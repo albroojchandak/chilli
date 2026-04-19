@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Web OAuth 2.0 Client ID (client_type: 3) from google-services.json.
+         Required by google_sign_in_android v7+ to configure the serverClientId. -->
+    <string name="default_web_client_id">278527617965-4dsk3c4eri7f0p8ojvv6hpo8mpmt716r.apps.googleusercontent.com</string>
+</resources>
