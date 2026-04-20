@@ -11,10 +11,7 @@ class PresenceRepository {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   PresenceRepository() {
-    _db = FirebaseDatabase.instanceFor(
-      app: Firebase.app(),
-      databaseURL: 'https://knect-84f31-default-rtdb.firebaseio.com/',
-    ).ref();
+    _db = FirebaseDatabase.instance.ref();
 
     if (kDebugMode) {
       FirebaseDatabase.instance.setLoggingEnabled(true);
@@ -106,18 +103,8 @@ class PresenceRepository {
     Map<String, Map<String, dynamic>> presenceInfoMap = {};
     bool isProfilesLoaded = false;
 
-    Query profileQuery = _db.child('usersProfile');
-    if (targetGender != null) {
-      String dbGender = targetGender.toLowerCase();
-      debugPrint('PresenceRepository: filtering by gender: $dbGender');
-      profileQuery = profileQuery
-          .orderByChild('g')
-          .equalTo(dbGender)
-          .limitToLast(1000);
-    } else {
-      debugPrint('PresenceRepository: no gender filter');
-      profileQuery = profileQuery.limitToLast(1000);
-    }
+    debugPrint('PresenceRepository: watchUsers streaming all profiles for client-side filtering (Target: $targetGender)');
+    Query profileQuery = _db.child('usersProfile').limitToLast(1000);
 
     void emitMerged() {
       if (!isProfilesLoaded && cachedUsers.isEmpty) return;
@@ -139,17 +126,12 @@ class PresenceRepository {
           lastActiveDate = DateTime.fromMillisecondsSinceEpoch(lastActiveTs);
           final diff = now.difference(lastActiveDate);
 
-          if (diff.inMinutes > 15 &&
+          if (diff.inMinutes > 10 &&
               (status == 'online' || status == 'active')) {
             status = 'offline';
           }
-
-          if (diff.inMinutes > 30) continue;
         } else {
-          if (status == 'online' || status == 'active') {
-            status = 'offline';
-          }
-          continue;
+          status = 'offline';
         }
 
         mergedUsers.add(
@@ -168,24 +150,28 @@ class PresenceRepository {
         int sA = statusWeight(a.status);
         int sB = statusWeight(b.status);
 
-        if (sA != sB) return sA.compareTo(sB) * -1;
+        if (sA != sB) return sB.compareTo(sA); // Sort by status (online first)
 
         final laA = a.lastActive?.millisecondsSinceEpoch ?? 0;
         final laB = b.lastActive?.millisecondsSinceEpoch ?? 0;
-        return laB.compareTo(laA);
+        return laB.compareTo(laA); // Then by last active
       });
 
+      debugPrint('PresenceRepository: emitting ${mergedUsers.length} merged users');
       controller.add(mergedUsers);
     }
 
     final profileSub = profileQuery.onValue.listen((event) {
       final profileMap = event.snapshot.value as Map<dynamic, dynamic>? ?? {};
+      debugPrint('PresenceRepository: received ${profileMap.length} profiles from RTDB');
+      
       final currentUid = _auth.currentUser?.uid;
       final List<ChilliProfile> users = [];
 
       profileMap.forEach((key, val) {
         if (val is Map) {
           final data = Map<String, dynamic>.from(val);
+          data['uid'] ??= key.toString();
 
           if (data['a'] != null) {
             String avatar = data['a'].toString();
@@ -198,10 +184,17 @@ class PresenceRepository {
 
           try {
             final user = ChilliProfile.fromMap(data);
-            if (user.uid != currentUid) {
-              users.add(user);
+            if (user.uid == currentUid) return;
+
+            // Filter by gender in Dart
+            if (targetGender != null && targetGender.isNotEmpty) {
+              if (user.gender.toLowerCase() != targetGender.toLowerCase()) return;
             }
-          } catch (e) {}
+
+            users.add(user);
+          } catch (e) {
+            debugPrint('PresenceRepository: error parsing user ${data['uid']}: $e');
+          }
         }
       });
 
@@ -233,16 +226,8 @@ class PresenceRepository {
 
   Future<List<ChilliProfile>> queryUsers({String? targetGender}) async {
     try {
-      Query query = _db.child('usersProfile');
-
-      if (targetGender != null) {
-        String dbGender = targetGender.toLowerCase();
-        query = query.orderByChild('g').equalTo(dbGender).limitToLast(1000);
-      } else {
-        query = query.limitToLast(1000);
-      }
-
-      final snapshot = await query.get();
+      debugPrint('PresenceRepository: queryUsers fetching all for target: $targetGender');
+      final snapshot = await _db.child('usersProfile').limitToLast(1000).get();
       if (snapshot.value == null) return [];
       final usersMap = snapshot.value as Map?;
       if (usersMap == null) return [];
@@ -261,6 +246,7 @@ class PresenceRepository {
           if (value is Map) {
             final data = Map<String, dynamic>.from(value);
             final uidStr = key.toString();
+            data['uid'] ??= uidStr;
 
             String status = 'offline';
             int? lastActiveTs;
@@ -278,15 +264,15 @@ class PresenceRepository {
                 );
                 final diff = DateTime.now().difference(lastActiveDate);
 
-                if (diff.inMinutes > 15 &&
+                if (diff.inMinutes > 10 &&
                     (status == 'online' || status == 'active')) {
                   status = 'offline';
                 }
               } else {
-                if (status == 'online' || status == 'active') {
-                  status = 'offline';
-                }
+                status = 'offline';
               }
+            } else {
+              status = 'offline';
             }
 
             data['s'] = status;
@@ -303,9 +289,14 @@ class PresenceRepository {
 
             final user = ChilliProfile.fromMap(data);
 
-            if (user.uid != currentUid) {
-              users.add(user);
+            if (user.uid == currentUid) return;
+
+            // Filter by gender in Dart
+            if (targetGender != null && targetGender.isNotEmpty) {
+              if (user.gender.toLowerCase() != targetGender.toLowerCase()) return;
             }
+
+            users.add(user);
           }
         } catch (e) {
           debugPrint('PresenceRepository: parse error: $e');

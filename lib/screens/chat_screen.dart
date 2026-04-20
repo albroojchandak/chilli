@@ -308,8 +308,21 @@ class _ChilliChatScreenState extends State<ChilliChatScreen> with SingleTickerPr
       child: CircleAvatar(
         radius: 16,
         backgroundColor: Colors.white10,
-        backgroundImage: widget.partnerAvatar.isNotEmpty ? NetworkImage(widget.partnerAvatar) : null,
-        child: widget.partnerAvatar.isEmpty ? const Icon(Icons.person, color: Colors.white, size: 16) : null,
+        child: ClipOval(
+          child: widget.partnerAvatar.isEmpty 
+            ? const Icon(Icons.person, color: Colors.white, size: 16)
+            : Image.network(
+                widget.partnerAvatar,
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Colors.white, size: 16),
+                loadingBuilder: (context, child, loadingProgress) {
+                  if (loadingProgress == null) return child;
+                  return const Center(child: SizedBox(width: 10, height: 10, child: CircularProgressIndicator(strokeWidth: 2, color: _neonCyan)));
+                },
+              ),
+        ),
       ),
     );
   }

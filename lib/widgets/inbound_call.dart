@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'dart:math' as math;
+import 'package:flutter/services.dart';
+import 'dart:ui';
 
 class InboundCallOverlay extends StatefulWidget {
   final String callerName;
@@ -21,131 +22,95 @@ class InboundCallOverlay extends StatefulWidget {
   State<InboundCallOverlay> createState() => _InboundCallOverlayState();
 }
 
-class _InboundCallOverlayState extends State<InboundCallOverlay>
-    with TickerProviderStateMixin {
-  late AnimationController _beatController;
-  late AnimationController _waveController;
-  late AnimationController _entryController;
-  late Animation<double> _beatAnimation;
-  late Animation<double> _waveAnimation;
-  late Animation<Offset> _entryAnimation;
+class _InboundCallOverlayState extends State<InboundCallOverlay> with SingleTickerProviderStateMixin {
+  late AnimationController _ctrl;
+  
+  late Animation<double> _fadeHeader;
+  late Animation<double> _scaleAvatar;
+  late Animation<double> _fadeInfo;
+  late Animation<double> _slideButtons;
+  late Animation<double> _pulseGlow;
+
+  static const _neonRose = Color(0xFFFF2D78);
+  static const _neonCyan = Color(0xFF00F5FF);
+  static const _bg = Color(0xFF050510);
 
   @override
   void initState() {
     super.initState();
+    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
 
-    _beatController = AnimationController(
-      duration: const Duration(milliseconds: 1400),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _waveController = AnimationController(
-      duration: const Duration(milliseconds: 1800),
-      vsync: this,
-    )..repeat();
-
-    _entryController = AnimationController(
-      duration: const Duration(milliseconds: 700),
-      vsync: this,
+    _fadeHeader = CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.4, curve: Curves.easeOut));
+    _scaleAvatar = CurvedAnimation(parent: _ctrl, curve: const Interval(0.1, 0.6, curve: Curves.easeOutBack));
+    _fadeInfo = CurvedAnimation(parent: _ctrl, curve: const Interval(0.3, 0.7, curve: Curves.easeOut));
+    _slideButtons = CurvedAnimation(parent: _ctrl, curve: const Interval(0.5, 1.0, curve: Curves.easeOutQuart));
+    
+    _pulseGlow = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: const Interval(0.7, 1.0, curve: Curves.easeInOut)),
     );
 
-    _beatAnimation = Tween<double>(begin: 1.0, end: 1.12).animate(
-      CurvedAnimation(parent: _beatController, curve: Curves.easeInOut),
-    );
-
-    _waveAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _waveController, curve: Curves.easeOut),
-    );
-
-    _entryAnimation =
-        Tween<Offset>(begin: const Offset(0, -1.2), end: Offset.zero).animate(
-          CurvedAnimation(parent: _entryController, curve: Curves.elasticOut),
-        );
-
-    _entryController.forward();
+    _ctrl.forward();
+    HapticFeedback.lightImpact();
   }
 
   @override
   void dispose() {
-    _beatController.dispose();
-    _waveController.dispose();
-    _entryController.dispose();
+    _ctrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Colors.transparent,
-      child: Stack(
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Stack(
         fit: StackFit.expand,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  const Color(0xFF0F0A1E).withOpacity(0.85),
-                  const Color(0xFF3B0764).withOpacity(0.97),
-                ],
-              ),
-            ),
-          ),
-          SlideTransition(
-            position: _entryAnimation,
-            child: Center(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 28),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF1A1030), Color(0xFF2D1B5E)],
+          // 1. Cinematic Background
+          _buildBackdrop(),
+          
+          // 2. Glass Overlay
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 30, sigmaY: 30),
+            child: Container(
+              color: _bg.withOpacity(0.6),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        clipBehavior: Clip.none,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                          child: IntrinsicHeight(
+                            child: Column(
+                              children: [
+                                const SizedBox(height: 40),
+                                FadeTransition(opacity: _fadeHeader, child: _buildTypeBadge()),
+                                const Spacer(flex: 3),
+                                ScaleTransition(scale: _scaleAvatar, child: _buildAvatarCircle()),
+                                const Spacer(flex: 2),
+                                FadeTransition(opacity: _fadeInfo, child: _buildCallerDetails()),
+                                const Spacer(flex: 4),
+                                AnimatedBuilder(
+                                  animation: _slideButtons,
+                                  builder: (context, child) {
+                                    return Transform.translate(
+                                      offset: Offset(0, 50 * (1 - _slideButtons.value)),
+                                      child: Opacity(opacity: _slideButtons.value, child: child),
+                                    );
+                                  },
+                                  child: _buildActions(),
+                                ),
+                                const SizedBox(height: 60),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                  borderRadius: BorderRadius.circular(36),
-                  border: Border.all(
-                    color: const Color(0xFF7C3AED).withOpacity(0.4),
-                    width: 1.5,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF7C3AED).withOpacity(0.5),
-                      blurRadius: 50,
-                      offset: const Offset(0, 24),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const SizedBox(height: 36),
-                    _buildCallTypeBadge(),
-                    const SizedBox(height: 28),
-                    _buildAvatarRipple(),
-                    const SizedBox(height: 28),
-                    Text(
-                      widget.callerName,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.3,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Incoming call...',
-                      style: TextStyle(
-                        color: Colors.white.withOpacity(0.65),
-                        fontSize: 15,
-                      ),
-                    ),
-                    const SizedBox(height: 44),
-                    _buildActions(),
-                    const SizedBox(height: 40),
-                  ],
                 ),
               ),
             ),
@@ -155,33 +120,34 @@ class _InboundCallOverlayState extends State<InboundCallOverlay>
     );
   }
 
-  Widget _buildCallTypeBadge() {
+  Widget _buildBackdrop() {
+    return Positioned.fill(
+      child: widget.callerAvatar.isNotEmpty
+          ? Image.network(widget.callerAvatar, fit: BoxFit.cover)
+          : Container(color: _bg),
+    );
+  }
+
+  Widget _buildTypeBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: const Color(0xFF7C3AED).withOpacity(0.2),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: const Color(0xFF7C3AED).withOpacity(0.4),
-          width: 1.2,
-        ),
+        color: Colors.white.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(50),
+        border: Border.all(color: Colors.white.withOpacity(0.1)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            widget.isVideoCall ? Icons.videocam_rounded : Icons.call_rounded,
-            color: const Color(0xFFA78BFA),
-            size: 17,
-          ),
-          const SizedBox(width: 7),
+          _BlinkingDot(color: widget.isVideoCall ? _neonCyan : Colors.orange),
+          const SizedBox(width: 10),
           Text(
-            widget.isVideoCall ? 'Video Call' : 'Voice Call',
+            widget.isVideoCall ? 'INCOMING VIDEO' : 'INCOMING AUDIO',
             style: const TextStyle(
-              color: Color(0xFFA78BFA),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              letterSpacing: 0.5,
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 2,
             ),
           ),
         ],
@@ -189,132 +155,205 @@ class _InboundCallOverlayState extends State<InboundCallOverlay>
     );
   }
 
-  Widget _buildAvatarRipple() {
-    return Stack(
-      alignment: Alignment.center,
+  Widget _buildAvatarCircle() {
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+      ),
+      child: Container(
+        padding: const EdgeInsets.all(4),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const LinearGradient(
+            colors: [_neonCyan, Colors.transparent],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: ClipOval(
+          child: SizedBox(
+            width: 180,
+            height: 180,
+            child: widget.callerAvatar.isNotEmpty
+                ? Image.network(widget.callerAvatar, fit: BoxFit.cover)
+                : Container(color: _bg, child: const Icon(Icons.person, color: Colors.white24, size: 80)),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCallerDetails() {
+    return Column(
       children: [
-        ...List.generate(3, (index) {
-          return AnimatedBuilder(
-            animation: _waveAnimation,
-            builder: (context, child) {
-              final delay = index * 0.33;
-              final v = (_waveAnimation.value - delay).clamp(0.0, 1.0);
-              return Container(
-                width: 130 + (v * 70),
-                height: 130 + (v * 70),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFF7C3AED).withOpacity((1 - v) * 0.35),
-                    width: 2,
-                  ),
-                ),
-              );
-            },
-          );
-        }),
-        AnimatedBuilder(
-          animation: _beatAnimation,
-          builder: (context, child) {
-            return Transform.scale(
-              scale: _beatAnimation.value,
-              child: Container(
-                width: 130,
-                height: 130,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFF7C3AED), width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF7C3AED).withOpacity(0.4),
-                      blurRadius: 24,
-                    ),
-                  ],
-                ),
-                child: ClipOval(
-                  child: Image.network(
-                    widget.callerAvatar,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      color: const Color(0xFF2D1B5E),
-                      child: const Icon(
-                        Icons.person,
-                        size: 56,
-                        color: Color(0xFFA78BFA),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
+        Text(
+          widget.callerName,
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 48,
+            fontWeight: FontWeight.w100,
+            letterSpacing: -1,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Container(
+          height: 1,
+          width: 40,
+          color: _neonCyan.withOpacity(0.5),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          widget.isVideoCall ? 'VIDEO CALL' : 'AUDIO CALL',
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.4),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 1,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildActions() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 48),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildRoundButton(
-            icon: Icons.call_end_rounded,
-            label: 'Decline',
-            color: const Color(0xFFEF4444),
-            onTap: widget.onDecline,
-          ),
-          const SizedBox(width: 40),
-          _buildRoundButton(
-            icon: Icons.call_rounded,
-            label: 'Accept',
-            color: const Color(0xFF10B981),
-            onTap: widget.onAccept,
-          ),
-        ],
-      ),
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _roundAction(
+          icon: Icons.close_rounded,
+          color: _neonRose,
+          label: 'DECLINE',
+          onTap: widget.onDecline,
+        ),
+        _roundAction(
+          icon: widget.isVideoCall ? Icons.videocam_rounded : Icons.call_rounded,
+          color: _neonCyan,
+          label: 'ACCEPT',
+          onTap: widget.onAccept,
+          hasGlow: true,
+        ),
+      ],
     );
   }
 
-  Widget _buildRoundButton({
+  Widget _roundAction({
     required IconData icon,
-    required String label,
     required Color color,
+    required String label,
     required VoidCallback onTap,
+    bool hasGlow = false,
   }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        children: [
-          Container(
-            width: 68,
-            height: 68,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [color, color.withOpacity(0.75)],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.5),
-                  blurRadius: 22,
-                  offset: const Offset(0, 10),
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            HapticFeedback.mediumImpact();
+            onTap();
+          },
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              if (hasGlow)
+                _GlowRing(color: color),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: color.withOpacity(0.1),
+                  border: Border.all(color: color.withOpacity(0.3), width: 2),
                 ),
-              ],
-            ),
-            child: Icon(icon, color: Colors.white, size: 30),
+                child: Icon(icon, color: Colors.white, size: 32),
+              ),
+            ],
           ),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-            ),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.white.withOpacity(0.5),
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            letterSpacing: 2,
           ),
-        ],
+        ),
+      ],
+    );
+  }
+}
+
+class _BlinkingDot extends StatefulWidget {
+  final Color color;
+  const _BlinkingDot({required this.color});
+
+  @override
+  State<_BlinkingDot> createState() => _BlinkingDotState();
+}
+
+class _BlinkingDotState extends State<_BlinkingDot> with SingleTickerProviderStateMixin {
+  late AnimationController _c;
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000))..repeat(reverse: true);
+  }
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) => Container(
+        width: 8,
+        height: 8,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: widget.color.withOpacity(_c.value * 0.8 + 0.2),
+          boxShadow: [BoxShadow(color: widget.color, blurRadius: 10 * _c.value)],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlowRing extends StatefulWidget {
+  final Color color;
+  const _GlowRing({required this.color});
+
+  @override
+  State<_GlowRing> createState() => _GlowRingState();
+}
+
+class _GlowRingState extends State<_GlowRing> with SingleTickerProviderStateMixin {
+  late AnimationController _c;
+  @override
+  void initState() {
+    super.initState();
+    _c = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
+  }
+  @override
+  void dispose() {
+    _c.dispose();
+    super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _c,
+      builder: (context, _) => Container(
+        width: 80 + (_c.value * 40),
+        height: 80 + (_c.value * 40),
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: widget.color.withOpacity(1 - _c.value), width: 2),
+        ),
       ),
     );
   }

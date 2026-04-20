@@ -6,7 +6,7 @@ import 'package:googleapis_auth/auth_io.dart';
 import 'package:googleapis_auth/googleapis_auth.dart';
 
 class NotificationTransmitter {
-  static const String _projectId = 'knect-84f31';
+  static const String _projectId = 'nurxian';
 
   final List<String> _scopes = [
     'https://www.googleapis.com/auth/firebase.messaging',

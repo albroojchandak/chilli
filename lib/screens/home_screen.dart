@@ -6,11 +6,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:chilli/theme/palette.dart';
+import 'dart:ui';
 import 'package:chilli/widgets/user_tile.dart';
 import 'package:chilli/screens/call_log_screen.dart';
 import 'package:chilli/screens/wallet_screen.dart';
 import 'package:chilli/screens/profile_screen.dart';
-import 'package:chilli/screens/call_screen.dart';
+import 'package:chilli/screens/chilli_call_view.dart';
 import 'package:chilli/screens/chat_screen.dart';
 import 'package:chilli/services/firestore_repo.dart';
 import 'package:chilli/services/push_receiver.dart';
@@ -85,6 +86,10 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     _setupListeners();
     _syncProfile();
     _bridge.syncCoinsWithServer();
+    
+    // Auto-recharge dummy balance for testing
+    await _bridge.updateLocalCoins(100, isDeduction: false);
+    debugPrint('HomeScreen: 100 dummy coins added for testing');
   }
 
   void _setupListeners() {
@@ -113,10 +118,19 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     }
 
     _db.child('pending_calls').child(_auth.currentUser?.uid ?? '').onChildAdded.listen((e) {
-      if (e.snapshot.value != null) {
+      if (e.snapshot.value != null && mounted) {
         final d = Map<String, dynamic>.from(e.snapshot.value as Map);
         d['roomId'] = e.snapshot.key;
-        _handleIncomingCall(d);
+        
+        final createTime = d['createdAt'] as int?;
+        final now = DateTime.now().millisecondsSinceEpoch;
+        
+        if (createTime != null && (now - createTime) < 60000) {
+          _handleIncomingCall(d);
+        } else {
+          // Cleanup stale signals
+          _db.child('pending_calls').child(_auth.currentUser?.uid ?? '').child(e.snapshot.key!).remove();
+        }
       }
     });
   }
@@ -193,7 +207,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     await _bridge.updateUserStatus('busy');
     await _db.child('calls').child(data['roomId']).update({'status': 'answered'});
     if (mounted) {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => CallScreen(
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => ChilliCallView(
         roomId: data['roomId'],
         callerName: data['callerName'] ?? 'User',
         callerAvatar: data['callerAvatar'] ?? '',
@@ -305,17 +319,23 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
       final roomId = 'chilli_${DateTime.now().millisecondsSinceEpoch}';
       
       if (mounted) {
-        await Navigator.push(context, MaterialPageRoute(builder: (_) => CallScreen(
-          roomId: roomId,
-          callerName: target.name,
-          callerAvatar: target.avatarUrl ?? '',
-          isOutgoing: true,
-          isVideoCall: isVideo,
-          receiverToken: target.fcmToken,
-          targetId: target.uid,
-          pushReceiver: _push,
-        )));
-        _updateOnlineStatus();
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => ChilliCallView(
+                roomId: roomId,
+                callerName: target.name,
+                callerAvatar: target.avatarUrl ?? '',
+                isOutgoing: true,
+                isVideoCall: isVideo,
+                pushReceiver: _push,
+                targetId: target.uid,
+                receiverToken: target.fcmToken,
+              ),
+        ),
+      );
+      _updateOnlineStatus();
         _bridge.syncCoinsWithServer();
       }
     } catch (e) {
@@ -372,8 +392,8 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
             child: CustomScrollView(
               physics: const BouncingScrollPhysics(),
               slivers: [
-                SliverToBoxAdapter(child: _buildQuickActionCard()),
                 SliverToBoxAdapter(child: _buildFilterRail()),
+                const SliverToBoxAdapter(child: SizedBox(height: 20)),
                 _buildUserGrid(),
                 const SliverToBoxAdapter(child: SizedBox(height: 100)),
               ],
@@ -385,111 +405,64 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   }
 
   Widget _buildTopBar() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
-      decoration: BoxDecoration(
-        color: _bg.withOpacity(0.8),
-        border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
-      ),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
-            child: Stack(
-              children: [
-                Container(
+    return ClipRRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+          decoration: BoxDecoration(
+            color: _bg.withOpacity(0.7),
+            border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
+          ),
+          child: Row(
+            children: [
+              GestureDetector(
+                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen())),
+                child: Container(
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: _neonViolet.withOpacity(0.5), width: 1.5),
+                    border: Border.all(color: _neonCyan.withOpacity(0.5), width: 1.5),
                   ),
                   child: CircleAvatar(
-                    radius: 18,
-                    backgroundColor: _neonViolet.withOpacity(0.1),
-                    backgroundImage: _avatar != null ? NetworkImage(_avatar!) : null,
-                    child: _avatar == null ? const Icon(Icons.person_rounded, color: _neonViolet, size: 20) : null,
+                    radius: 16,
+                    backgroundImage: (_avatar != null && _avatar!.isNotEmpty) ? NetworkImage(_avatar!) : null,
+                    backgroundColor: Colors.white10,
+                    child: (_avatar == null || _avatar!.isEmpty) ? const Icon(Icons.person, size: 16, color: Colors.white54) : null,
                   ),
                 ),
-                Positioned(
-                  right: 0,
-                  bottom: 0,
-                  child: Container(
-                    padding: const EdgeInsets.all(3),
-                    decoration: const BoxDecoration(color: _neonViolet, shape: BoxShape.circle),
-                    child: const Icon(Icons.tune_rounded, color: Colors.white, size: 10),
+              ),
+              const Spacer(),
+              RichText(
+                text: const TextSpan(
+                  children: [
+                    TextSpan(text: 'CHILLI', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 3)),
+                    TextSpan(text: '•', style: TextStyle(color: _neonPink, fontSize: 18, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () => setState(() => _currentTabIndex = 2),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _neonViolet.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: _neonViolet.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.toll_rounded, color: Color(0xFFFFD700), size: 14),
+                      const SizedBox(width: 4),
+                      Text('$_coins', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
+                    ],
                   ),
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: const Row(
-              children: [
-                Icon(Icons.whatshot_rounded, color: _neonPink, size: 28),
-                SizedBox(width: 8),
-                Text(
-                  'CHILLI',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          _buildCoinPill(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCoinPill() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-      decoration: BoxDecoration(
-        color: _neonViolet.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _neonViolet.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.toll_rounded, color: Colors.amber, size: 20),
-          const SizedBox(width: 8),
-          Text(
-            _coins.toStringAsFixed(0),
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildQuickActionCard() {
-    return Container(
-      margin: const EdgeInsets.all(20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [_neonViolet.withOpacity(0.2), _neonPink.withOpacity(0.1)]),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: _neonViolet.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text('Quick Match', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w900)),
-              Text('Start a random spicy chat', style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13)),
+              ),
             ],
           ),
-          const Spacer(),
-          _buildActionButton(Icons.videocam_rounded, _neonCyan, () {}),
-          const SizedBox(width: 12),
-          _buildActionButton(Icons.mic_rounded, _neonPink, () {}),
-        ],
+        ),
       ),
     );
   }
@@ -510,29 +483,60 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   }
 
   Widget _buildFilterRail() {
-    return SizedBox(
-      height: 44,
+    return Container(
+      height: 54,
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
+        physics: const BouncingScrollPhysics(),
         itemCount: _filters.length,
         itemBuilder: (context, i) {
-          final isSelected = _selectedFilter == _filters[i];
+          final filterName = _filters[i];
+          final isSelected = _selectedFilter == filterName;
+          final isAll = filterName == 'All';
+
           return GestureDetector(
-            onTap: () => setState(() => _selectedFilter = _filters[i]),
+            onTap: () => setState(() => _selectedFilter = filterName),
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeOutCubic,
               margin: const EdgeInsets.only(right: 12),
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 18),
               decoration: BoxDecoration(
-                color: isSelected ? _neonCyan.withOpacity(0.15) : Colors.white.withOpacity(0.03),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: isSelected ? _neonCyan : Colors.white.withOpacity(0.1)),
+                color: isSelected ? _neonCyan.withOpacity(0.1) : Colors.white.withOpacity(0.02),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isSelected ? _neonCyan.withOpacity(0.5) : Colors.white.withOpacity(0.08),
+                  width: isSelected ? 1.5 : 1.0,
+                ),
+                boxShadow: isSelected
+                    ? [BoxShadow(color: _neonCyan.withOpacity(0.2), blurRadius: 10, spreadRadius: -2)]
+                    : [],
               ),
-              alignment: Alignment.center,
-              child: Text(
-                _filters[i],
-                style: TextStyle(color: isSelected ? _neonCyan : Colors.white.withOpacity(0.5), fontWeight: FontWeight.w700),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (isSelected)
+                    Container(
+                      margin: const EdgeInsets.only(right: 8),
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(color: _neonCyan, shape: BoxShape.circle),
+                    ),
+                  if (isAll && !isSelected)
+                    const Icon(Icons.language_rounded, size: 14, color: Colors.white24),
+                  if (isAll && !isSelected) const SizedBox(width: 6),
+                  Text(
+                    filterName.toUpperCase(),
+                    style: TextStyle(
+                      color: isSelected ? _neonCyan : Colors.white60,
+                      fontWeight: isSelected ? FontWeight.w900 : FontWeight.w600,
+                      fontSize: 11,
+                      letterSpacing: 1.2,
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -542,70 +546,124 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   }
 
   Widget _buildUserGrid() {
+    debugPrint('HomeScreen: searching profiles for target gender: $_target');
     return StreamBuilder<List<ChilliProfile>>(
       stream: _presence.watchUsers(targetGender: _target),
       builder: (context, snap) {
-        if (!snap.hasData) return const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: _neonCyan)));
+        if (snap.connectionState == ConnectionState.waiting) {
+          return const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: _neonCyan)));
+        }
         
-        var users = snap.data!;
+        var users = snap.data ?? [];
         if (_selectedFilter != 'All') {
           users = users.where((u) => u.language.toLowerCase() == _selectedFilter.toLowerCase()).toList();
         }
 
-        if (users.isEmpty) return SliverFillRemaining(child: Center(child: Text('No users found', style: TextStyle(color: Colors.white.withOpacity(0.3)))));
+        if (users.isEmpty) {
+          debugPrint('HomeScreen: RTDB empty, falling back to Firestore');
+          return StreamBuilder<List<ChilliProfile>>(
+            stream: _firestore.watchAllUsers(targetGender: _target),
+            builder: (context, fSnap) {
+              if (fSnap.connectionState == ConnectionState.waiting) {
+                return const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: _neonCyan)));
+              }
+              
+              var fUsers = fSnap.data ?? [];
+              if (_selectedFilter != 'All') {
+                fUsers = fUsers.where((u) => u.language.toLowerCase() == _selectedFilter.toLowerCase()).toList();
+              }
 
-        return SliverPadding(
-          padding: const EdgeInsets.all(20),
-          sliver: SliverGrid(
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.75,
-            ),
-            delegate: SliverChildBuilderDelegate(
-              (context, i) => UserTile(
-                name: users[i].name,
-                imageUrl: users[i].avatarUrl ?? '',
-                language: users[i].language,
-                gender: users[i].gender,
-                isOnline: users[i].status == 'online',
-                onAudioCall: () => _startCall(users[i], false),
-                onVideoCall: () => _startCall(users[i], true),
-                onChat: () => _startChat(users[i]),
-                rating: 5.0,
-                interests: const ['Chat', 'Connect'],
-                audioPrice: '10',
-                videoPrice: '20',
-                audioUrl: users[i].audioUrl,
-                coins: users[i].coins.toDouble(),
-                currentUserGender: _gender,
-                lastActive: users[i].lastActive,
-                status: users[i].status,
-                career: users[i].career,
-              ),
-              childCount: users.length,
-            ),
-          ),
-        );
+              if (fUsers.isEmpty) {
+                return SliverFillRemaining(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.person_search_rounded, color: Colors.white.withOpacity(0.1), size: 64),
+                        const SizedBox(height: 16),
+                        Text('No users found nearby', style: TextStyle(color: Colors.white.withOpacity(0.3))),
+                      ],
+                    ),
+                  ),
+                );
+              }
+
+              return _buildGrid(fUsers);
+            },
+          );
+        }
+
+        return _buildGrid(users);
       },
+    );
+  }
+
+  Widget _buildGrid(List<ChilliProfile> users) {
+    return SliverPadding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 240,
+          crossAxisSpacing: 14,
+          mainAxisSpacing: 14,
+          childAspectRatio: 0.75,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, i) => UserTile(
+            name: users[i].name,
+            imageUrl: users[i].avatarUrl ?? '',
+            language: users[i].language,
+            gender: users[i].gender,
+            isOnline: users[i].status == 'online',
+            onAudioCall: () => _startCall(users[i], false),
+            onVideoCall: () => _startCall(users[i], true),
+            onChat: () => _startChat(users[i]),
+            rating: 5.0,
+            interests: const ['Chat', 'Connect'],
+            audioPrice: '10',
+            videoPrice: '20',
+            audioUrl: users[i].audioUrl,
+            coins: users[i].coins.toDouble(),
+            currentUserGender: _gender,
+            lastActive: users[i].lastActive,
+            status: users[i].status,
+            career: users[i].career,
+            uid: users[i].uid,
+          ),
+          childCount: users.length,
+        ),
+      ),
     );
   }
 
   Widget _buildBottomNav() {
     return Container(
-      height: 80,
-      decoration: BoxDecoration(
-        color: _bg,
-        border: Border(top: BorderSide(color: Colors.white.withOpacity(0.05))),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          _buildNavItem(0, Icons.schedule_rounded, 'HISTORY'),
-          _buildNavItem(1, Icons.radar_rounded, 'EXPLORE'),
-          _buildNavItem(2, Icons.account_balance_wallet_rounded, 'WALLET'),
-        ],
+      height: 100,
+      padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+      color: Colors.transparent,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(28),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+          child: Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFF151525).withOpacity(0.8),
+              borderRadius: BorderRadius.circular(28),
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
+              boxShadow: [
+                BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 40, offset: const Offset(0, 10)),
+              ],
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildNavItem(0, Icons.grid_view_rounded, 'EXPLORE'),
+                _buildNavItem(1, Icons.history_toggle_off_rounded, 'HISTORY'),
+                _buildNavItem(2, Icons.toll_rounded, 'WALLET'),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -615,28 +673,33 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     return GestureDetector(
       onTap: () => setState(() => _currentTabIndex = index),
       behavior: HitTestBehavior.opaque,
-      child: SizedBox(
-        width: 80,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedScale(
+            duration: const Duration(milliseconds: 300),
+            scale: isSelected ? 1.2 : 1.0,
+            curve: Curves.easeOutBack,
+            child: Icon(
               icon,
-              color: isSelected ? _neonCyan : Colors.white.withOpacity(0.2),
-              size: 26,
+              color: isSelected ? _neonCyan : Colors.white24,
+              size: 24,
             ),
-            const SizedBox(height: 6),
-            Text(
-              label,
-              style: TextStyle(
-                color: isSelected ? _neonCyan : Colors.white.withOpacity(0.2),
-                fontSize: 9,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.2,
-              ),
+          ),
+          const SizedBox(height: 6),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            width: isSelected ? 12 : 0,
+            height: 3,
+            decoration: BoxDecoration(
+              color: _neonCyan,
+              borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                if (isSelected) BoxShadow(color: _neonCyan.withOpacity(0.5), blurRadius: 8, spreadRadius: 1),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
