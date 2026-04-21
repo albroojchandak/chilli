@@ -219,8 +219,7 @@ class DataBridge {
     'paygic_token': '',
     'min_app_version': '1.0.0',
     'latest_app_version': '1.0.0',
-    'update_url':
-        'https://play.google.com/store/apps/details?id=com.nurxian.chilli',
+    'update_url': '',
     'is_reward_enabled': true,
   };
 
@@ -404,9 +403,7 @@ class DataBridge {
             data['min_version']?.toString() ?? '1.0.0';
         _appConfig['latest_app_version'] =
             data['latest_version']?.toString() ?? '1.0.0';
-        _appConfig['update_url'] =
-            data['update_url']?.toString() ??
-            'https://play.google.com/store/apps/details?id=com.nurxian.chilli';
+        _appConfig['update_url'] = data['update_url']?.toString() ?? '';
 
         debugPrint('DataBridge: version parsed');
       } else {
