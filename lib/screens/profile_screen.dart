@@ -14,6 +14,7 @@ import 'package:chilli/services/data_bridge.dart';
 import 'package:chilli/screens/auth_screen.dart';
 import 'package:chilli/legal/privacy_screen.dart';
 import 'package:chilli/legal/terms_screen.dart';
+import 'package:chilli/legal/refund_screen.dart';
 import 'package:chilli/screens/support_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -218,6 +219,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               _buildMenuCard([
                 _buildMenuItem(Icons.manage_accounts_rounded, 'Edit Profile Identity', _primaryNeon, _editName, true),
                 _buildMenuItem(Icons.shield_moon_rounded, 'Privacy & Encryption', _accentViolet, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyScreen())), true),
+                _buildMenuItem(Icons.receipt_long_rounded, 'Transaction Refund Protocol', Colors.amber, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RefundScreen())), true),
                 _buildMenuItem(Icons.assignment_rounded, 'Cloud Terms of Service', _secondaryNeon, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen())), false),
               ]),
               const SizedBox(height: 32),

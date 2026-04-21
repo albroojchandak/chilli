@@ -1,91 +1,104 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class TermsScreen extends StatelessWidget {
-  const TermsScreen({Key? key}) : super(key: key);
+  const TermsScreen({super.key});
 
-  static const Color _bg = Color(0xFF0F0A1E);
-  static const Color _surface = Color(0xFF1A1030);
-  static const Color _card = Color(0xFF231842);
-  static const Color _accent = Color(0xFF7C3AED);
-  static const Color _accentLight = Color(0xFFA78BFA);
-  static const Color _textBright = Color(0xFFF1F0F7);
-  static const Color _textMuted = Color(0xFF9B93B8);
+  static const Color _bg = Color(0xFF06010F);
+  static const Color _neonCyan = Color(0xFF00F5FF);
+  static const Color _neonPink = Color(0xFFFF2D78);
+  static const Color _neonViolet = Color(0xFFBF5AF2);
+  static const Color _surface = Color(0xFF151525);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
-      appBar: AppBar(
-        backgroundColor: _surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _accentLight),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text('Terms of Service', style: TextStyle(color: _textBright, fontWeight: FontWeight.w700, fontSize: 18)),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: _accent.withOpacity(0.2)),
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTopBanner(),
-            const SizedBox(height: 24),
-            _buildInfoCard('1. Acceptance of Terms', _buildText('By accessing or using Chilli, you agree to be bound by these Terms of Service. If you do not agree to all of the terms and conditions, you may not access or use our services.')),
-            _buildInfoCard('2. Age Requirements', _buildText('You must be at least 18 years of age to use this application. By using Chilli, you represent and warrant that you meet this age requirement.')),
-            _buildInfoCard('3. Account Responsibilities', _buildBulletList([
-              'You are responsible for maintaining the confidentiality of your account',
-              'You are responsible for all activities that occur under your account',
-              'You must provide accurate and complete registration information',
-              'You must notify us immediately of any unauthorized use of your account',
-            ])),
-            _buildInfoCard('4. Content & Conduct', _buildBulletList([
-              'Users must not post inappropriate or illegal content',
-              'Users must respect the privacy and rights of others',
-              'Harassment or abuse of other users will result in account termination',
-              'We reserve the right to remove content at our discretion',
-            ])),
-            _buildInfoCard('5. Intellectual Property', _buildText('All content and materials provided on the platform are the property of Inflyratech and are protected by applicable intellectual property laws.')),
-            _buildInfoCard('6. Limitation of Liability', _buildText('Chilli and Inflyratech shall not be liable for any indirect, incidental, special, consequential, or punitive damages arising out of your use of the services.')),
-            _buildInfoCard('7. Termination', _buildText('We reserve the right to suspend or terminate your access to the platform at any time for any reason, including violation of these Terms.')),
-            _buildInfoCard('8. Governing Law', _buildText('These Terms shall be governed by and construed in accordance with the laws of India.')),
-            const SizedBox(height: 16),
-            _buildFooter(),
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(colors: [_accent, _accent.withOpacity(0.6)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [BoxShadow(color: _accent.withOpacity(0.35), blurRadius: 20, offset: const Offset(0, 8))],
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), shape: BoxShape.circle),
-            child: const Icon(Icons.gavel_rounded, color: Colors.white, size: 30),
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              backgroundColor: _bg.withOpacity(0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'NETWORK GOVERNANCE',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+        ),
+      ),
+      body: Stack(
+        children: [
+          Positioned(
+            top: -100,
+            left: -100,
+            child: _buildGlow(_neonPink.withOpacity(0.05), 400),
+          ),
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 100, 24, 60),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Terms of Use', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('Agreement for platform use', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                _buildDynamicHeader(),
+                const SizedBox(height: 48),
+                _buildTermSection(
+                  '01',
+                  'PLATFORM ACCESS',
+                  'By entering the Chilli network, you enter into a binding agreement with Nurxian. You are granted a limited, non-exclusive license to use our P2P communication nodes strictly for personal, non-commercial interaction.',
+                ),
+                _buildTermSection(
+                  '02',
+                  'IDENTITY ELIGIBILITY',
+                  'You must be at least 18 years of age. Nurxian reserves the right to request proof of age and will immediately terminate any identity node found to be operated by a minor.',
+                ),
+                _buildTermSection(
+                  '03',
+                  'CODE OF CONDUCT',
+                  'Users must refrain from harassment, hate speech, or the dissemination of explicit illegal material. Any attempt to reverse-engineer the Chilli OS or bypass regional restrictions is a violation of this protocol.',
+                ),
+                _buildTermSection(
+                  '04',
+                  'VIRTUAL ASSETS (COINS)',
+                  'Virtual coins are internal utilities used to facilitate network handshakes. They have no real-world monetary value outside the Chilli environment, are non-transferable, and non-refundable under any circumstances.',
+                ),
+                _buildTermSection(
+                  '05',
+                  'INTELLECTUAL PROPERTY',
+                  'The Chilli UI, brand identity, and underlying source code are the sole proprietary assets of Nurxian. You may not reproduce or mirror our mainframe architecture without explicit written authorization.',
+                ),
+                _buildTermSection(
+                  '06',
+                  'NETWORK RELIABILITY',
+                  'While we strive for 99.9% uptime, Nurxian is not liable for data packet loss, connection drops, or server outages caused by third-party ISP failures or global network anomalies.',
+                ),
+                _buildTermSection(
+                  '07',
+                  'ACCOUNT TERMINATION',
+                  'Nurxian maintains absolute discretion to blacklist or permanently delete any user account that violates these governance terms without prior warning or compensation for remaining virtual assets.',
+                ),
+                _buildTermSection(
+                  '08',
+                  'GOVERNING LAW',
+                  'This agreement is governed by the laws of India. Any disputes arising from the usage of the Chilli network shall be subject to the exclusive jurisdiction of the courts in Poonch, J&K.',
+                ),
+                const SizedBox(height: 48),
+                _buildContactNode(),
+                const SizedBox(height: 60),
+                _buildLegalFooter(),
               ],
             ),
           ),
@@ -94,61 +107,114 @@ class TermsScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String title, Widget content) {
+  Widget _buildGlow(Color color, double radius) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      width: radius,
+      height: radius,
       decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _accent.withOpacity(0.2), width: 1.2),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: radius, spreadRadius: radius / 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDynamicHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'TERMS OF SERVICE',
+          style: TextStyle(color: _neonPink, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Legal Framework\nof the Nurxian Ecosystem.',
+          style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.w900, height: 1.1),
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'Version 2.0 | Last Revised: April 2026',
+          style: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 11, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Please review these terms carefully before establishing your identity node on our network.',
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildTermSection(String index, String title, String description) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: _neonPink.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                child: Text(index, style: const TextStyle(color: _neonPink, fontSize: 10, fontWeight: FontWeight.w900)),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 38),
+            child: Text(
+              description,
+              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13, height: 1.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactNode() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(color: _accent.withOpacity(0.12), borderRadius: const BorderRadius.vertical(top: Radius.circular(15))),
-            child: Row(
-              children: [
-                Container(width: 3, height: 18, decoration: BoxDecoration(color: _accentLight, borderRadius: BorderRadius.circular(2))),
-                const SizedBox(width: 10),
-                Expanded(child: Text(title, style: const TextStyle(color: _textBright, fontWeight: FontWeight.w700, fontSize: 15))),
-              ],
-            ),
+          const Text('CONTACT ADDRESS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1, fontSize: 12)),
+          const SizedBox(height: 12),
+          Text(
+            'Nurxian Core Legal Team\nPoonch, Jammu & Kashmir\nIndia - 185102',
+            style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12, height: 1.6),
           ),
-          Padding(padding: const EdgeInsets.all(16), child: content),
         ],
       ),
     );
   }
 
-  Widget _buildText(String text) {
-    return Text(text, style: const TextStyle(color: _textMuted, fontSize: 14, height: 1.6));
-  }
-
-  Widget _buildBulletList(List<String> points) {
-    return Column(
-      children: points.map((p) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(margin: const EdgeInsets.only(top: 7), width: 5, height: 5, decoration: const BoxDecoration(color: _accentLight, shape: BoxShape.circle)),
-            const SizedBox(width: 10),
-            Expanded(child: Text(p, style: const TextStyle(color: _textMuted, fontSize: 13, height: 1.5))),
-          ],
-        ),
-      )).toList(),
-    );
-  }
-
-  Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: _surface, borderRadius: BorderRadius.circular(14), border: Border.all(color: _accent.withOpacity(0.15))),
-      child: const Column(
+  Widget _buildLegalFooter() {
+    return Center(
+      child: Column(
         children: [
-          Text('© Inflyratech. All rights reserved.', style: TextStyle(color: _textBright, fontSize: 12, fontWeight: FontWeight.w600)),
+          Text(
+            'CHILLI OS | NURXIAN LEGAL',
+            style: TextStyle(color: Colors.white.withOpacity(0.15), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'ESTABLISHED DEC 2025 | ALL RIGHTS RESERVED.',
+            style: TextStyle(color: Colors.white.withOpacity(0.05), fontSize: 9, letterSpacing: 1),
+          ),
         ],
       ),
     );

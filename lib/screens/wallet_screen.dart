@@ -12,6 +12,8 @@ import 'package:chilli/theme/palette.dart';
 import 'package:chilli/services/identity_manager.dart';
 import 'package:chilli/services/data_bridge.dart';
 import 'package:chilli/screens/txn_screen.dart';
+import 'dart:ui';
+import 'package:firebase_database/firebase_database.dart';
 
 class ChilliWalletScreen extends StatefulWidget {
   const ChilliWalletScreen({super.key});
@@ -60,18 +62,40 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
   }
 
   void _checkBonus() async {
-    final enabled = DataBridge.appConfig['is_reward_enabled'] == true;
-    if (!enabled) return;
-    
     final prefs = await SharedPreferences.getInstance();
-    final last = prefs.getString('last_bonus_claim') ?? '';
-    final now = DateTime.now();
-    final today = "${now.year}-${now.month}-${now.day}";
+    final lastStr = prefs.getString('last_bonus_claim_date') ?? '';
+    final streak = prefs.getInt('bonus_streak_count') ?? 0;
     
-    setState(() {
-      _isClaimable = last != today;
-      _streakDay = prefs.getInt('bonus_streak') ?? 1;
-    });
+    final now = DateTime.now();
+    final todayStr = "${now.year}-${now.month}-${now.day}";
+    
+    if (lastStr == todayStr) {
+      setState(() {
+        _isClaimable = false;
+        _streakDay = streak;
+      });
+    } else {
+      int nextStreak = 1;
+      if (lastStr.isNotEmpty) {
+        try {
+          final parts = lastStr.split('-');
+          final lastDate = DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+          final diff = DateTime(now.year, now.month, now.day).difference(lastDate).inDays;
+          
+          if (diff == 1) {
+            nextStreak = (streak % 7) + 1;
+          } else {
+            nextStreak = 1;
+          }
+        } catch (_) {
+          nextStreak = 1;
+        }
+      }
+      setState(() {
+        _isClaimable = true;
+        _streakDay = nextStreak;
+      });
+    }
   }
 
   @override
@@ -82,12 +106,35 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _bg,
-      appBar: _buildAppBar(),
-      body: _isLoading 
-        ? const Center(child: CircularProgressIndicator(color: _neonCyan))
-        : _buildBody(),
+    return Stack(
+      children: [
+        Scaffold(
+          backgroundColor: _bg,
+          appBar: _buildAppBar(),
+          body: _isLoading 
+            ? const Center(child: CircularProgressIndicator(color: _neonCyan))
+            : _buildBody(),
+        ),
+        if (_isPaying)
+          BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+            child: Container(
+              color: Colors.black.withOpacity(0.5),
+              child: const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: _neonCyan),
+                    SizedBox(height: 20),
+                    Text('INITIATING PAYMENT...', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 2)),
+                    SizedBox(height: 8),
+                    Text('Please do not close the app', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+      ],
     );
   }
 
@@ -176,39 +223,68 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
   }
 
   Widget _buildDailyRewardSection() {
-    return GestureDetector(
-      onTap: _isClaimable ? _showScratchDialog : null,
-      child: Opacity(
-        opacity: _isClaimable ? 1.0 : 0.6,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(colors: [_neonPink.withOpacity(0.2), Colors.transparent]),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _neonPink.withOpacity(0.3)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: _neonPink.withOpacity(0.1), shape: BoxShape.circle),
-                child: const Icon(Icons.card_giftcard_rounded, color: _neonPink, size: 28),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('Daily Reward', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w800)),
-                    Text(_isClaimable ? 'Tap to scratch and win coins!' : 'Come back tomorrow for more', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12)),
-                  ],
+    final List<int> rewards = [5, 11, 17, 23, 29, 35, 51];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            _buildSectionHeader('DAILY REWARDS'),
+            if (_isClaimable) 
+              GestureDetector(
+                onTap: _handleClaim,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  decoration: BoxDecoration(color: _neonPink.withOpacity(0.2), borderRadius: BorderRadius.circular(8), border: Border.all(color: _neonPink.withOpacity(0.5))),
+                  child: const Text('CLAIM NOW', style: TextStyle(color: _neonPink, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1)),
                 ),
               ),
-              if (_isClaimable) const Icon(Icons.chevron_right_rounded, color: _neonPink),
-            ],
+          ],
+        ),
+        const SizedBox(height: 16),
+        SizedBox(
+          height: 100,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            itemCount: 7,
+            itemBuilder: (context, i) {
+              final day = i + 1;
+              final isToday = day == _streakDay && _isClaimable;
+              final isClaimed = day < _streakDay || (day == _streakDay && !_isClaimable);
+              final isFuture = day > _streakDay;
+              
+              return Container(
+                width: 75,
+                margin: const EdgeInsets.only(right: 12),
+                decoration: BoxDecoration(
+                  color: isToday ? _neonPink.withOpacity(0.1) : Colors.white.withOpacity(0.03),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: isToday ? _neonPink : (isClaimed ? _neonCyan.withOpacity(0.3) : Colors.white.withOpacity(0.05)),
+                    width: isToday ? 1.5 : 1.0,
+                  ),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text('DAY $day', style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 9, fontWeight: FontWeight.w900)),
+                    const SizedBox(height: 8),
+                    Icon(
+                      isClaimed ? Icons.check_circle_rounded : Icons.toll_rounded,
+                      color: isClaimed ? _neonCyan : (isToday ? _neonPink : Colors.amber.withOpacity(0.5)),
+                      size: 20,
+                    ),
+                    const SizedBox(height: 4),
+                    Text('${rewards[i]}', style: TextStyle(color: isToday ? _neonPink : Colors.white, fontSize: 13, fontWeight: FontWeight.w900)),
+                  ],
+                ),
+              );
+            },
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -245,14 +321,45 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
   }
 
   void _handleClaim() async {
-    Navigator.pop(context);
-    await _bridge.updateLocalCoins(10);
-    await _bridge.syncCoinsWithServer();
-    final prefs = await SharedPreferences.getInstance();
-    final now = DateTime.now();
-    await prefs.setString('last_bonus_claim', "${now.year}-${now.month}-${now.day}");
-    _checkBonus();
-    _showToast('Claimed 10 coins!');
+    if (!_isClaimable) return;
+    
+    final List<int> rewards = [5, 11, 17, 23, 29, 35, 51];
+    final reward = rewards[_streakDay - 1];
+    
+    setState(() => _isPaying = true);
+    await Future.delayed(const Duration(seconds: 1));
+
+    try {
+      await _bridge.updateLocalCoins(reward);
+      
+      final user = _auth.currentUser;
+      if (user != null) {
+        await FirebaseDatabase.instance.ref().child('users').child(user.uid).update({
+          'coins': ServerValue.increment(reward)
+        });
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'coins': FieldValue.increment(reward)
+        });
+      }
+
+      final prefs = await SharedPreferences.getInstance();
+      final now = DateTime.now();
+      await prefs.setString('last_bonus_claim_date', "${now.year}-${now.month}-${now.day}");
+      await prefs.setInt('bonus_streak_count', _streakDay);
+      
+      if (mounted) {
+        setState(() {
+          _isClaimable = false;
+          _isPaying = false;
+        });
+        _showToast('CLAIMED $reward COINS!');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isPaying = false);
+        _showToast('Claim Failed');
+      }
+    }
   }
 
   Widget _buildPackageGrid() {
@@ -310,8 +417,38 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
   }
 
   void _startPurchase(Map pkg) async {
-    // Implement Paygic or Razorpay logic here
-    _showToast('Starting payment for ₹${pkg['price']}...');
+    setState(() => _isPaying = true);
+    
+    // Simulate payment gateway initiation
+    await Future.delayed(const Duration(seconds: 2));
+    
+    final coinsToAdd = (pkg['coins'] as num) + (pkg['bonus'] as num);
+    
+    try {
+      // Local update
+      await _bridge.updateLocalCoins(coinsToAdd, isDeduction: false);
+      
+      // Server update (RTDB & Firestore)
+      final user = _auth.currentUser;
+      if (user != null) {
+        await FirebaseDatabase.instance.ref().child('users').child(user.uid).update({
+          'coins': ServerValue.increment(coinsToAdd)
+        });
+        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+          'coins': FieldValue.increment(coinsToAdd)
+        });
+      }
+      
+      if (mounted) {
+        setState(() => _isPaying = false);
+        _showToast('SUCCESS! Credited $coinsToAdd coins');
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isPaying = false);
+        _showToast('Payment Failed');
+      }
+    }
   }
 
   void _showToast(String m) => Fluttertoast.showToast(msg: m, backgroundColor: _neonViolet);

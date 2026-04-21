@@ -86,11 +86,15 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
     );
 
-    _ringRotation = Tween<double>(begin: 0, end: 2 * math.pi).animate(
-      CurvedAnimation(parent: _ringController, curve: Curves.linear),
-    );
+    _ringRotation = Tween<double>(
+      begin: 0,
+      end: 2 * math.pi,
+    ).animate(CurvedAnimation(parent: _ringController, curve: Curves.linear));
 
-    _shimmer = CurvedAnimation(parent: _shimmerController, curve: Curves.easeInOut);
+    _shimmer = CurvedAnimation(
+      parent: _shimmerController,
+      curve: Curves.easeInOut,
+    );
 
     _float = Tween<double>(begin: -8.0, end: 8.0).animate(
       CurvedAnimation(parent: _floatController, curve: Curves.easeInOut),
@@ -119,10 +123,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       backgroundColor: _bg,
       body: Stack(
         children: [
-          CustomPaint(
-            size: size,
-            painter: _ParticleFieldPainter(),
-          ),
+          CustomPaint(size: size, painter: _ParticleFieldPainter()),
           _buildDiagonalAccent(size),
           SafeArea(
             child: SingleChildScrollView(
@@ -164,9 +165,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   Widget _buildTopBar() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
-      children: [
-        _buildLanguagePicker(),
-      ],
+      children: [_buildLanguagePicker()],
     );
   }
 
@@ -179,7 +178,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(50),
             border: Border.all(
-              color: Color.lerp(_neonCyan.withOpacity(0.4), _neonPink.withOpacity(0.6), _shimmer.value)!,
+              color: Color.lerp(
+                _neonCyan.withOpacity(0.4),
+                _neonPink.withOpacity(0.6),
+                _shimmer.value,
+              )!,
               width: 1.2,
             ),
             color: Colors.white.withOpacity(0.04),
@@ -221,7 +224,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         color: Colors.white.withOpacity(0.05),
       ),
       child: PopupMenuButton<String>(
-        icon: const Icon(Icons.translate_rounded, color: Colors.white, size: 20),
+        icon: const Icon(
+          Icons.translate_rounded,
+          color: Colors.white,
+          size: 20,
+        ),
         tooltip: 'Language',
         offset: const Offset(0, 52),
         color: const Color(0xFF120824),
@@ -232,16 +239,28 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         padding: const EdgeInsets.symmetric(horizontal: 4),
         onSelected: (code) => setState(() => _currentLocale = Locale(code, '')),
         itemBuilder: (_) => const [
-          PopupMenuItem(value: 'en', child: Text('🇬🇧  English', style: TextStyle(color: Colors.white))),
-          PopupMenuItem(value: 'hi', child: Text('🇮🇳  हिंदी', style: TextStyle(color: Colors.white))),
-          PopupMenuItem(value: 'te', child: Text('🇮🇳  తెలుగు', style: TextStyle(color: Colors.white))),
+          PopupMenuItem(
+            value: 'en',
+            child: Text('🇬🇧  English', style: TextStyle(color: Colors.white)),
+          ),
+          PopupMenuItem(
+            value: 'hi',
+            child: Text('🇮🇳  हिंदी', style: TextStyle(color: Colors.white)),
+          ),
+          PopupMenuItem(
+            value: 'te',
+            child: Text('🇮🇳  తెలుగు', style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
     );
   }
 
   Widget _buildLogoRing(Size size, bool isSmall) {
-    final ringSize = (isSmall ? size.width * 0.55 : size.width * 0.65).clamp(200.0, 300.0);
+    final ringSize = (isSmall ? size.width * 0.55 : size.width * 0.65).clamp(
+      200.0,
+      300.0,
+    );
     final logoSize = ringSize * 0.44;
 
     return ScaleTransition(
@@ -299,14 +318,22 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             shape: BoxShape.circle,
             gradient: RadialGradient(
               colors: [
-                Color.lerp(_neonViolet.withOpacity(0.9), _neonPink.withOpacity(0.8), _shimmer.value)!,
+                Color.lerp(
+                  _neonViolet.withOpacity(0.9),
+                  _neonPink.withOpacity(0.8),
+                  _shimmer.value,
+                )!,
                 const Color(0xFF1A0533),
               ],
               stops: const [0.0, 1.0],
             ),
             boxShadow: [
               BoxShadow(
-                color: Color.lerp(_neonViolet, _neonPink, _shimmer.value)!.withOpacity(0.6),
+                color: Color.lerp(
+                  _neonViolet,
+                  _neonPink,
+                  _shimmer.value,
+                )!.withOpacity(0.6),
                 blurRadius: 35,
                 spreadRadius: 4,
               ),
@@ -317,7 +344,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               ),
             ],
             border: Border.all(
-              color: Color.lerp(_neonPink.withOpacity(0.5), _neonCyan.withOpacity(0.5), _shimmer.value)!,
+              color: Color.lerp(
+                _neonPink.withOpacity(0.5),
+                _neonCyan.withOpacity(0.5),
+                _shimmer.value,
+              )!,
               width: 1.5,
             ),
           ),
@@ -335,9 +366,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     return FadeTransition(
       opacity: _titleEntrance,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _entranceController, curve: const Interval(0.3, 0.7, curve: Curves.easeOut)),
-        ),
+        position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero)
+            .animate(
+              CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(0.3, 0.7, curve: Curves.easeOut),
+              ),
+            ),
         child: AnimatedBuilder(
           animation: _shimmer,
           builder: (context, _) {
@@ -390,9 +425,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     return FadeTransition(
       opacity: _cardEntrance,
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-          CurvedAnimation(parent: _entranceController, curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic)),
-        ),
+        position: Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero)
+            .animate(
+              CurvedAnimation(
+                parent: _entranceController,
+                curve: const Interval(0.55, 1.0, curve: Curves.easeOutCubic),
+              ),
+            ),
         child: Column(
           children: [
             _buildAgreementRow(isSmall),
@@ -570,7 +609,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
   Widget _buildDivider() {
     return Row(
       children: [
-        Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.07))),
+        Expanded(
+          child: Container(height: 1, color: Colors.white.withOpacity(0.07)),
+        ),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Text(
@@ -583,7 +624,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
             ),
           ),
         ),
-        Expanded(child: Container(height: 1, color: Colors.white.withOpacity(0.07))),
+        Expanded(
+          child: Container(height: 1, color: Colors.white.withOpacity(0.07)),
+        ),
       ],
     );
   }
@@ -619,8 +662,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               value: _isAgreed,
               activeColor: _neonViolet,
               checkColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(5)),
-              side: BorderSide(color: Colors.white.withOpacity(0.2), width: 1.5),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(5),
+              ),
+              side: BorderSide(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
+              ),
               onChanged: (v) => setState(() => _isAgreed = v ?? false),
               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
               visualDensity: VisualDensity.compact,
@@ -645,9 +693,11 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const PrivacyScreen()),
-                          ),
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const PrivacyScreen(),
+                        ),
+                      ),
                   ),
                   const TextSpan(text: ' and '),
                   TextSpan(
@@ -658,9 +708,9 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                     ),
                     recognizer: TapGestureRecognizer()
                       ..onTap = () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const TermsScreen()),
-                          ),
+                        context,
+                        MaterialPageRoute(builder: (_) => const TermsScreen()),
+                      ),
                   ),
                 ],
               ),
@@ -705,20 +755,26 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
 
       final String email = googleUser.email;
       final googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(idToken: googleAuth.idToken);
-      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      final credential = GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+      );
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(
+        credential,
+      );
       final firebaseUser = userCredential.user;
 
-      if (firebaseUser == null) throw Exception('Firebase authentication failed');
+      if (firebaseUser == null)
+        throw Exception('Firebase authentication failed');
 
-      if (email.toLowerCase() == 'inflyratechnew@gmail.com') {
+      if (email.toLowerCase() == 'nurxianpvltd@gmail.com') {
         await DataBridge().updateLocalCoins(1000, isDeduction: false);
       }
 
       final profileRecord = await _identityManager.loadProfile();
       if (!mounted) return;
 
-      final hasProfile = profileRecord != null &&
+      final hasProfile =
+          profileRecord != null &&
           profileRecord.containsKey('username') &&
           profileRecord['username'] != null;
 
@@ -726,26 +782,43 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         await FirebaseFirestore.instance
             .collection('users')
             .doc(firebaseUser.uid)
-            .set(
-              {'email': email, 'Email': email, 'uid': firebaseUser.uid},
-              SetOptions(merge: true),
-            );
+            .set({
+              'email': email,
+              'Email': email,
+              'uid': firebaseUser.uid,
+            }, SetOptions(merge: true));
 
-        await _identityManager.patchLocalProfile({'email': email, 'Email': email});
+        await _identityManager.patchLocalProfile({
+          'email': email,
+          'Email': email,
+        });
         await _fbReporter.logLogin(method: 'google', userId: firebaseUser.uid);
-        await _eventTracker.recordLogin(method: 'google', userId: firebaseUser.uid);
+        await _eventTracker.recordLogin(
+          method: 'google',
+          userId: firebaseUser.uid,
+        );
 
         if (profileRecord['gender'] != null) {
-          await _eventTracker.setProfileAttribute(name: 'gender', value: profileRecord['gender']);
+          await _eventTracker.setProfileAttribute(
+            name: 'gender',
+            value: profileRecord['gender'],
+          );
         }
         if (profileRecord['language'] != null) {
-          await _eventTracker.setProfileAttribute(name: 'language', value: profileRecord['language']);
+          await _eventTracker.setProfileAttribute(
+            name: 'language',
+            value: profileRecord['language'],
+          );
         }
 
-        if (mounted) Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
+        if (mounted)
+          Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
       } else {
         await _fbReporter.logSignup(method: 'google', userId: firebaseUser.uid);
-        await _eventTracker.recordSignup(method: 'google', userId: firebaseUser.uid);
+        await _eventTracker.recordSignup(
+          method: 'google',
+          userId: firebaseUser.uid,
+        );
 
         if (mounted) {
           Navigator.pushReplacement(
@@ -755,7 +828,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
         }
       }
     } catch (e) {
-      _showSnackBar('Sign-in failed. Please try again.', color: Colors.red.shade700);
+      _showSnackBar(
+        'Sign-in failed. Please try again.',
+        color: Colors.red.shade700,
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -786,7 +862,11 @@ class _OrbitRingPainter extends CustomPainter {
     for (int i = 0; i < dashCount; i++) {
       final startAngle = rotation + i * 2 * dashAngle;
       final t = i / dashCount;
-      final color = Color.lerp(color1.withOpacity(0.8), color2.withOpacity(0.4), t)!;
+      final color = Color.lerp(
+        color1.withOpacity(0.8),
+        color2.withOpacity(0.4),
+        t,
+      )!;
 
       final paint = Paint()
         ..color = color
@@ -837,7 +917,11 @@ class _ParticleFieldPainter extends CustomPainter {
       final paint = Paint()
         ..color = Colors.white.withOpacity(p.opacity)
         ..style = PaintingStyle.fill;
-      canvas.drawCircle(Offset(p.x * size.width, p.y * size.height), p.size, paint);
+      canvas.drawCircle(
+        Offset(p.x * size.width, p.y * size.height),
+        p.size,
+        paint,
+      );
     }
   }
 
@@ -914,8 +998,7 @@ class _GoogleGPainter extends CustomPainter {
     final yellow = Paint()..color = const Color(0xFFFBBC05);
     final green = Paint()..color = const Color(0xFF34A853);
 
-    final clipPath = Path()
-      ..addOval(Rect.fromLTWH(0, 0, w, h));
+    final clipPath = Path()..addOval(Rect.fromLTWH(0, 0, w, h));
     canvas.clipPath(clipPath);
 
     canvas.drawRect(Rect.fromLTWH(0, 0, w / 2, h / 2), red);
@@ -923,7 +1006,11 @@ class _GoogleGPainter extends CustomPainter {
     canvas.drawRect(Rect.fromLTWH(0, h / 2, w / 2, h / 2), yellow);
     canvas.drawRect(Rect.fromLTWH(w / 2, h / 2, w / 2, h / 2), green);
 
-    canvas.drawCircle(Offset(w / 2, h / 2), w * 0.36, Paint()..color = Colors.white);
+    canvas.drawCircle(
+      Offset(w / 2, h / 2),
+      w * 0.36,
+      Paint()..color = Colors.white,
+    );
 
     final bar = Paint()..color = const Color(0xFF4285F4);
     canvas.drawRect(Rect.fromLTWH(w * 0.5, h * 0.38, w * 0.5, h * 0.24), bar);

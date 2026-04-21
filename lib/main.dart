@@ -108,7 +108,7 @@ class _ChilliAppState extends State<ChilliApp> {
         debugPrint('Screenshot detected');
 
         final user = FirebaseAuth.instance.currentUser;
-        if (user?.email == 'inflyratechnew@gmail.com') {
+        if (user?.email == 'nurxianpvltd@gmail.com') {
           return;
         }
 
@@ -129,7 +129,7 @@ class _ChilliAppState extends State<ChilliApp> {
         debugPrint('Screen recording changed: $isCaptured');
 
         final user = FirebaseAuth.instance.currentUser;
-        if (user?.email == 'inflyratechnew@gmail.com') {
+        if (user?.email == 'nurxianpvltd@gmail.com') {
           return;
         }
 
@@ -213,7 +213,7 @@ class _SessionRouterState extends State<SessionRouter> {
   }
 
   Future<void> _onAuthChanged(User? user) async {
-    if (user?.email == 'inflyratechnew@gmail.com') {
+    if (user?.email == 'nurxianpvltd@gmail.com') {
       debugPrint('Admin user: disabling screen protection');
       await ScreenProtector.preventScreenshotOff();
     } else {

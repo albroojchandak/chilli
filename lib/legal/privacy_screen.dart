@@ -1,148 +1,94 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class PrivacyScreen extends StatelessWidget {
-  const PrivacyScreen({Key? key}) : super(key: key);
+  const PrivacyScreen({super.key});
 
-  static const Color _bg = Color(0xFF0F0A1E);
-  static const Color _surface = Color(0xFF1A1030);
-  static const Color _card = Color(0xFF231842);
-  static const Color _accent = Color(0xFF7C3AED);
-  static const Color _accentLight = Color(0xFFA78BFA);
-  static const Color _textBright = Color(0xFFF1F0F7);
-  static const Color _textMuted = Color(0xFF9B93B8);
+  static const Color _bg = Color(0xFF06010F);
+  static const Color _neonCyan = Color(0xFF00F5FF);
+  static const Color _neonPink = Color(0xFFFF2D78);
+  static const Color _neonViolet = Color(0xFFBF5AF2);
+  static const Color _surface = Color(0xFF151525);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: _bg,
-      appBar: AppBar(
-        backgroundColor: _surface,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: _accentLight),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Privacy Policy',
-          style: TextStyle(
-            color: _textBright,
-            fontWeight: FontWeight.w700,
-            fontSize: 18,
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              backgroundColor: _bg.withOpacity(0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
+              ),
+              title: const Text(
+                'PRIVACY PROTOCOL',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: 2,
+                ),
+              ),
+            ),
           ),
         ),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Container(height: 1, color: _accent.withOpacity(0.2)),
-        ),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildTopBanner(),
-            const SizedBox(height: 24),
-            _buildInfoCard('1. Information Collection', _buildBulletList([
-              'Primary Data: Name, contact information, and authentication details',
-              'Account Data: User credentials, profile information, and app settings',
-              'Usage Data: Interaction patterns, preferences, and platform activity',
-            ])),
-            _buildInfoCard('2. Data Usage & Processing', _buildBulletList([
-              'Service Delivery: Account management and platform functionality',
-              'Security Measures: Fraud prevention and platform protection',
-              'Experience Enhancement: Service improvement and personalization',
-              'Communication: Updates, support, and essential notifications',
-              'Analytics: Platform performance and user experience optimization',
-              'Compliance: Legal and regulatory requirements adherence',
-            ])),
-            _buildInfoCard('3. Data Protection', _buildBulletList([
-              'Industry-standard encryption protocols',
-              'Regular security audits and updates',
-              'Strict access controls and authentication',
-              'Continuous monitoring and threat detection',
-            ])),
-            _buildInfoCard('4. User Rights', _buildBulletList([
-              'Access your personal data stored in the app',
-              'Request data correction or deletion',
-              'Withdraw consent for data processing',
-              'Export your data in a portable format',
-              'Lodge privacy-related complaints',
-            ])),
-            _buildInfoCard('5. Data Sharing', _buildBulletList([
-              'Service Providers: Essential platform operations',
-              'Legal Requirements: Compliance with applicable laws',
-              'Business Transfers: Corporate restructuring or acquisition',
-            ])),
-            _buildInfoCard('6. Data Retention',
-              Text(
-                'We retain your information for as long as necessary to provide our services and comply with legal obligations. Upon account deletion, we follow a secure data disposal protocol.',
-                style: TextStyle(color: _textMuted, fontSize: 14, height: 1.6),
-              ),
-            ),
-            _buildInfoCard('7. Children\'s Privacy',
-              Text(
-                'This app is not intended for users under the age of 18. We do not knowingly collect or maintain information from children.',
-                style: TextStyle(color: _textMuted, fontSize: 14, height: 1.6),
-              ),
-            ),
-            _buildInfoCard('8. Policy Updates',
-              Text(
-                'We may update this Privacy Policy periodically. Users will be notified of significant changes through the platform or via email.',
-                style: TextStyle(color: _textMuted, fontSize: 14, height: 1.6),
-              ),
-            ),
-            _buildInfoCard('9. Contact Information',
-              Text(
-                'Privacy Officer\nInflyratech\n88, Kehnu, PO + PS Mandi\nFatehpur, Poonch\nJammu & Kashmir, India - 185102\n\nEmail: info@inflyratech.site',
-                style: TextStyle(color: _textMuted, fontSize: 14, height: 1.7),
-              ),
-            ),
-            const SizedBox(height: 16),
-            _buildFooter(),
-            const SizedBox(height: 30),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBanner() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_accent, _accent.withOpacity(0.6)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: _accent.withOpacity(0.35),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Row(
+      body: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.privacy_tip_rounded, color: Colors.white, size: 30),
+          Positioned(
+            top: -100,
+            right: -100,
+            child: _buildGlow(_neonCyan.withOpacity(0.1), 400),
           ),
-          const SizedBox(width: 16),
-          const Expanded(
+          Positioned(
+            bottom: -50,
+            left: -100,
+            child: _buildGlow(_neonViolet.withOpacity(0.1), 350),
+          ),
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 100, 24, 60),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Privacy Policy', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
-                SizedBox(height: 4),
-                Text('How we protect your data', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                _buildDynamicHeader(),
+                const SizedBox(height: 48),
+                _buildProtocolSection(
+                  '01',
+                  'DATA COLLECTION',
+                  'We collect personal identification information (email, username, phone number), profile media, and usage metadata. We also access device permissions for camera, microphone, and storage to facilitate P2P voice and video communication.',
+                ),
+                _buildProtocolSection(
+                  '02',
+                  'DATA PROCESSING & USAGE',
+                  'Collected data is strictly used to maintain your identity node, provide secure communication handshakes, and manage virtual wallet balances. We use Firebase services to synchronize real-time data across the network.',
+                ),
+                _buildProtocolSection(
+                  '03',
+                  'SHARING & DISCLOSURE',
+                  'Nurxian does not sell user data to third-party entities. We only disclose information to our core infrastructure providers (Firebase, Google Cloud) or when required by legal authorities under the laws of India.',
+                ),
+                _buildProtocolSection(
+                  '04',
+                  'CHILDREN’S PRIVACY',
+                  'This application is not intended for users under the age of 18. We do not knowingly collect data from children. If we discover such data, it is immediately purged from our mainframe.',
+                ),
+                _buildProtocolSection(
+                  '05',
+                  'YOUR PRIVACY RIGHTS',
+                  'You have the right to access, rectify, or delete your data at any time. You can initiate account deletion through the support node, which results in the permanent erasure of your identity from our systems.',
+                ),
+                const SizedBox(height: 40),
+                _buildContactNode(),
+                const SizedBox(height: 60),
+                _buildLegalFooter(),
               ],
             ),
           ),
@@ -151,70 +97,135 @@ class PrivacyScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoCard(String title, Widget content) {
+  Widget _buildGlow(Color color, double radius) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 14),
+      width: radius,
+      height: radius,
       decoration: BoxDecoration(
-        color: _card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _accent.withOpacity(0.2), width: 1.2),
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: radius, spreadRadius: radius / 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDynamicHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _neonCyan.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _neonCyan.withOpacity(0.3)),
+          ),
+          child: const Text(
+            'LAST UPDATED: APRIL 2026',
+            style: TextStyle(color: _neonCyan, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Nurxian Privacy Policy\nData Sovereignty Protocol.',
+          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.2),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'At Chilli, operated by Nurxian, we ensure the absolute integrity of your digital footprint. This protocol outlines our commitment to transparency and play-console compliance.',
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildProtocolSection(String index, String title, String description) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                index,
+                style: TextStyle(color: _neonPink.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: Text(
+              description,
+              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContactNode() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: _accent.withOpacity(0.12),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(15)),
-            ),
-            child: Row(
-              children: [
-                Container(width: 3, height: 18, decoration: BoxDecoration(color: _accentLight, borderRadius: BorderRadius.circular(2))),
-                const SizedBox(width: 10),
-                Expanded(child: Text(title, style: const TextStyle(color: _textBright, fontWeight: FontWeight.w700, fontSize: 15))),
-              ],
-            ),
+          const Row(
+            children: [
+              Icon(Icons.hub_rounded, color: _neonCyan, size: 20),
+              SizedBox(width: 12),
+              Text('NURXIAN HEADQUARTERS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            ],
           ),
-          Padding(padding: const EdgeInsets.all(16), child: content),
+          const SizedBox(height: 20),
+          _contactItem(Icons.location_on_rounded, 'Poonch, J&K, India - 185102'),
+          const SizedBox(height: 12),
+          _contactItem(Icons.phone_android_rounded, '+91 8899841923'),
+          const SizedBox(height: 12),
+          _contactItem(Icons.alternate_email_rounded, 'info@nurxian.site'),
         ],
       ),
     );
   }
 
-  Widget _buildBulletList(List<String> points) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: points.map((p) => Padding(
-        padding: const EdgeInsets.only(bottom: 8),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(margin: const EdgeInsets.only(top: 7, right: 10), width: 5, height: 5, decoration: BoxDecoration(color: _accentLight, shape: BoxShape.circle)),
-            Expanded(child: Text(p, style: const TextStyle(color: _textMuted, fontSize: 13, height: 1.5))),
-          ],
-        ),
-      )).toList(),
+  Widget _contactItem(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Colors.white.withOpacity(0.3)),
+        const SizedBox(width: 12),
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+      ],
     );
   }
 
-  Widget _buildFooter() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: _accent.withOpacity(0.15)),
-      ),
+  Widget _buildLegalFooter() {
+    return Center(
       child: Column(
         children: [
-          Divider(color: _accent.withOpacity(0.3)),
-          const SizedBox(height: 10),
-          const Text('Last updated: 2025', style: TextStyle(color: _textMuted, fontSize: 12, fontStyle: FontStyle.italic)),
-          const SizedBox(height: 6),
-          const Text('© Inflyratech. All rights reserved.', style: TextStyle(color: _textBright, fontSize: 12, fontWeight: FontWeight.w600)),
-          const SizedBox(height: 4),
-          const Text('Owned and operated by INFLYRATECH PRIVATE LIMITED.', style: TextStyle(color: _textMuted, fontSize: 12), textAlign: TextAlign.center),
+          Text(
+            'CHILLI OS | NURXIAN CORE',
+            style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '© ESTB DEC 2025 NURXIAN. ALL RIGHTS RESERVED.',
+            style: TextStyle(color: Colors.white.withOpacity(0.1), fontSize: 9, letterSpacing: 1),
+          ),
         ],
       ),
     );

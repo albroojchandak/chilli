@@ -74,10 +74,8 @@ class PushReceiver {
   bool isInCall = false;
 
   Function(Map<String, dynamic> data)? onCallDeclined;
-  Function(Map<String, dynamic> data)? onChatDeclined;
   Function(String roomId)? onCallEnded;
   Function(Map<String, dynamic> data)? onIncomingCall;
-  Function(Map<String, dynamic> data)? onIncomingChat;
 
   Future<void> initialize() async {
     FirebaseMessaging messaging = FirebaseMessaging.instance;
@@ -138,14 +136,10 @@ class PushReceiver {
 
     if (type == 'call_declined') {
       onCallDeclined?.call(data);
-    } else if (type == 'chat_declined') {
-      onChatDeclined?.call(data);
     } else if (type == 'call_ended') {
       onCallEnded?.call(roomId);
     } else if (type == 'incoming_call') {
       onIncomingCall?.call(data);
-    } else if (type == 'incoming_chat') {
-      onIncomingChat?.call(data);
     }
   }
 

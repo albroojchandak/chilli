@@ -59,10 +59,7 @@ class DataBridge {
       } else {
         debugPrint('DataBridge: updating status to "$status" for ${user.uid}');
 
-        await presenceRef.update({
-          's': status,
-          'la': ServerValue.timestamp,
-        });
+        await presenceRef.update({'s': status, 'la': ServerValue.timestamp});
 
         debugPrint('DataBridge: status updated to $status');
       }
@@ -115,7 +112,9 @@ class DataBridge {
         await prefs.setString(_userCacheKey, jsonEncode(data));
       }
 
-      print('DataBridge: coins update $currentCoins ${isDeduction ? '-' : '+'} $amount = $newBalance');
+      print(
+        'DataBridge: coins update $currentCoins ${isDeduction ? '-' : '+'} $amount = $newBalance',
+      );
       broadcastBalance(newBalance);
     } catch (e) {
       debugPrint('DataBridge: updateLocalCoins error: $e');
@@ -221,7 +220,7 @@ class DataBridge {
     'min_app_version': '1.0.0',
     'latest_app_version': '1.0.0',
     'update_url':
-        'https://play.google.com/store/apps/details?id=com.knect.inflyratech',
+        'https://play.google.com/store/apps/details?id=com.nurxian.chilli',
     'is_reward_enabled': true,
   };
 
@@ -244,29 +243,6 @@ class DataBridge {
         'created_by': 'initializeFirestoreConfig',
       });
       debugPrint('DataBridge: pricing doc created');
-
-      await _firestore.collection('app_config').doc('payment').set({
-        'paygic_mid': 'ELITEZEENZGFR',
-        'paygic_token':
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJFTElURVpFRU5aR0ZSIiwiX2lkIjoiNjhlNzUxOWJiNGE0NmMzYjc3NDhkNzdlIiwiaWF0IjoxNzY3MjQ1MDA0LCJleHAiOjE3Njk4MzcwMDR9.BP1apIcNcGmHfTHKSlcNGgxtYo3gQ3NQ5beSbylSPjo',
-        'min_deposit': 79.0,
-        'min_withdrawal': 50.0,
-        'min_recharge': 10.0,
-        'min_payout': 50.0,
-        'last_updated': FieldValue.serverTimestamp(),
-        'created_by': 'initializeFirestoreConfig',
-      });
-      debugPrint('DataBridge: payment doc created');
-
-      await _firestore.collection('app_config').doc('version').set({
-        'min_version': '1.0.0',
-        'latest_version': '1.0.0',
-        'update_url':
-            'https://play.google.com/store/apps/details?id=com.knect.inflyratech',
-        'last_updated': FieldValue.serverTimestamp(),
-        'created_by': 'initializeFirestoreConfig',
-      });
-      debugPrint('DataBridge: version doc created');
 
       debugPrint('DataBridge: Firestore config initialization complete');
     } catch (e, stackTrace) {
@@ -430,7 +406,7 @@ class DataBridge {
             data['latest_version']?.toString() ?? '1.0.0';
         _appConfig['update_url'] =
             data['update_url']?.toString() ??
-            'https://play.google.com/store/apps/details?id=com.knect.inflyratech';
+            'https://play.google.com/store/apps/details?id=com.nurxian.chilli';
 
         debugPrint('DataBridge: version parsed');
       } else {
@@ -495,8 +471,7 @@ class DataBridge {
         final usersMap = snapshot.value as Map<dynamic, dynamic>;
         usersMap.forEach((key, value) async {
           final userData = Map<String, dynamic>.from(value as Map);
-          if (userData['email'] == email || userData['Email'] == email) {
-          }
+          if (userData['email'] == email || userData['Email'] == email) {}
         });
       }
     } catch (e) {

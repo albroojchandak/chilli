@@ -14,7 +14,6 @@ class UserTile extends StatefulWidget {
   final String? audioUrl;
   final VoidCallback? onAudioCall;
   final VoidCallback? onVideoCall;
-  final VoidCallback? onChat;
   final double? coins;
   final String? currentUserGender;
   final DateTime? lastActive;
@@ -22,7 +21,6 @@ class UserTile extends StatefulWidget {
   final List<String> interests;
   final String career;
   final String? uid;
-  final String chatPrice;
 
   const UserTile({
     super.key,
@@ -37,7 +35,6 @@ class UserTile extends StatefulWidget {
     this.audioUrl,
     this.onAudioCall,
     this.onVideoCall,
-    this.onChat,
     this.coins,
     this.currentUserGender,
     this.lastActive,
@@ -45,7 +42,6 @@ class UserTile extends StatefulWidget {
     this.interests = const [],
     this.career = 'Expert',
     this.uid,
-    this.chatPrice = '2',
   });
 
   @override
@@ -246,8 +242,6 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
     final bool isFemale = widget.currentUserGender?.toLowerCase() == 'female';
     return Row(
       children: [
-        _actionIcon(Icons.chat_bubble_rounded, accent, widget.chatPrice, '/msg', isFemale, widget.onChat),
-        const SizedBox(width: 8),
         _actionIcon(Icons.mic_rounded, accent, widget.audioPrice, '/min', isFemale, widget.onAudioCall),
         const SizedBox(width: 8),
         _actionIcon(Icons.videocam_rounded, accent, widget.videoPrice, '/min', isFemale, widget.onVideoCall),
@@ -274,19 +268,22 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
                 children: [
                   Icon(icon, color: Colors.white, size: 16),
                   const SizedBox(height: 2),
-                  RichText(
-                    text: TextSpan(
-                      children: [
-                        TextSpan(
-                          text: isFree ? 'FREE' : '₹$price',
-                          style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
-                        ),
-                        if (!isFree)
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: RichText(
+                      text: TextSpan(
+                        children: [
                           TextSpan(
-                            text: unit,
-                            style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 7, fontWeight: FontWeight.bold),
+                            text: isFree ? 'FREE' : '₹$price',
+                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
                           ),
-                      ],
+                          if (!isFree)
+                            TextSpan(
+                              text: unit,
+                              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 7, fontWeight: FontWeight.bold),
+                            ),
+                        ],
+                      ),
                     ),
                   ),
                 ],

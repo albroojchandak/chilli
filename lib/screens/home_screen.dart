@@ -12,7 +12,6 @@ import 'package:chilli/screens/call_log_screen.dart';
 import 'package:chilli/screens/wallet_screen.dart';
 import 'package:chilli/screens/profile_screen.dart';
 import 'package:chilli/screens/chilli_call_view.dart';
-import 'package:chilli/screens/chat_screen.dart';
 import 'package:chilli/services/firestore_repo.dart';
 import 'package:chilli/services/push_receiver.dart';
 import 'package:chilli/services/data_bridge.dart';
@@ -95,7 +94,6 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   void _setupListeners() {
     _push.initialize();
     _push.onIncomingCall = (d) => Future.delayed(const Duration(milliseconds: 200), () => _handleIncomingCall(d));
-    _push.onIncomingChat = (d) => Future.delayed(const Duration(milliseconds: 200), () => _handleIncomingChat(d));
 
     _coinSub = DataBridge.balanceStream.listen((c) => setState(() => _coins = c));
     _statusTimer = Timer.periodic(const Duration(minutes: 1), (_) => _updateOnlineStatus());
@@ -128,11 +126,11 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
         if (createTime != null && (now - createTime) < 60000) {
           _handleIncomingCall(d);
         } else {
-          // Cleanup stale signals
           _db.child('pending_calls').child(_auth.currentUser?.uid ?? '').child(e.snapshot.key!).remove();
         }
       }
     });
+
   }
 
   Future<void> _syncProfile() async {
@@ -228,82 +226,6 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     await _db.child('calls').child(data['roomId']).update({'status': 'declined'});
   }
 
-  void _handleIncomingChat(Map<String, dynamic> data) async {
-    if (!mounted || _push.isInCall) return;
-    final roomId = data['roomId']?.toString();
-    if (roomId == null) return;
-
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (c) => InboundCallOverlay(
-        callerName: data['senderName'] ?? 'Chilli User',
-        callerAvatar: data['senderAvatar'] ?? '',
-        isVideoCall: false,
-        onAccept: () {
-          Navigator.pop(c);
-          _acceptChat(data);
-        },
-        onDecline: () {
-          Navigator.pop(c);
-          _declineChat(data);
-        },
-      ),
-    );
-  }
-
-  void _acceptChat(Map<String, dynamic> data) async {
-    await _bridge.updateUserStatus('busy');
-    await _db.child('chats').child(data['roomId']).update({'status': 'connected'});
-    if (mounted) {
-      await Navigator.push(context, MaterialPageRoute(builder: (_) => ChilliChatScreen(
-        roomId: data['roomId'],
-        partnerName: data['senderName'] ?? 'User',
-        partnerAvatar: data['senderAvatar'] ?? '',
-        isOutgoing: false,
-        pushReceiver: _push,
-        partnerUid: data['senderUid'],
-      )));
-      _updateOnlineStatus();
-    }
-  }
-
-  void _declineChat(Map<String, dynamic> data) async {
-    final uid = _auth.currentUser?.uid;
-    if (uid != null) _db.child('pending_chats').child(uid).child(data['roomId']).remove();
-    await _db.child('chats').child(data['roomId']).update({'status': 'declined'});
-  }
-
-  void _startChat(ChilliProfile target) async {
-    if (_isActionLock) return;
-    if (_gender != 'female' && _coins < 2) {
-      _showWalletHint();
-      return;
-    }
-
-    setState(() => _isActionLock = true);
-    try {
-      await _bridge.updateUserStatus('busy');
-      final roomId = 'chat_${DateTime.now().millisecondsSinceEpoch}';
-      
-      if (mounted) {
-        await Navigator.push(context, MaterialPageRoute(builder: (_) => ChilliChatScreen(
-          roomId: roomId,
-          partnerName: target.name,
-          partnerAvatar: target.avatarUrl ?? '',
-          isOutgoing: true,
-          partnerUid: target.uid,
-          pushReceiver: _push,
-        )));
-        _updateOnlineStatus();
-      }
-    } catch (e) {
-      _showError(e.toString());
-    } finally {
-      if (mounted) setState(() => _isActionLock = false);
-    }
-  }
-
   void _startCall(ChilliProfile target, bool isVideo) async {
     if (_isActionLock) return;
     if (_gender != 'female' && _coins < 5) {
@@ -384,6 +306,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     return Column(
       children: [
         _buildTopBar(),
+        _buildSearchBar(),
         Expanded(
           child: RefreshIndicator(
             onRefresh: () async => _syncProfile(),
@@ -405,11 +328,12 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   }
 
   Widget _buildTopBar() {
+    final topPad = MediaQuery.of(context).padding.top;
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
         child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 50, 20, 16),
+          padding: EdgeInsets.fromLTRB(20, topPad + 10, 20, 16),
           decoration: BoxDecoration(
             color: _bg.withOpacity(0.7),
             border: Border(bottom: BorderSide(color: Colors.white.withOpacity(0.05))),
@@ -461,6 +385,41 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.04),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.white.withOpacity(0.08)),
+        ),
+        child: TextField(
+          controller: _searchCtrl,
+          onChanged: (v) => setState(() => _searchQuery = v),
+          style: const TextStyle(color: Colors.white, fontSize: 14),
+          decoration: InputDecoration(
+            hintText: 'Search partners...',
+            hintStyle: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 14),
+            prefixIcon: const Icon(Icons.search_rounded, color: _neonCyan, size: 20),
+            suffixIcon: _searchQuery.isNotEmpty 
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded, color: Colors.white24, size: 18),
+                  onPressed: () {
+                    _searchCtrl.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
+            border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 16),
           ),
         ),
       ),
@@ -558,6 +517,9 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
         if (_selectedFilter != 'All') {
           users = users.where((u) => u.language.toLowerCase() == _selectedFilter.toLowerCase()).toList();
         }
+        if (_searchQuery.isNotEmpty) {
+          users = users.where((u) => u.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+        }
 
         if (users.isEmpty) {
           debugPrint('HomeScreen: RTDB empty, falling back to Firestore');
@@ -572,6 +534,9 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
               if (_selectedFilter != 'All') {
                 fUsers = fUsers.where((u) => u.language.toLowerCase() == _selectedFilter.toLowerCase()).toList();
               }
+              if (_searchQuery.isNotEmpty) {
+                fUsers = fUsers.where((u) => u.name.toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+              }
 
               if (fUsers.isEmpty) {
                 return SliverFillRemaining(
@@ -581,7 +546,8 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
                       children: [
                         Icon(Icons.person_search_rounded, color: Colors.white.withOpacity(0.1), size: 64),
                         const SizedBox(height: 16),
-                        Text('No users found nearby', style: TextStyle(color: Colors.white.withOpacity(0.3))),
+                        Text(_searchQuery.isEmpty ? 'No users found nearby' : 'No results for "$_searchQuery"', 
+                          style: TextStyle(color: Colors.white.withOpacity(0.3))),
                       ],
                     ),
                   ),
@@ -617,7 +583,6 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
             isOnline: users[i].status == 'online',
             onAudioCall: () => _startCall(users[i], false),
             onVideoCall: () => _startCall(users[i], true),
-            onChat: () => _startChat(users[i]),
             rating: 5.0,
             interests: const ['Chat', 'Connect'],
             audioPrice: '10',
@@ -637,9 +602,10 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   }
 
   Widget _buildBottomNav() {
+    final botPad = MediaQuery.of(context).padding.bottom;
     return Container(
-      height: 100,
-      padding: const EdgeInsets.fromLTRB(24, 0, 24, 30),
+      height: 70 + botPad,
+      padding: EdgeInsets.fromLTRB(24, 0, 24, botPad > 0 ? botPad : 10),
       color: Colors.transparent,
       child: ClipRRect(
         borderRadius: BorderRadius.circular(28),
@@ -657,9 +623,9 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                _buildNavItem(0, Icons.grid_view_rounded, 'EXPLORE'),
-                _buildNavItem(1, Icons.history_toggle_off_rounded, 'HISTORY'),
-                _buildNavItem(2, Icons.toll_rounded, 'WALLET'),
+                _buildNavItem(0, Icons.call_rounded, 'HISTORY'),
+                _buildNavItem(1, Icons.home_rounded, 'EXPLORE'),
+                _buildNavItem(2, Icons.wallet_rounded, 'RECHARGE'),
               ],
             ),
           ),

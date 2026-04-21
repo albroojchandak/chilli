@@ -74,8 +74,7 @@ class StoreReviewManager {
               await prefs.setBool('app_rating_done', true);
               if (context.mounted) Navigator.pop(context);
 
-              const String storeUrl =
-                  'https://play.google.com/store/apps/details?id=com.knect.inflyratech';
+              const String storeUrl = '';
               final Uri uri = Uri.parse(storeUrl);
 
               try {

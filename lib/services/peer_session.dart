@@ -14,6 +14,8 @@ class PeerSessionController {
   Function(String message)? onMessageReceived;
   Function(RTCDataChannelState state)? onDataChannelStateChange;
 
+  RTCDataChannel? get dataChannel => _dataChannel;
+
   final Map<String, dynamic> _rtcConfig = {
     'iceServers': [
       {'urls': 'stun:stun.l.google.com:19302'},
@@ -257,7 +259,7 @@ class PeerSessionController {
     await _peerConnection!.setLocalDescription(offer);
 
     final chatData = {
-      'offer': {'s': _pack(offer.sdp!), 't': offer.type!},
+      'offer': {'s': offer.sdp!, 't': offer.type!},
       'status': 'waiting',
       'senderName': senderName,
       'senderAvatar': senderAvatar,
@@ -282,8 +284,8 @@ class PeerSessionController {
       final data = Map<String, dynamic>.from(event.snapshot.value as Map);
       print('PeerSessionController: received chat answer');
 
-      String sdp = _unpack(data['s']);
-      String type = data['t'];
+      String sdp = data['s'] ?? data['sdp'];
+      String type = data['t'] ?? data['type'];
       RTCSessionDescription answer = RTCSessionDescription(sdp, type);
       await _peerConnection!.setRemoteDescription(answer);
     });
@@ -303,25 +305,16 @@ class PeerSessionController {
         return;
       }
 
-      if (_peerConnection!.signalingState ==
-              RTCSignalingState.RTCSignalingStateHaveLocalOffer ||
-          _peerConnection!.signalingState ==
-              RTCSignalingState.RTCSignalingStateHaveRemoteOffer) {
-        print('PeerSessionController: ignoring redundant offer');
+      if (_peerConnection!.signalingState != RTCSignalingState.RTCSignalingStateStable) {
+        print('PeerSessionController: ignoring redundant offer, state: ${_peerConnection!.signalingState}');
         return;
       }
 
       final data = Map<String, dynamic>.from(event.snapshot.value as Map);
       print('PeerSessionController: chat offer received for $roomId');
 
-      String sdp, type;
-      if (data.containsKey('s')) {
-        sdp = _unpack(data['s']);
-        type = data['t'];
-      } else {
-        sdp = data['sdp'];
-        type = data['type'];
-      }
+      String sdp = data['s'] ?? data['sdp'];
+      String type = data['t'] ?? data['type'];
 
       RTCSessionDescription offer = RTCSessionDescription(sdp, type);
 
@@ -337,7 +330,7 @@ class PeerSessionController {
         print('PeerSessionController: local desc (answer) set for chat');
 
         await _db.child('chats').child(roomId).update({
-          'answer': {'s': _pack(answer.sdp!), 't': answer.type!},
+          'answer': {'s': answer.sdp!, 't': answer.type!},
           'status': 'connected',
         });
         print('PeerSessionController: answer uploaded to RTDB');
@@ -383,6 +376,8 @@ class PeerSessionController {
   }
 
   void _applyDataChannelListeners() {
+    if (_dataChannel == null) return;
+
     _dataChannel?.onDataChannelState = (RTCDataChannelState state) {
       print('PeerSessionController: data channel state: $state');
       onDataChannelStateChange?.call(state);
@@ -393,6 +388,11 @@ class PeerSessionController {
         onMessageReceived?.call(message.text);
       }
     };
+
+    // Trigger immediate callback if channel is already open
+    if (_dataChannel!.state == RTCDataChannelState.RTCDataChannelOpen) {
+      onDataChannelStateChange?.call(RTCDataChannelState.RTCDataChannelOpen);
+    }
   }
 
   void _listenForDataChannel() {
