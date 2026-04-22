@@ -357,12 +357,22 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
                 ),
               ),
               const Spacer(),
-              RichText(
-                text: const TextSpan(
-                  children: [
-                    TextSpan(text: 'CHILLI', style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 3)),
-                    TextSpan(text: '•', style: TextStyle(color: _neonPink, fontSize: 18, fontWeight: FontWeight.w900)),
-                  ],
+              ClipOval(
+                child: Image.asset(
+                  'assets/logo.png',
+                  height: 24,
+                  width: 24,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'CHILLI',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 2,
                 ),
               ),
               const Spacer(),

@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:chilli/services/alert_dispatcher.dart';
 
 @pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+Future<void> handleBackgroundMessage(RemoteMessage message) async {
   debugPrint("PushReceiver: BACKGROUND HANDLER CALLED");
   debugPrint("PushReceiver: message id: ${message.messageId}");
   debugPrint("PushReceiver: data: ${message.data}");

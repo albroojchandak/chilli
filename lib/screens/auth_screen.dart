@@ -133,8 +133,8 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      SizedBox(height: isSmall ? 20 : 36),
                       _buildTopBar(),
                       SizedBox(height: isSmall ? 24 : 48),
                       _buildLogoRing(size, isSmall),
@@ -144,7 +144,6 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       _buildSubtitle(isSmall),
                       SizedBox(height: isSmall ? 32 : 52),
                       _buildSignInCard(isSmall),
-                      SizedBox(height: isSmall ? 20 : 36),
                     ],
                   ),
                 ),
@@ -261,7 +260,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
       200.0,
       300.0,
     );
-    final logoSize = ringSize * 0.44;
+    final logoSize = ringSize * 0.48;
 
     return ScaleTransition(
       scale: _logoEntrance,
@@ -352,10 +351,18 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               width: 1.5,
             ),
           ),
-          child: Icon(
-            Icons.whatshot_rounded,
-            size: size * 0.48,
-            color: Colors.white,
+          child: Center(
+            child: Container(
+              width: size * 0.85,
+              height: size * 0.85,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: AssetImage('assets/logo.png'),
+                  fit: BoxFit.cover,
+                ),
+              ),
+            ),
           ),
         );
       },

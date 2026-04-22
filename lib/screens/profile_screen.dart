@@ -252,7 +252,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
             Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const SizedBox(height: 40),
+                const SizedBox(height: 20),
+                ClipOval(
+                  child: Image.asset(
+                    'assets/logo.png',
+                    height: 40,
+                    width: 40,
+                    fit: BoxFit.cover,
+                  ),
+                ),
+                const SizedBox(height: 20),
                 _buildAvatarHexagon(),
                 const SizedBox(height: 24),
                 Text(
@@ -484,9 +493,28 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
 
   Widget _buildVersionInfo() {
     return Center(
-      child: Text(
-        'CHILLI OS v2.4.0-STABLE',
-        style: TextStyle(color: Colors.white.withOpacity(0.15), fontSize: 10, fontWeight: FontWeight.w800, letterSpacing: 3),
+      child: Column(
+        children: [
+          ClipOval(
+            child: Image.asset(
+              'assets/logo.png',
+              height: 20,
+              width: 20,
+              color: Colors.white.withOpacity(0.1),
+              fit: BoxFit.cover,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'CHILLI OS v2.4.0-STABLE',
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.15),
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 3,
+            ),
+          ),
+        ],
       ),
     );
   }

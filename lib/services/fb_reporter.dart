@@ -10,11 +10,17 @@ class FbInsightsReporter {
 
   Future<void> setup() async {
     try {
+      // Attempt to initialize. This may fail if native Facebook config (AppID) is missing.
       await _fbAppEvents.setAutoLogAppEventsEnabled(true);
       await _fbAppEvents.setAdvertiserTracking(enabled: true);
       debugPrint('FbInsightsReporter: setup complete');
     } catch (e) {
-      debugPrint('FbInsightsReporter: setup error: $e');
+      // If native SDK is not initialized, we catch it here to prevent app crash/noise.
+      if (e.toString().contains('FacebookSdk.sdkInitialize') || e.toString().contains('not initialized')) {
+        debugPrint('FbInsightsReporter: SDK not initialized (missing native config). Skipping.');
+      } else {
+        debugPrint('FbInsightsReporter: setup error: $e');
+      }
     }
   }
 

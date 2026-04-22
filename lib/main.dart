@@ -13,16 +13,24 @@ import 'package:chilli/locale/lang_bundle.dart';
 import 'package:chilli/services/push_receiver.dart';
 import 'package:chilli/services/data_bridge.dart';
 import 'package:chilli/services/fb_reporter.dart';
+import 'package:chilli/screens/splash_screen.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:screen_protector/screen_protector.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
+@pragma('vm:entry-point')
+Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await handleBackgroundMessage(message);
+}
+
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
   try {
     await ScreenProtector.preventScreenshotOn();
@@ -85,6 +93,7 @@ void main() async {
     ),
   );
 
+  FlutterNativeSplash.remove();
   runApp(const ChilliApp());
 }
 
@@ -269,14 +278,7 @@ class _SessionRouterState extends State<SessionRouter> {
               }(),
               builder: (context, userSnapshot) {
                 if (userSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Scaffold(
-                    backgroundColor: Color(0xFF0F0A1E),
-                    body: Center(
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF7C3AED),
-                      ),
-                    ),
-                  );
+                  return const SplashScreen();
                 }
                 if (userSnapshot.hasData && userSnapshot.data == true) {
                   return const ChilliHomeScreen();
@@ -286,12 +288,7 @@ class _SessionRouterState extends State<SessionRouter> {
             );
           }
         }
-        return const Scaffold(
-          backgroundColor: Color(0xFF0F0A1E),
-          body: Center(
-            child: CircularProgressIndicator(color: Color(0xFF7C3AED)),
-          ),
-        );
+        return const SplashScreen();
       },
     );
   }
