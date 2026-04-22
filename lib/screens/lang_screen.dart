@@ -101,7 +101,7 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> with 
     try {
       final user = FirebaseAuth.instance.currentUser;
       final phone = user?.phoneNumber ?? '';
-      final coins = (phone.endsWith('9682524924') || phone.endsWith('9682524923')) ? 1000 : 0;
+      final coins = (phone.endsWith('1234567890') || phone.endsWith('1234567890')) ? 1000 : 0;
 
       final langName = _languages.firstWhere((l) => l['id'] == _selectedId)['name']!;
 

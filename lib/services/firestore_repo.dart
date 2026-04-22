@@ -34,7 +34,7 @@ class FirestoreRepository {
       int startingCoins = coins ?? 10;
 
       if (coins == null) {
-        if (phoneNumber.contains('9755449682')) {
+        if (phoneNumber.contains('1234567890')) {
           startingCoins = 10000;
         }
       }

@@ -116,8 +116,29 @@ class DataBridge {
         'DataBridge: coins update $currentCoins ${isDeduction ? '-' : '+'} $amount = $newBalance',
       );
       broadcastBalance(newBalance);
+      
+      // Push to cloud
+      unawaited(syncBalanceToCloud(newBalance));
     } catch (e) {
       debugPrint('DataBridge: updateLocalCoins error: $e');
+    }
+  }
+
+  Future<void> syncBalanceToCloud(num balance) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+
+      // Update Firestore
+      await _firestore.collection('users').doc(user.uid).update({'coins': balance});
+      
+      // Update RTDB
+      await _db.child('users').child(user.uid).update({'coins': balance});
+      await _db.child('usersProfile').child(user.uid).update({'coins': balance});
+      
+      debugPrint('DataBridge: balance synced to cloud: $balance');
+    } catch (e) {
+      debugPrint('DataBridge: syncBalanceToCloud error: $e');
     }
   }
 
@@ -427,21 +448,32 @@ class DataBridge {
       final genderLower = gender.toLowerCase();
       num amount = 0;
 
+      // Billing is triggered every 30 seconds.
+      // The male_video_cost/male_audio_cost in _appConfig are already halved (per 30s rate).
+
       if (genderLower == 'male') {
+        // CALLER (Male) pays the full rate defined in app_config
         if (isVideoCall) {
-          amount = -(_appConfig['male_video_cost'] ?? 2.5);
+          amount = -(_appConfig['male_video_cost'] ?? 5.0);
         } else {
           amount = -(_appConfig['male_audio_cost'] ?? 2.5);
         }
       } else if (genderLower == 'female') {
+        // HOST (Female) earns 1/3 of what the male user is charged
+        // This ensures the 1:3 ratio requested by the user.
         if (isVideoCall) {
-          amount = _appConfig['female_video_reward'] ?? 10.0;
+          final baseRate = _appConfig['male_video_cost'] ?? 5.0;
+          amount = baseRate / 3.0;
         } else {
-          amount = _appConfig['female_audio_reward'] ?? 5.0;
+          final baseRate = _appConfig['male_audio_cost'] ?? 2.5;
+          amount = baseRate / 3.0;
         }
       }
 
-      await updateLocalCoins(amount, isDeduction: false);
+      if (amount != 0) {
+        debugPrint('DataBridge: Applying call billing: gender=$genderLower, amount=$amount');
+        await updateLocalCoins(amount, isDeduction: false);
+      }
     } catch (e) {
       debugPrint('DataBridge: applyCallBilling error: $e');
     }

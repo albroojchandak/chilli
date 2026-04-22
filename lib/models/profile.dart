@@ -60,6 +60,7 @@ class ChilliProfile {
     'l': language.isEmpty ? 'English' : language,
     'a': avatarUrl,
     'ft': fcmToken,
+    'coins': coins,
   };
 
   factory ChilliProfile.fromMap(Map<String, dynamic> map) {

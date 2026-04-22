@@ -93,6 +93,11 @@ void main() async {
     ),
   );
 
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
+
   FlutterNativeSplash.remove();
   runApp(const ChilliApp());
 }

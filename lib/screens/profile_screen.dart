@@ -11,6 +11,7 @@ import 'package:chilli/services/firestore_repo.dart';
 import 'package:chilli/services/media_uploader.dart';
 import 'package:chilli/services/presence_repo.dart';
 import 'package:chilli/services/data_bridge.dart';
+import 'package:chilli/utils/avatar_store.dart';
 import 'package:chilli/screens/auth_screen.dart';
 import 'package:chilli/legal/privacy_screen.dart';
 import 'package:chilli/legal/terms_screen.dart';
@@ -73,6 +74,17 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   }
 
   Future<void> _updateAvatar() async {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Opening Avatar Vault...')));
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildAvatarSelectionSheet(),
+    );
+  }
+
+  Future<void> _pickFromGallery() async {
+    Navigator.pop(context);
     final picker = ImagePicker();
     final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
     if (image == null) return;
@@ -82,11 +94,240 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
       final url = await _media.uploadAvatar(_profile?['uid'] ?? '', File(image.path));
       if (url != null) {
         await _firestore.patchProfile(avatarUrl: url);
+        if (_profile?['uid'] != null) {
+          await _presence.patchFields(_profile!['uid'], {'avatarUrl': url});
+        }
+        await _identity.patchLocalProfile({'avatarUrl': url, 'a': url});
         _loadData();
       }
     } finally {
       if (mounted) setState(() => _isUpdating = false);
     }
+  }
+
+  Future<void> _selectPredefined(String url) async {
+    Navigator.pop(context);
+    setState(() => _isUpdating = true);
+    try {
+      await _firestore.patchProfile(avatarUrl: url);
+      if (_profile?['uid'] != null) {
+        await _presence.patchFields(_profile!['uid'], {'avatarUrl': url});
+      }
+      await _identity.patchLocalProfile({'avatarUrl': url, 'a': url});
+      _loadData();
+    } finally {
+      if (mounted) setState(() => _isUpdating = false);
+    }
+  }
+
+  Widget _buildAvatarSelectionSheet() {
+    final gender = (_profile?['gender'] ?? 'female').toString().toLowerCase();
+    final avatars = gender == 'male' ? AvatarVault.maleAvatars : AvatarVault.femaleAvatars;
+    
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.85,
+      decoration: const BoxDecoration(
+        color: _bgDark,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Stack(
+        children: [
+          // Background Glow
+          Positioned(
+            top: -100,
+            right: -100,
+            child: Container(
+              width: 300,
+              height: 300,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _primaryNeon.withOpacity(0.05),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              const SizedBox(height: 12),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    const Text(
+                      'CHOOSE IDENTITY',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.close, color: Colors.white38),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              _buildUploadOption(),
+              const SizedBox(height: 24),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Row(
+                  children: [
+                    Text(
+                      'PRESET PROTOCOLS',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.3),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 2,
+                      ),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _primaryNeon.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        gender.toUpperCase(),
+                        style: const TextStyle(color: _primaryNeon, fontSize: 9, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(24, 0, 24, 40),
+                  physics: const BouncingScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 16,
+                    childAspectRatio: 1,
+                  ),
+                  itemCount: avatars.length,
+                  itemBuilder: (context, index) {
+                    final url = avatars[index];
+                    final isSelected = _profile?['avatarUrl'] == url;
+                    return GestureDetector(
+                      onTap: () => _selectPredefined(url),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isSelected ? _primaryNeon : Colors.white.withOpacity(0.05),
+                            width: 2,
+                          ),
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(18),
+                          child: Stack(
+                            children: [
+                              Image.network(
+                                url,
+                                fit: BoxFit.cover,
+                                width: double.infinity,
+                                height: double.infinity,
+                                loadingBuilder: (context, child, progress) {
+                                  if (progress == null) return child;
+                                  return Container(
+                                    color: Colors.white.withOpacity(0.02),
+                                    child: Center(
+                                      child: SizedBox(
+                                        width: 20,
+                                        height: 20,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          value: progress.expectedTotalBytes != null 
+                                            ? progress.cumulativeBytesLoaded / progress.expectedTotalBytes! 
+                                            : null,
+                                          color: _primaryNeon.withOpacity(0.3),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                              if (isSelected)
+                                Container(
+                                  color: _primaryNeon.withOpacity(0.3),
+                                  child: const Center(
+                                    child: Icon(Icons.check_circle, color: Colors.white, size: 32),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildUploadOption() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
+      child: GestureDetector(
+        onTap: _pickFromGallery,
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: _primaryNeon.withOpacity(0.05),
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: _primaryNeon.withOpacity(0.1)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: _primaryNeon.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Icon(Icons.add_photo_alternate_rounded, color: _primaryNeon, size: 24),
+              ),
+              const SizedBox(width: 20),
+              const Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'UPLOAD CUSTOM',
+                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1),
+                  ),
+                  Text(
+                    'Pick from your local storage',
+                    style: TextStyle(color: Colors.white38, fontSize: 11),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.1), size: 14),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _editName() async {
