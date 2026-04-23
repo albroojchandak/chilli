@@ -32,20 +32,15 @@ void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  try {
-    await ScreenProtector.preventScreenshotOn();
-    await ScreenProtector.protectDataLeakageWithColor(Colors.black);
-    debugPrint('Screen protection enabled');
-  } catch (e) {
-    debugPrint('Screen protection error: $e');
-  }
+  // Removed global screen protection to allow user screenshots as requested
+
 
   try {
     await Firebase.initializeApp();
     debugPrint('Firebase initialized');
     try {
       await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.debug,
+        androidProvider: AndroidProvider.playIntegrity,
       );
       debugPrint('App Check activated');
     } catch (e) {
@@ -113,55 +108,9 @@ class _ChilliAppState extends State<ChilliApp> {
   @override
   void initState() {
     super.initState();
-    _initSecurityListeners();
   }
 
-  void _initSecurityListeners() async {
-    ScreenProtector.addListener(
-      () {
-        debugPrint('Screenshot detected');
 
-        final user = FirebaseAuth.instance.currentUser;
-        if (user?.email == 'nurxianpvltd@gmail.com') {
-          return;
-        }
-
-        if (mounted) {
-          ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Screenshots are restricted for security reasons.',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Color(0xFFEF4444),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        }
-      },
-      (isCaptured) {
-        debugPrint('Screen recording changed: $isCaptured');
-
-        final user = FirebaseAuth.instance.currentUser;
-        if (user?.email == 'nurxianpvltd@gmail.com') {
-          return;
-        }
-
-        if (isCaptured && mounted) {
-          ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Screen recording detected. Please stop to protect privacy.',
-                style: TextStyle(color: Colors.white),
-              ),
-              backgroundColor: Color(0xFFEF4444),
-              duration: Duration(seconds: 3),
-            ),
-          );
-        }
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -227,14 +176,8 @@ class _SessionRouterState extends State<SessionRouter> {
   }
 
   Future<void> _onAuthChanged(User? user) async {
-    if (user?.email == 'nurxianpvltd@gmail.com') {
-      debugPrint('Admin user: disabling screen protection');
-      await ScreenProtector.preventScreenshotOff();
-    } else {
-      debugPrint('Standard user: ensuring screen protection is ON');
-      await ScreenProtector.preventScreenshotOn();
-      await ScreenProtector.protectDataLeakageWithColor(Colors.black);
-    }
+    // Ensuring screen protection is OFF for everyone to allow screenshots
+    await ScreenProtector.preventScreenshotOff();
   }
 
   @override

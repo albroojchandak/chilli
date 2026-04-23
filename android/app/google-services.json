@@ -1,26 +1,19 @@
 {
   "project_info": {
     "project_number": "278527617965",
+    "firebase_url": "https://nurxian-default-rtdb.firebaseio.com",
     "project_id": "nurxian",
     "storage_bucket": "nurxian.firebasestorage.app"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:278527617965:android:64577ec3d0fa63405fcf24",
+        "mobilesdk_app_id": "1:278527617965:android:874cd03b312d543a5fcf24",
         "android_client_info": {
-          "package_name": "com.example.chilli"
+          "package_name": "com.nurxian.chilli"
         }
       },
       "oauth_client": [
-        {
-          "client_id": "278527617965-mpmu3a4831p703oufoc5q5d95bf1dcr0.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.example.chilli",
-            "certificate_hash": "981ac2864367ae1125f10a757e412504924aee19"
-          }
-        },
         {
           "client_id": "278527617965-4dsk3c4eri7f0p8ojvv6hpo8mpmt716r.apps.googleusercontent.com",
           "client_type": 3
