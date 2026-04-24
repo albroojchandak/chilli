@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:chilli/models/profile.dart';
 import 'package:chilli/utils/avatar_store.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' hide Query;
 import 'dart:async';
 
 class PresenceRepository {
@@ -106,13 +107,29 @@ class PresenceRepository {
     debugPrint('PresenceRepository: watchUsers streaming all profiles for client-side filtering (Target: $targetGender)');
     Query profileQuery = _db.child('usersProfile').limitToLast(1000);
 
-    void emitMerged() {
+    void emitMerged() async {
       if (!isProfilesLoaded && cachedUsers.isEmpty) return;
 
       final now = DateTime.now();
       final List<ChilliProfile> mergedUsers = [];
 
+      // Fetch blocked users from Firestore
+      List<String> blockedUids = [];
+      final currentUid = _auth.currentUser?.uid;
+      if (currentUid != null) {
+        try {
+          final snap = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
+          if (snap.exists) {
+            blockedUids = List<String>.from(snap.data()?['blockedUsers'] ?? []);
+          }
+        } catch (e) {
+          debugPrint('PresenceRepository: block fetch error: $e');
+        }
+      }
+
       for (var user in cachedUsers) {
+        if (blockedUids.contains(user.uid)) continue; // Filter blocked
+
         final pData = Map<dynamic, dynamic>.from(
           presenceInfoMap[user.uid] ?? {'s': 'offline'},
         );

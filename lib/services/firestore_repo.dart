@@ -90,11 +90,19 @@ class FirestoreRepository {
   }
 
   Stream<List<ChilliProfile>> watchAllUsers({String? targetGender}) {
-    return _usersRef.snapshots().map((snapshot) {
+    return _usersRef.snapshots().asyncMap((snapshot) async {
       final currentUid = _auth.currentUser?.uid;
       final target = targetGender?.toLowerCase();
 
-      print('FirestoreRepository: snapshot ${snapshot.docs.length} docs');
+      // Fetch current user's blocked list
+      List<String> blockedUids = [];
+      if (currentUid != null) {
+        final selfDoc = await _usersRef.doc(currentUid).get();
+        if (selfDoc.exists) {
+          final data = selfDoc.data() as Map<String, dynamic>;
+          blockedUids = List<String>.from(data['blockedUsers'] ?? []);
+        }
+      }
 
       final list = snapshot.docs
           .map(
@@ -102,13 +110,54 @@ class FirestoreRepository {
           )
           .where((user) {
             final isNotMe = user.uid != currentUid;
-            if (target == null) return isNotMe;
-            return isNotMe && user.gender.toLowerCase() == target;
+            final isNotBlocked = !blockedUids.contains(user.uid);
+            if (target == null) return isNotMe && isNotBlocked;
+            return isNotMe && isNotBlocked && user.gender.toLowerCase() == target;
           })
           .toList();
 
-      print('FirestoreRepository: filtered ${list.length} users');
       return list;
+    });
+  }
+
+  Future<void> blockUser(String targetUid) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+      await _usersRef.doc(user.uid).update({
+        'blockedUsers': FieldValue.arrayUnion([targetUid])
+      });
+    } catch (e) {
+      debugPrint('FirestoreRepository: blockUser error: $e');
+    }
+  }
+
+  Future<void> unblockUser(String targetUid) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+      await _usersRef.doc(user.uid).update({
+        'blockedUsers': FieldValue.arrayRemove([targetUid])
+      });
+    } catch (e) {
+      debugPrint('FirestoreRepository: unblockUser error: $e');
+    }
+  }
+
+  Stream<List<ChilliProfile>> watchBlockedUsers() {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value([]);
+
+    return _usersRef.doc(user.uid).snapshots().asyncMap((snap) async {
+      if (!snap.exists) return [];
+      final data = snap.data() as Map<String, dynamic>;
+      final List<String> blockedUids = List<String>.from(data['blockedUsers'] ?? []);
+      
+      if (blockedUids.isEmpty) return [];
+
+      // Fetch profiles for these UIDs
+      final profilesSnap = await _usersRef.where('uid', whereIn: blockedUids).get();
+      return profilesSnap.docs.map((d) => ChilliProfile.fromMap(d.data() as Map<String, dynamic>)).toList();
     });
   }
 
@@ -144,6 +193,22 @@ class FirestoreRepository {
 
   Future<void> updatePresenceStatus(String status) async {
     debugPrint('FirestoreRepository: status update skipped (using RTDB)');
+  }
+
+  Future<void> reportUser(String targetUid, String reason) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return;
+      await _firestore.collection('reports').add({
+        'reporterUid': user.uid,
+        'targetUid': targetUid,
+        'reason': reason,
+        'timestamp': FieldValue.serverTimestamp(),
+        'status': 'pending',
+      });
+    } catch (e) {
+      debugPrint('FirestoreRepository: reportUser error: $e');
+    }
   }
 
   Future<void> savePushToken(String? token) async {

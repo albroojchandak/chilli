@@ -17,6 +17,7 @@ import 'package:chilli/legal/privacy_screen.dart';
 import 'package:chilli/legal/terms_screen.dart';
 import 'package:chilli/legal/refund_screen.dart';
 import 'package:chilli/screens/support_screen.dart';
+import 'package:chilli/models/profile.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -410,6 +411,97 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     }
   }
 
+  Future<void> _openBlockedManagement() async {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _buildBlockedSheet(),
+    );
+  }
+
+  Widget _buildBlockedSheet() {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.8,
+      decoration: const BoxDecoration(
+        color: _bgDark,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+      ),
+      child: Column(
+        children: [
+          const SizedBox(height: 12),
+          Container(
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(color: Colors.white10, borderRadius: BorderRadius.circular(2)),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(24),
+            child: Text(
+              'BLOCKED PROTOCOLS',
+              style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w900, letterSpacing: 2),
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<List<ChilliProfile>>(
+              stream: _firestore.watchBlockedUsers(),
+              builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: _primaryNeon));
+                }
+                final users = snap.data ?? [];
+                if (users.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.shield_outlined, color: Colors.white10, size: 64),
+                        const SizedBox(height: 16),
+                        Text('No blocked identities found', style: TextStyle(color: Colors.white38)),
+                      ],
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  itemCount: users.length,
+                  itemBuilder: (context, i) => Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.03),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          backgroundImage: NetworkImage(users[i].avatarUrl ?? ''),
+                          backgroundColor: Colors.white10,
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Text(
+                            users[i].name,
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () => _firestore.unblockUser(users[i].uid),
+                          child: const Text('UNBLOCK', style: TextStyle(color: _primaryNeon, fontWeight: FontWeight.w900, fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -460,6 +552,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               _buildMenuCard([
                 _buildMenuItem(Icons.manage_accounts_rounded, 'Edit Profile Identity', _primaryNeon, _editName, true),
                 _buildMenuItem(Icons.shield_moon_rounded, 'Privacy & Encryption', _accentViolet, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacyScreen())), true),
+                _buildMenuItem(Icons.block_rounded, 'Blocked Protocols', Colors.redAccent, _openBlockedManagement, true),
                 _buildMenuItem(Icons.receipt_long_rounded, 'Transaction Refund Protocol', Colors.amber, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const RefundScreen())), true),
                 _buildMenuItem(Icons.assignment_rounded, 'Cloud Terms of Service', _secondaryNeon, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TermsScreen())), false),
               ]),
@@ -467,6 +560,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
               _buildSectionLabel('NETWORK SUPPORT'),
               _buildMenuCard([
                 _buildMenuItem(Icons.support_agent_rounded, 'Mainframe Help Center', _primaryNeon, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen())), true),
+                _buildMenuItem(Icons.delete_forever_rounded, 'Deactivate Identity', _secondaryNeon, () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupportScreen())), true),
                 _buildMenuItem(Icons.share_rounded, 'Synchronize Friends', Colors.orangeAccent, () => Share.share('Join the network on Chilli!'), false),
               ]),
               const SizedBox(height: 64),

@@ -34,7 +34,6 @@ void main() async {
 
   // Removed global screen protection to allow user screenshots as requested
 
-
   try {
     await Firebase.initializeApp();
     debugPrint('Firebase initialized');
@@ -61,7 +60,7 @@ void main() async {
   try {
     await PushReceiver().initialize();
   } catch (e) {
-    debugPrint('FCM init error: $e');
+    debugPrint('FCM init error:988 $e');
   }
 
   try {
@@ -109,8 +108,6 @@ class _ChilliAppState extends State<ChilliApp> {
   void initState() {
     super.initState();
   }
-
-
 
   @override
   Widget build(BuildContext context) {

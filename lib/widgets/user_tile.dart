@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:chilli/services/firestore_repo.dart';
 
 class UserTile extends StatefulWidget {
   final String name;
@@ -72,6 +73,73 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
     super.dispose();
   }
 
+  Future<void> _confirmBlock() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (c) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF15082E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: _neonPink, width: 0.5)),
+          title: const Text('BLOCK USER?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          content: Text('Do you want to block ${widget.name}? They will no longer appear in your feed.', style: const TextStyle(color: Colors.white70)),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('CANCEL', style: TextStyle(color: Colors.white38))),
+            TextButton(
+              onPressed: () => Navigator.pop(c, true),
+              child: const Text('BLOCK', style: TextStyle(color: _neonPink, fontWeight: FontWeight.w900)),
+            ),
+          ],
+        ),
+      ),
+    );
+
+    if (confirm == true && widget.uid != null) {
+      await FirestoreRepository().blockUser(widget.uid!);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${widget.name} blocked'), backgroundColor: _neonPink));
+      }
+    }
+  }
+
+  Future<void> _handleReport() async {
+    final List<String> reasons = [
+      'Inappropriate Content',
+      'Harassment or Bullying',
+      'Spam or Fake Profile',
+      'Hate Speech',
+      'Nudity or Sexual Content',
+      'Other'
+    ];
+
+    final reason = await showDialog<String>(
+      context: context,
+      builder: (c) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF15082E),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: Colors.amberAccent, width: 0.5)),
+          title: const Text('REPORT USER', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: reasons.map((r) => ListTile(
+              title: Text(r, style: const TextStyle(color: Colors.white70, fontSize: 14)),
+              onTap: () => Navigator.pop(c, r),
+              dense: true,
+            )).toList(),
+          ),
+        ),
+      ),
+    );
+
+    if (reason != null && widget.uid != null) {
+      await FirestoreRepository().reportUser(widget.uid!, reason);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User reported. We will investigate.'), backgroundColor: Colors.amber));
+      }
+    }
+  }
+
   Future<void> _toggleAudio() async {
     if (widget.audioUrl == null || widget.audioUrl!.isEmpty) return;
     try {
@@ -113,7 +181,58 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
             _buildOverlayLayer(accent, isBusy),
             _buildInfoPanel(accent),
             if (widget.audioUrl != null) _buildVoiceIndicator(),
+            _buildBlockButton(),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBlockButton() {
+    return Positioned(
+      top: 12,
+      right: 12,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
+            child: PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert_rounded, color: Colors.white54, size: 14),
+              padding: EdgeInsets.zero,
+              color: const Color(0xFF15082E),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white10)),
+              onSelected: (val) {
+                if (val == 'block') _confirmBlock();
+                if (val == 'report') _handleReport();
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'report',
+                  child: Row(
+                    children: [
+                      Icon(Icons.flag_rounded, color: Colors.amberAccent, size: 18),
+                      SizedBox(width: 12),
+                      Text('Report Protocol', style: TextStyle(color: Colors.white, fontSize: 14)),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(Icons.block_rounded, color: _neonPink, size: 18),
+                      SizedBox(width: 12),
+                      Text('Block Identity', style: TextStyle(color: Colors.white, fontSize: 14)),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -298,7 +417,7 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
   Widget _buildVoiceIndicator() {
     return Positioned(
       top: 12,
-      right: 12,
+      left: 12,
       child: GestureDetector(
         onTap: _toggleAudio,
         child: ClipRRect(
@@ -306,11 +425,12 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              width: 32,
+              height: 32,
               decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
               child: _isLoading
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
-                  : Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 18),
+                  ? const Center(child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)))
+                  : Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 14),
             ),
           ),
         ),
