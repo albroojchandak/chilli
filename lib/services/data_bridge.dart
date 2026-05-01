@@ -246,28 +246,107 @@ class DataBridge {
 
   static Map<String, dynamic> get appConfig => _appConfig;
 
+  // ✅ Initialize Firestore Config - CALL THIS ONCE TO SET UP YOUR DATABASE
   Future<void> initializeFirestoreConfig() async {
     try {
-      debugPrint('DataBridge: initializing Firestore config');
+      debugPrint('');
+      debugPrint('🟡 ========================================');
+      debugPrint('🟡 INITIALIZING FIRESTORE CONFIG');
+      debugPrint('🟡 ========================================');
+      debugPrint('⚠️  WARNING: This will OVERWRITE existing config!');
+      debugPrint('');
 
+      // 1. Create PRICING document
+      debugPrint('💰 Creating pricing document...');
       await _firestore.collection('app_config').doc('pricing').set({
-        'male_audio_rate': 5.0,
-        'male_video_rate': 10.0,
-        'female_audio_rate': 10.0,
-        'female_video_rate': 20.0,
-        'min_coins_required': 5.0,
-        'is_reward_enabled': true,
-        'min_deposit': 79.0,
-        'min_withdrawal': 50.0,
+        // Male pricing (per 30 seconds)
+        'male_audio_rate': 5.0, // 5 coins per minute for audio
+        'male_video_rate': 10.0, // 5 coins per minute for video
+        // Female rewards (per 30 seconds)
+        'female_audio_rate': 10.0, // 10 coins per minute for audio
+        'female_video_rate': 20.0, // 20 coins per minute for video
+        // Minimum coins required
+        'min_coins_required': 5.0, // Minimum coins to start call
+        // Reward system
+        'is_reward_enabled': true, // Enable/disable female rewards
+        // Payment thresholds (optional - can also go in payment doc)
+        'min_deposit': 79.0, // Minimum recharge amount
+        'min_withdrawal': 50.0, // Minimum withdrawal amount
+        // Metadata
         'last_updated': FieldValue.serverTimestamp(),
         'created_by': 'initializeFirestoreConfig',
       });
-      debugPrint('DataBridge: pricing doc created');
+      debugPrint('✅ Pricing document created!');
 
-      debugPrint('DataBridge: Firestore config initialization complete');
+      // 2. Create PAYMENT document
+      debugPrint('');
+      debugPrint('💳 Creating payment document...');
+      await _firestore.collection('app_config').doc('payment').set({
+        // Payment gateway credentials
+        'paygic_mid': 'ELITEZEENZGFR', // Add your Merchant ID here
+        'paygic_token':
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJFTElURVpFRU5aR0ZSIiwiX2lkIjoiNjhlNzUxOWJiNGE0NmMzYjc3NDhkNzdlIiwiaWF0IjoxNzY3MjQ1MDA0LCJleHAiOjE3Njk4MzcwMDR9.BP1apIcNcGmHfTHKSlcNGgxtYo3gQ3NQ5beSbylSPjo', // Add your API Token here
+        // Payment thresholds
+        'min_deposit': 79.0,
+        'min_withdrawal': 50.0,
+
+        // Alternative field names (for compatibility)
+        'min_recharge': 10.0,
+        'min_payout': 50.0,
+
+        // Metadata
+        'last_updated': FieldValue.serverTimestamp(),
+        'created_by': 'initializeFirestoreConfig',
+      });
+      debugPrint('✅ Payment document created!');
+      debugPrint('⚠️  Remember to add your paygic_mid and paygic_token!');
+
+      // 3. Create VERSION document
+      debugPrint('');
+      debugPrint('📱 Creating version document...');
+      await _firestore.collection('app_config').doc('version').set({
+        'min_version': '1.0.0', // Minimum app version allowed
+        'latest_version': '1.0.0', // Latest available version
+        'update_url':
+            'https://play.google.com/store/apps/details?id=com.nurxian.chilli',
+
+        // Metadata
+        'last_updated': FieldValue.serverTimestamp(),
+        'created_by': 'initializeFirestoreConfig',
+      });
+      debugPrint('✅ Version document created!');
+
+      debugPrint('');
+      debugPrint('🟢 ========================================');
+      debugPrint('🟢 FIRESTORE CONFIG INITIALIZATION COMPLETE!');
+      debugPrint('🟢 ========================================');
+      debugPrint('✅ Created 3 documents:');
+      debugPrint('   1. app_config/pricing');
+      debugPrint('   2. app_config/payment');
+      debugPrint('   3. app_config/version');
+      debugPrint('');
+      debugPrint('📝 Next steps:');
+      debugPrint('   1. Open Firestore Console');
+      debugPrint('   2. Navigate to app_config/payment');
+      debugPrint('   3. Add your paygic_mid and paygic_token');
+      debugPrint('   4. Adjust pricing values if needed');
+      debugPrint('🟢 ========================================');
+      debugPrint('');
     } catch (e, stackTrace) {
-      debugPrint('DataBridge: initializeFirestoreConfig error: $e');
-      debugPrint('DataBridge: stack: $stackTrace');
+      debugPrint('');
+      debugPrint('🔴 ========================================');
+      debugPrint('🔴 ERROR INITIALIZING FIRESTORE CONFIG');
+      debugPrint('🔴 ========================================');
+      debugPrint('❌ Error: $e');
+      debugPrint('📍 Stack trace:');
+      debugPrint(stackTrace.toString());
+      debugPrint('');
+      debugPrint('💡 Common issues:');
+      debugPrint('   - Firestore rules may not allow write access');
+      debugPrint('   - Firebase not properly initialized');
+      debugPrint('   - No internet connection');
+      debugPrint('🔴 ========================================');
+      debugPrint('');
       rethrow;
     }
   }
@@ -452,21 +531,21 @@ class DataBridge {
       // The male_video_cost/male_audio_cost in _appConfig are already halved (per 30s rate).
 
       if (genderLower == 'male') {
-        // CALLER (Male) pays the full rate defined in app_config
+        // CALLER (Male) pays the rate defined in app_config
         if (isVideoCall) {
           amount = -(_appConfig['male_video_cost'] ?? 5.0);
         } else {
           amount = -(_appConfig['male_audio_cost'] ?? 2.5);
         }
       } else if (genderLower == 'female') {
-        // HOST (Female) earns 1/3 of what the male user is charged
-        // This ensures the 1:3 ratio requested by the user.
-        if (isVideoCall) {
-          final baseRate = _appConfig['male_video_cost'] ?? 5.0;
-          amount = baseRate / 3.0;
-        } else {
-          final baseRate = _appConfig['male_audio_cost'] ?? 2.5;
-          amount = baseRate / 3.0;
+        // HOST (Female) earns the rate defined in app_config
+        final isRewardEnabled = _appConfig['is_reward_enabled'] == true;
+        if (isRewardEnabled) {
+          if (isVideoCall) {
+            amount = _appConfig['female_video_reward'] ?? 10.0;
+          } else {
+            amount = _appConfig['female_audio_reward'] ?? 5.0;
+          }
         }
       }
 
