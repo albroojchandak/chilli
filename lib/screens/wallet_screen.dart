@@ -14,6 +14,8 @@ import 'package:chilli/services/data_bridge.dart';
 import 'package:chilli/screens/txn_screen.dart';
 import 'dart:ui';
 import 'package:firebase_database/firebase_database.dart';
+import 'package:paygic/paygic.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ChilliWalletScreen extends StatefulWidget {
   const ChilliWalletScreen({super.key});
@@ -22,7 +24,7 @@ class ChilliWalletScreen extends StatefulWidget {
   State<ChilliWalletScreen> createState() => _ChilliWalletScreenState();
 }
 
-class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTickerProviderStateMixin {
+class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   final _identity = IdentityManager();
   final _bridge = DataBridge();
   final _auth = FirebaseAuth.instance;
@@ -34,6 +36,8 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
   bool _isPaying = false;
 
   final List<Map<String, dynamic>> _packages = [
+    {'coins': 5, 'price': 5, 'bonus': 0, 'popular': false},
+    {'coins': 10, 'price': 10, 'bonus': 0, 'popular': false},
     {'coins': 100, 'price': 79, 'bonus': 0, 'popular': false},
     {'coins': 250, 'price': 199, 'bonus': 10, 'popular': true},
     {'coins': 500, 'price': 399, 'bonus': 25, 'popular': false},
@@ -46,13 +50,26 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
   static const _neonViolet = Color(0xFFBF5AF2);
 
   late final AnimationController _glowController;
+  Timer? _paymentTimeoutTimer;
+  String? _currentRefId;
+  Map? _currentPkg;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _glowController = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
     _loadBalance();
     _checkBonus();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isPaying && _currentRefId != null) {
+      Future.delayed(const Duration(milliseconds: 500), () {
+        if (mounted) _checkPaymentStatusPolled();
+      });
+    }
   }
 
   void _loadBalance() async {
@@ -100,6 +117,8 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _paymentTimeoutTimer?.cancel();
     _glowController.dispose();
     super.dispose();
   }
@@ -419,35 +438,154 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen> with SingleTick
   void _startPurchase(Map pkg) async {
     setState(() => _isPaying = true);
     
-    // Simulate payment gateway initiation
-    await Future.delayed(const Duration(seconds: 2));
+    final user = _auth.currentUser;
+    final price = (pkg['price'] as num).toDouble();
     
-    final coinsToAdd = (pkg['coins'] as num) + (pkg['bonus'] as num);
-    
+    String mobile = user?.phoneNumber?.replaceAll(RegExp(r'[^0-9]'), '') ?? '9999999999';
+    if (mobile.length > 10) {
+      mobile = mobile.substring(mobile.length - 10);
+    } else if (mobile.length < 10) {
+      mobile = '9999999999';
+    }
+
     try {
-      // Local update
-      await _bridge.updateLocalCoins(coinsToAdd, isDeduction: false);
-      
-      // Server update (RTDB & Firestore)
-      final user = _auth.currentUser;
-      if (user != null) {
-        await FirebaseDatabase.instance.ref().child('users').child(user.uid).update({
-          'coins': ServerValue.increment(coinsToAdd)
-        });
-        await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
-          'coins': FieldValue.increment(coinsToAdd)
-        });
-      }
-      
-      if (mounted) {
-        setState(() => _isPaying = false);
-        _showToast('SUCCESS! Credited $coinsToAdd coins');
+      final token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJDSElUQ0hBVFoiLCJfaWQiOiI2ODVmY2VlYjFhOWQ4NDQ0YjRjZGI5OGEiLCJpYXQiOjE3Nzc5MDA2OTEsImV4cCI6MTc4MDQ5MjY5MX0.cqL4D0Le3fxD7ZhXl6ckbnbaBURW_AuGiw7ip-VBoyk';
+      final mref = 'ORD_${DateTime.now().millisecondsSinceEpoch}';
+
+      final response = await http.post(
+        Uri.parse('https://server.paygic.in/api/v2/createPaymentRequest'),
+        headers: {
+          'Content-Type': 'application/json',
+          'token': token,
+        },
+        body: jsonEncode({
+          'mid': 'CHITCHATZ',
+          'amount': price,
+          'merchantReferenceId': mref,
+          'customer_name': user?.displayName?.isNotEmpty == true ? user!.displayName! : 'Chilli User',
+          'customer_email': user?.email?.isNotEmpty == true ? user!.email! : 'user@chilli.app',
+          'customer_mobile': mobile,
+        }),
+      );
+
+      final data = jsonDecode(response.body);
+      if (data['status'] == true && data['data'] != null && data['data']['intent'] != null) {
+        final intentUrl = data['data']['intent'];
+
+        final uri = Uri.parse(intentUrl);
+        if (await canLaunchUrl(uri)) {
+           await launchUrl(uri, mode: LaunchMode.externalApplication);
+           
+           if (!mounted) return;
+           _startPaymentStatusCheck(mref, pkg);
+        } else {
+           _showToast('No UPI app found to handle payment');
+           setState(() => _isPaying = false);
+        }
+      } else {
+         _showToast('Failed to create payment request');
+         setState(() => _isPaying = false);
       }
     } catch (e) {
       if (mounted) {
+        _showToast('Error initiating payment');
         setState(() => _isPaying = false);
-        _showToast('Payment Failed');
       }
+    }
+  }
+
+  void _startPaymentStatusCheck(String mref, Map pkg) {
+    _currentRefId = mref;
+    _currentPkg = pkg;
+    
+    _paymentTimeoutTimer?.cancel();
+    _paymentTimeoutTimer = Timer(const Duration(seconds: 120), () {
+      if (_isPaying && mounted) {
+        setState(() => _isPaying = false);
+        _currentRefId = null;
+        _currentPkg = null;
+        _showToast('Payment timeout. Please try again.');
+      }
+    });
+
+    int attemptCount = 0;
+    // Increased to 10 seconds to avoid Paygic API "Too many OTP requests" rate limit
+    Timer.periodic(const Duration(seconds: 10), (timer) async {
+      attemptCount++;
+      if (!mounted || !_isPaying || _currentRefId == null) {
+        timer.cancel();
+        return;
+      }
+      await _checkPaymentStatusPolled();
+      if (attemptCount >= 12) timer.cancel();
+    });
+  }
+
+  Future<void> _checkPaymentStatusPolled() async {
+    if (_currentRefId == null || _currentPkg == null) return;
+    try {
+      final token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJDSElUQ0hBVFoiLCJfaWQiOiI2ODVmY2VlYjFhOWQ4NDQ0YjRjZGI5OGEiLCJpYXQiOjE3Nzc5MDA2OTEsImV4cCI6MTc4MDQ5MjY5MX0.cqL4D0Le3fxD7ZhXl6ckbnbaBURW_AuGiw7ip-VBoyk';
+      
+      final response = await http.post(
+        Uri.parse('https://server.paygic.in/api/v2/checkPaymentStatus'),
+        headers: {
+          'Content-Type': 'application/json',
+          'token': token,
+        },
+        body: jsonEncode({
+          'mid': 'CHITCHATZ',
+          'merchantReferenceId': _currentRefId,
+        }),
+      );
+
+      if (response.statusCode == 429 || response.body.contains('Too many')) {
+        return; // Rate limited, ignore and wait for next poll
+      }
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        
+        // Extract exact transaction status properly
+        final dynamic statusVal = (data['data'] != null && data['data']['txnStatus'] != null) 
+            ? data['data']['txnStatus'] 
+            : (data['txnStatus'] ?? data['status']);
+            
+        final txnStatus = statusVal.toString().toUpperCase();
+        
+        if (txnStatus == 'SUCCESS') {
+          _paymentTimeoutTimer?.cancel();
+          final pkg = _currentPkg!;
+          _currentRefId = null;
+          _currentPkg = null;
+          
+          final coinsToAdd = (pkg['coins'] as num) + (pkg['bonus'] as num);
+          await _bridge.updateLocalCoins(coinsToAdd, isDeduction: false);
+          final user = _auth.currentUser;
+          if (user != null) {
+            await FirebaseDatabase.instance.ref().child('users').child(user.uid).update({
+              'coins': ServerValue.increment(coinsToAdd)
+            });
+            await FirebaseFirestore.instance.collection('users').doc(user.uid).update({
+              'coins': FieldValue.increment(coinsToAdd)
+            });
+          }
+          if (mounted) {
+            setState(() => _isPaying = false);
+            _showToast('SUCCESS! Credited $coinsToAdd coins');
+          }
+        } else if (txnStatus == 'FAILED' || txnStatus == 'CANCELLED') {
+          _paymentTimeoutTimer?.cancel();
+          _currentRefId = null;
+          _currentPkg = null;
+          if (mounted) {
+            setState(() => _isPaying = false);
+            _showToast('Payment $txnStatus');
+          }
+        }
+        // If PENDING, we do nothing and let it continue polling
+      }
+    } catch (e) {
+      // Ignore transient errors during polling
     }
   }
 

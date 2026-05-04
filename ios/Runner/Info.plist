@@ -68,5 +68,13 @@
 		</array>
 		<key>UIStatusBarHidden</key>
 		<false/>
+		<key>LSApplicationQueriesSchemes</key>
+		<array>
+			<string>phonepe</string>
+			<string>gpay</string>
+			<string>paytm</string>
+			<string>bhim</string>
+			<string>upi</string>
+		</array>
 	</dict>
 </plist>
