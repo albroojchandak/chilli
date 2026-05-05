@@ -85,10 +85,6 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     _setupListeners();
     _syncProfile();
     _bridge.syncCoinsWithServer();
-    
-    // Auto-recharge dummy balance for testing
-    await _bridge.updateLocalCoins(100, isDeduction: false);
-    debugPrint('HomeScreen: 100 dummy coins added for testing');
   }
 
   void _setupListeners() {
@@ -389,7 +385,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
                     children: [
                       const Icon(Icons.toll_rounded, color: Color(0xFFFFD700), size: 14),
                       const SizedBox(width: 4),
-                      Text('$_coins', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
+                      Text(_coins.toStringAsFixed(2), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 11)),
                     ],
                   ),
                 ),
@@ -595,8 +591,8 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
             onVideoCall: () => _startCall(users[i], true),
             rating: 5.0,
             interests: const ['Chat', 'Connect'],
-            audioPrice: '10',
-            videoPrice: '20',
+            audioPrice: ((DataBridge.appConfig['male_audio_cost'] as num? ?? 2.5) * 2).toStringAsFixed(2),
+            videoPrice: ((DataBridge.appConfig['male_video_cost'] as num? ?? 5.0) * 2).toStringAsFixed(2),
             audioUrl: users[i].audioUrl,
             coins: users[i].coins.toDouble(),
             currentUserGender: _gender,

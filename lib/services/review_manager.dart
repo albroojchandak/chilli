@@ -74,7 +74,7 @@ class StoreReviewManager {
               await prefs.setBool('app_rating_done', true);
               if (context.mounted) Navigator.pop(context);
 
-              const String storeUrl = '';
+              const String storeUrl = 'https://play.google.com/store/apps/details?id=com.nurxian.chilli';
               final Uri uri = Uri.parse(storeUrl);
 
               try {

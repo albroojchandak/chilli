@@ -368,20 +368,28 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
   void _invokeMetering() {
     _startClock();
     _billingTimer?.cancel();
+    
     _billingTimer = Timer.periodic(const Duration(seconds: 30), (t) async {
       if (_isTerminated || !mounted) {
         t.cancel();
         return;
       }
-      await _bridge.applyCallBilling(isVideoCall: widget.isVideoCall, gender: _localGender!);
-      final b = await _bridge.getLocalCoins();
-      if (mounted) setState(() => _balance = b);
-      if (_localGender == 'male' && _balance <= 0) {
-        t.cancel();
-        _haltInternal('Insufficient Coins', 'Balance depleted.', Icons.account_balance_wallet_rounded, Colors.orange);
-        _shutdownCall(reason: 'insufficient_coins');
-      }
+      await _performBillingCycle(timer: t);
     });
+  }
+
+  Future<void> _performBillingCycle({Timer? timer}) async {
+    final gender = _localGender ?? (widget.isOutgoing ? 'male' : 'female');
+    await _bridge.applyCallBilling(isVideoCall: widget.isVideoCall, gender: gender);
+    final b = await _bridge.getLocalCoins();
+    if (mounted) setState(() => _balance = b);
+    
+    if (gender == 'male' && _balance <= 0) {
+      timer?.cancel();
+      _billingTimer?.cancel();
+      _haltInternal('Insufficient Coins', 'Balance depleted.', Icons.account_balance_wallet_rounded, Colors.orange);
+      _shutdownCall(reason: 'insufficient_coins');
+    }
   }
 
   void _startClock() {
@@ -886,7 +894,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
         children: [
           const Icon(Icons.toll_rounded, color: Colors.amber, size: 18),
           const SizedBox(width: 8),
-          Text('$_balance', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
+          Text(_balance.toStringAsFixed(2), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 15)),
         ],
       ),
     );
@@ -1024,7 +1032,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
                   ),
                   const SizedBox(height: 8),
                   Text(g.name, style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  Text('₹${g.cost}', style: const TextStyle(color: _neonIce, fontSize: 12, fontWeight: FontWeight.w900)),
+                  Text('₹${g.cost.toStringAsFixed(2)}', style: const TextStyle(color: _neonIce, fontSize: 12, fontWeight: FontWeight.w900)),
                 ],
               ),
             );

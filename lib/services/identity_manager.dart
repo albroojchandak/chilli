@@ -152,6 +152,16 @@ class IdentityManager {
         if (data != null) {
           _normalizeFields(data);
           data['uid'] = user.uid;
+
+          // Preserve local coins
+          final String? existingJson = prefs.getString('user_data');
+          if (existingJson != null) {
+            final existingMap = jsonDecode(existingJson);
+            if (existingMap['coins'] != null) {
+              data['coins'] = existingMap['coins'];
+            }
+          }
+
           prefs.setString('user_data', jsonEncode(data));
         }
         return data;
@@ -183,6 +193,16 @@ class IdentityManager {
 
               _normalizeFields(data);
               data['uid'] = user.uid;
+
+              // Preserve local coins
+              final String? existingJson = prefs.getString('user_data');
+              if (existingJson != null) {
+                final existingMap = jsonDecode(existingJson);
+                if (existingMap['coins'] != null) {
+                  data['coins'] = existingMap['coins'];
+                }
+              }
+
               prefs.setString('user_data', jsonEncode(data));
               return data;
             }
@@ -276,6 +296,9 @@ class IdentityManager {
             }
             if (data['fcmToken'] == null && existingMap['fcmToken'] != null) {
               data['fcmToken'] = existingMap['fcmToken'];
+            }
+            if (existingMap['coins'] != null) {
+              data['coins'] = existingMap['coins'];
             }
           }
 

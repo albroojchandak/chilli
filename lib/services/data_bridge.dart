@@ -116,7 +116,7 @@ class DataBridge {
         'DataBridge: coins update $currentCoins ${isDeduction ? '-' : '+'} $amount = $newBalance',
       );
       broadcastBalance(newBalance);
-      
+
       // Push to cloud
       unawaited(syncBalanceToCloud(newBalance));
     } catch (e) {
@@ -129,14 +129,21 @@ class DataBridge {
       final user = _auth.currentUser;
       if (user == null) return;
 
+      // Balance is only stored locally, disabled cloud sync
+      /*
       // Update Firestore
-      await _firestore.collection('users').doc(user.uid).update({'coins': balance});
-      
+      await _firestore.collection('users').doc(user.uid).update({
+        'coins': balance,
+      });
+
       // Update RTDB
       await _db.child('users').child(user.uid).update({'coins': balance});
-      await _db.child('usersProfile').child(user.uid).update({'coins': balance});
-      
-      debugPrint('DataBridge: balance synced to cloud: $balance');
+      await _db.child('usersProfile').child(user.uid).update({
+        'coins': balance,
+      });
+      */
+
+      debugPrint('DataBridge: balance synced locally: $balance');
     } catch (e) {
       debugPrint('DataBridge: syncBalanceToCloud error: $e');
     }
@@ -153,17 +160,11 @@ class DataBridge {
         final localCoins = await getLocalCoins();
         broadcastBalance(localCoins);
       } else {
-        final snapshot = await _db
-            .child('users')
-            .child(user.uid)
-            .child('coins')
-            .get();
-        if (snapshot.exists) {
-          final serverCoins = (snapshot.value as num?) ?? 0;
-          await prefs.setDouble('local_coins', serverCoins.toDouble());
-          print('DataBridge: coins synced from server: $serverCoins');
-          broadcastBalance(serverCoins);
-        }
+        // Only use local cache, don't fetch from server
+        final serverCoins = 0.0;
+        await prefs.setDouble('local_coins', serverCoins);
+        print('DataBridge: initialized local coins: $serverCoins');
+        broadcastBalance(serverCoins);
       }
     } catch (e) {
       debugPrint('DataBridge: syncCoinsWithServer error: $e');
@@ -283,7 +284,7 @@ class DataBridge {
       debugPrint('💳 Creating payment document...');
       await _firestore.collection('app_config').doc('payment').set({
         // Payment gateway credentials
-        'paygic_mid': 'ELITEZEENZGFR', // Add your Merchant ID here
+        'paygic_mid': 'ChilliWalletScreenZGFR', // Add your Merchant ID here
         'paygic_token':
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJFTElURVpFRU5aR0ZSIiwiX2lkIjoiNjhlNzUxOWJiNGE0NmMzYjc3NDhkNzdlIiwiaWF0IjoxNzY3MjQ1MDA0LCJleHAiOjE3Njk4MzcwMDR9.BP1apIcNcGmHfTHKSlcNGgxtYo3gQ3NQ5beSbylSPjo', // Add your API Token here
         // Payment thresholds
@@ -530,14 +531,7 @@ class DataBridge {
       // Billing is triggered every 30 seconds.
       // The male_video_cost/male_audio_cost in _appConfig are already halved (per 30s rate).
 
-      if (genderLower == 'male') {
-        // CALLER (Male) pays the rate defined in app_config
-        if (isVideoCall) {
-          amount = -(_appConfig['male_video_cost'] ?? 5.0);
-        } else {
-          amount = -(_appConfig['male_audio_cost'] ?? 2.5);
-        }
-      } else if (genderLower == 'female') {
+      if (genderLower == 'female') {
         // HOST (Female) earns the rate defined in app_config
         final isRewardEnabled = _appConfig['is_reward_enabled'] == true;
         if (isRewardEnabled) {
@@ -547,10 +541,19 @@ class DataBridge {
             amount = _appConfig['female_audio_reward'] ?? 5.0;
           }
         }
+      } else {
+        // CALLER (Male / Default) pays the rate defined in app_config
+        if (isVideoCall) {
+          amount = -(_appConfig['male_video_cost'] ?? 5.0);
+        } else {
+          amount = -(_appConfig['male_audio_cost'] ?? 2.5);
+        }
       }
 
       if (amount != 0) {
-        debugPrint('DataBridge: Applying call billing: gender=$genderLower, amount=$amount');
+        debugPrint(
+          'DataBridge: Applying call billing: gender=$genderLower, amount=$amount',
+        );
         await updateLocalCoins(amount, isDeduction: false);
       }
     } catch (e) {
