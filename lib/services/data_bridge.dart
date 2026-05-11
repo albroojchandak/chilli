@@ -239,8 +239,10 @@ class DataBridge {
     'min_withdrawal': 50.0,
     'paygic_mid': '',
     'paygic_token': '',
+    'cashfree_app_id': '',
+    'cashfree_secret_key': '',
     'min_app_version': '1.0.0',
-    'latest_app_version': '1.0.0',
+    'latest_app_version': '2.0.0',
     'update_url': '',
     'is_reward_enabled': true,
   };
@@ -287,6 +289,8 @@ class DataBridge {
         'paygic_mid': 'ChilliWalletScreenZGFR', // Add your Merchant ID here
         'paygic_token':
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJFTElURVpFRU5aR0ZSIiwiX2lkIjoiNjhlNzUxOWJiNGE0NmMzYjc3NDhkNzdlIiwiaWF0IjoxNzY3MjQ1MDA0LCJleHAiOjE3Njk4MzcwMDR9.BP1apIcNcGmHfTHKSlcNGgxtYo3gQ3NQ5beSbylSPjo', // Add your API Token here
+        'cashfree_app_id': '12366946c21ef121b51f66469494966321', // Cashfree App ID
+        'cashfree_secret_key': 'cfsk_ma_prod_83d9bf1dc8d6bb2324eac7bb1d30bc38_2bce323a', // Cashfree Secret Key
         // Payment thresholds
         'min_deposit': 79.0,
         'min_withdrawal': 50.0,
@@ -307,7 +311,7 @@ class DataBridge {
       debugPrint('📱 Creating version document...');
       await _firestore.collection('app_config').doc('version').set({
         'min_version': '1.0.0', // Minimum app version allowed
-        'latest_version': '1.0.0', // Latest available version
+        'latest_version': '2.0.0', // Latest available version
         'update_url':
             'https://play.google.com/store/apps/details?id=com.nurxian.chilli',
 
@@ -485,6 +489,14 @@ class DataBridge {
                     _appConfig['paygic_token'])
                 .toString()
                 .trim();
+        _appConfig['cashfree_app_id'] =
+            (data['cashfree_app_id'] ?? _appConfig['cashfree_app_id'])
+                .toString()
+                .trim();
+        _appConfig['cashfree_secret_key'] =
+            (data['cashfree_secret_key'] ?? _appConfig['cashfree_secret_key'])
+                .toString()
+                .trim();
 
         debugPrint('DataBridge: payment parsed');
       } else {
@@ -525,7 +537,7 @@ class DataBridge {
     try {
       if (_appConfig['paygic_mid'] == '') await fetchAppConfig();
 
-      final genderLower = gender.toLowerCase();
+      final genderLower = gender.toLowerCase().trim();
       num amount = 0;
 
       // Billing is triggered every 30 seconds.
@@ -566,7 +578,7 @@ class DataBridge {
   }
 
   Future<bool> hasMinimumBalance(bool isVideoCall, String gender) async {
-    if (gender.toLowerCase() == 'female') return true;
+    if (gender.toLowerCase().trim() == 'female') return true;
 
     final coins = await getLocalCoins();
     final minRequired = _appConfig['min_coins_required'] ?? 5.0;

@@ -99,7 +99,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
       _userSub = FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots().listen((snap) {
         if (snap.exists && mounted) {
           final d = snap.data()!;
-          final g = d['gender']?.toString().toLowerCase();
+          final g = (d['gender'] ?? d['Gender'])?.toString().toLowerCase().trim();
           if (g != _gender) {
             _gender = g;
             _target = g == 'male' ? 'female' : 'male';
@@ -133,7 +133,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     await _identity.refreshFromRemote();
     final local = await _identity.loadProfile();
     if (local != null) {
-      final g = local['gender']?.toString().toLowerCase() ?? 'male';
+      final g = (local['gender'] ?? local['Gender'])?.toString().toLowerCase().trim() ?? 'male';
       _gender = g;
       _target = g == 'male' ? 'female' : 'male';
       _lang = local['language']?.toString();

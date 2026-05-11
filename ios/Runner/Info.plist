@@ -76,5 +76,11 @@
 			<string>bhim</string>
 			<string>upi</string>
 		</array>
+		<key>FacebookAppID</key>
+		<string>1277829287886166</string>
+		<key>FacebookClientToken</key>
+		<string>a2a8c33115fe312462e040994297e564</string>
+		<key>FacebookDisplayName</key>
+		<string>Chilli</string>
 	</dict>
 </plist>

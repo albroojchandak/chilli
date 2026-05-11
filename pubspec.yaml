@@ -2,7 +2,7 @@ name: chilli
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.0+1
+version: 2.0.1+3
 
 environment:
   sdk: ^3.11.4
@@ -48,6 +48,7 @@ dependencies:
   scratcher: ^2.5.0
   flutter_native_splash: ^2.4.7
   paygic: ^1.0.3
+  flutter_cashfree_pg_sdk: ^2.3.4+51
 
 dev_dependencies:
   flutter_test:

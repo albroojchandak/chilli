@@ -180,7 +180,20 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
             _buildImageLayer(accent),
             _buildOverlayLayer(accent, isBusy),
             _buildInfoPanel(accent),
-            if (widget.audioUrl != null) _buildVoiceIndicator(),
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildStatusBadge(accent),
+                  if (widget.audioUrl != null) ...[
+                    const SizedBox(height: 8),
+                    _buildVoiceIndicatorWidget(),
+                  ],
+                ],
+              ),
+            ),
             _buildBlockButton(),
           ],
         ),
@@ -285,6 +298,14 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
   }
 
   Widget _buildInfoPanel(Color accent) {
+    final bool isBusy = widget.status.toLowerCase() == 'busy';
+    String timeText = '';
+    if (widget.lastActive != null) {
+      timeText = _formatTime(widget.lastActive!);
+    } else if (widget.isOnline || isBusy) {
+      timeText = 'Active now';
+    }
+
     return Positioned(
       bottom: 0,
       left: 0,
@@ -313,6 +334,18 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
                           const Icon(Icons.verified_rounded, color: _neonViolet, size: 14),
                         ],
                       ),
+                      if (timeText.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          timeText,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                      const SizedBox(height: 2),
                       Text(
                         'Speak ${widget.language}',
                         style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10, fontWeight: FontWeight.bold),
@@ -320,7 +353,6 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
                     ],
                   ),
                 ),
-                _buildOnlineDot(accent),
               ],
             ),
             const SizedBox(height: 12),
@@ -331,30 +363,86 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildOnlineDot(Color accent) {
+  Widget _buildStatusBadge(Color accent) {
     final bool isBusy = widget.status.toLowerCase() == 'busy';
-    return AnimatedBuilder(
-      animation: _glowController,
-      builder: (context, _) {
-        final double op = widget.isOnline ? (0.6 + (_glowController.value * 0.4)) : 0.3;
-        return Container(
-          width: 10,
-          height: 10,
+    String statusText = 'Offline';
+    Color statusColor = Colors.grey;
+
+    if (isBusy) {
+      statusText = 'Busy';
+      statusColor = Colors.amber;
+    } else if (widget.isOnline) {
+      statusText = 'Online';
+      statusColor = _neonCyan;
+    }
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(20),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
           decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: isBusy ? Colors.amber : (widget.isOnline ? _neonCyan : Colors.grey),
-            boxShadow: [
-              if (widget.isOnline || isBusy)
-                BoxShadow(
-                  color: (isBusy ? Colors.amber : _neonCyan).withOpacity(op),
-                  blurRadius: 8,
-                  spreadRadius: 1,
+            color: Colors.black38,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.white12),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedBuilder(
+                animation: _glowController,
+                builder: (context, _) {
+                  final double op = widget.isOnline ? (0.6 + (_glowController.value * 0.4)) : 0.3;
+                  return Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: statusColor,
+                      boxShadow: [
+                        if (widget.isOnline || isBusy)
+                          BoxShadow(
+                            color: statusColor.withOpacity(op),
+                            blurRadius: 8,
+                            spreadRadius: 1,
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+              const SizedBox(width: 6),
+              Text(
+                statusText,
+                style: TextStyle(
+                  color: statusColor,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
                 ),
+              ),
             ],
           ),
-        );
-      },
+        ),
+      ),
     );
+  }
+
+  String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+
+    if (difference.inMinutes < 1) {
+      return 'Active now';
+    } else if (difference.inHours < 1) {
+      return 'Active ${difference.inMinutes}m ago';
+    } else if (difference.inDays < 1) {
+      return 'Active ${difference.inHours}h ago';
+    } else if (difference.inDays < 7) {
+      return 'Active ${difference.inDays}d ago';
+    } else {
+      return 'Active ${time.day}/${time.month}/${time.year}';
+    }
   }
 
   Widget _buildQuickActions(Color accent) {
@@ -414,24 +502,20 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
     );
   }
 
-  Widget _buildVoiceIndicator() {
-    return Positioned(
-      top: 12,
-      left: 12,
-      child: GestureDetector(
-        onTap: _toggleAudio,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(20),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(
-              width: 32,
-              height: 32,
-              decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
-              child: _isLoading
-                  ? const Center(child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)))
-                  : Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 14),
-            ),
+  Widget _buildVoiceIndicatorWidget() {
+    return GestureDetector(
+      onTap: _toggleAudio,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
+            child: _isLoading
+                ? const Center(child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)))
+                : Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 14),
           ),
         ),
       ),

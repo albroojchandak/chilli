@@ -534,6 +534,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_cashfree_pg_sdk:
+    dependency: "direct main"
+    description:
+      name: flutter_cashfree_pg_sdk
+      sha256: "2166ceeceac809f1483491aad3724965ac84d0ae7b1a4c506a2637f90a74245a"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.3.4+51"
   flutter_image_compress:
     dependency: "direct main"
     description:

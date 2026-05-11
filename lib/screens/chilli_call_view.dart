@@ -214,7 +214,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
         setState(() {
           _localLabel = cloud['name'] ?? cloud['username'] ?? _localLabel;
           _localDisplay = cloud['avatarUrl'] ?? cloud['Avatar'] ?? _localDisplay;
-          _localGender = cloud['gender']?.toString().toLowerCase();
+          _localGender = (cloud['gender'] ?? cloud['Gender'])?.toString().toLowerCase().trim() ?? _localGender;
         });
       }
     } catch (_) {}
@@ -226,7 +226,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
       final blob = prefs.getString('user_data');
       if (blob != null) {
         final data = jsonDecode(blob) as Map<String, dynamic>;
-        _localGender = data['Gender']?.toString().toLowerCase();
+        _localGender = (data['gender'] ?? data['Gender'])?.toString().toLowerCase().trim() ?? _localGender;
         final ma = data['MaleAudio'] ?? 10;
         final mv = data['MaleVideo'] ?? 20;
         final fa = data['FemaleAudio'] ?? 8;
@@ -379,7 +379,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
   }
 
   Future<void> _performBillingCycle({Timer? timer}) async {
-    final gender = _localGender ?? (widget.isOutgoing ? 'male' : 'female');
+    final gender = (_localGender ?? (widget.isOutgoing ? 'male' : 'female')).toLowerCase().trim();
     await _bridge.applyCallBilling(isVideoCall: widget.isVideoCall, gender: gender);
     final b = await _bridge.getLocalCoins();
     if (mounted) setState(() => _balance = b);
