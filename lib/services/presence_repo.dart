@@ -1,6 +1,5 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
 import 'package:chilli/models/profile.dart';
 import 'package:chilli/utils/avatar_store.dart';
@@ -23,6 +22,7 @@ class PresenceRepository {
     try {
       final profileRef = _db.child('usersProfile').child(user.uid);
       final profileMap = user.toRTDBMap();
+      profileMap['la'] ??= ServerValue.timestamp;
       await profileRef.set(profileMap);
 
       await _db.child('userPresence').child(user.uid).update({
@@ -53,6 +53,7 @@ class PresenceRepository {
         final la = updates['lastActive'];
         final ts = la is DateTime ? la.millisecondsSinceEpoch : la;
         await _db.child('userPresence').child(uid).update({'la': ts});
+        await _db.child('usersProfile').child(uid).update({'la': ts});
       }
     } catch (e) {
       debugPrint('PresenceRepository: patchFields error: $e');
@@ -65,6 +66,7 @@ class PresenceRepository {
       if (user == null) return;
       final ts = ServerValue.timestamp;
       await _db.child('userPresence').child(user.uid).update({'la': ts});
+      await _db.child('usersProfile').child(user.uid).update({'la': ts});
     } catch (e) {
       debugPrint('PresenceRepository: refreshTimestamp error: $e');
     }
@@ -76,14 +78,16 @@ class PresenceRepository {
       if (user == null) return;
 
       final presenceRef = _db.child('userPresence').child(user.uid);
+      final profileRef = _db.child('usersProfile').child(user.uid);
 
       if (status == 'offline') {
         debugPrint('PresenceRepository: setting offline for ${user.uid}');
         await presenceRef.update({'s': 'offline'});
+        await profileRef.update({'s': 'offline'});
       } else {
         debugPrint('PresenceRepository: setting "$status" for ${user.uid}');
-
         await presenceRef.update({'s': status});
+        await profileRef.update({'s': status});
       }
 
       debugPrint('PresenceRepository: status set to $status');
@@ -105,7 +109,7 @@ class PresenceRepository {
     bool isProfilesLoaded = false;
 
     debugPrint('PresenceRepository: watchUsers streaming all profiles for client-side filtering (Target: $targetGender)');
-    Query profileQuery = _db.child('usersProfile').limitToLast(1000);
+    Query profileQuery = _db.child('usersProfile').orderByChild('la').limitToLast(500);
 
     void emitMerged() async {
       if (!isProfilesLoaded && cachedUsers.isEmpty) return;

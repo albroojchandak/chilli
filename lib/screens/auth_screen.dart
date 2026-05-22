@@ -262,110 +262,79 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     );
     final logoSize = ringSize * 0.48;
 
-    return ScaleTransition(
-      scale: _logoEntrance,
-      child: AnimatedBuilder(
-        animation: Listenable.merge([_ringRotation, _float]),
-        builder: (context, _) {
-          return Transform.translate(
-            offset: Offset(0, _float.value),
-            child: SizedBox(
-              width: ringSize,
-              height: ringSize,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CustomPaint(
-                    size: Size(ringSize, ringSize),
-                    painter: _OrbitRingPainter(
-                      rotation: _ringRotation.value,
-                      color1: _neonPink,
-                      color2: _neonCyan,
-                    ),
-                  ),
-                  Transform.rotate(
-                    angle: -_ringRotation.value * 0.6,
-                    child: CustomPaint(
-                      size: Size(ringSize * 0.78, ringSize * 0.78),
-                      painter: _OrbitRingPainter(
-                        rotation: _ringRotation.value * 1.4,
-                        color1: _neonViolet,
-                        color2: _softGold,
-                        dashCount: 14,
-                        strokeWidth: 1.0,
-                      ),
-                    ),
-                  ),
-                  _buildLogoCore(logoSize),
-                ],
-              ),
+    return SizedBox(
+      width: ringSize,
+      height: ringSize,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          CustomPaint(
+            size: Size(ringSize, ringSize),
+            painter: _OrbitRingPainter(
+              rotation: 0.0,
+              color1: _neonPink,
+              color2: _neonCyan,
             ),
-          );
-        },
+          ),
+          CustomPaint(
+            size: Size(ringSize * 0.78, ringSize * 0.78),
+            painter: _OrbitRingPainter(
+              rotation: 0.0,
+              color1: _neonViolet,
+              color2: _softGold,
+              dashCount: 14,
+              strokeWidth: 1.0,
+            ),
+          ),
+          _buildLogoCore(logoSize),
+        ],
       ),
     );
   }
 
   Widget _buildLogoCore(double size) {
-    return AnimatedBuilder(
-      animation: _shimmer,
-      builder: (context, _) {
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            _neonViolet.withOpacity(0.9),
+            const Color(0xFF1A0533),
+          ],
+          stops: const [0.0, 1.0],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: _neonViolet.withOpacity(0.6),
+            blurRadius: 35,
+            spreadRadius: 4,
+          ),
+          BoxShadow(
+            color: _neonCyan.withOpacity(0.2),
+            blurRadius: 60,
+            spreadRadius: -4,
+          ),
+        ],
+        border: Border.all(
+          color: _neonPink.withOpacity(0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Center(
+        child: Container(
+          width: size * 0.85,
+          height: size * 0.85,
+          decoration: const BoxDecoration(
             shape: BoxShape.circle,
-            gradient: RadialGradient(
-              colors: [
-                Color.lerp(
-                  _neonViolet.withOpacity(0.9),
-                  _neonPink.withOpacity(0.8),
-                  _shimmer.value,
-                )!,
-                const Color(0xFF1A0533),
-              ],
-              stops: const [0.0, 1.0],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Color.lerp(
-                  _neonViolet,
-                  _neonPink,
-                  _shimmer.value,
-                )!.withOpacity(0.6),
-                blurRadius: 35,
-                spreadRadius: 4,
-              ),
-              BoxShadow(
-                color: _neonCyan.withOpacity(0.2),
-                blurRadius: 60,
-                spreadRadius: -4,
-              ),
-            ],
-            border: Border.all(
-              color: Color.lerp(
-                _neonPink.withOpacity(0.5),
-                _neonCyan.withOpacity(0.5),
-                _shimmer.value,
-              )!,
-              width: 1.5,
+            image: DecorationImage(
+              image: AssetImage('assets/logo.png'),
+              fit: BoxFit.cover,
             ),
           ),
-          child: Center(
-            child: Container(
-              width: size * 0.85,
-              height: size * 0.85,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                image: DecorationImage(
-                  image: AssetImage('assets/logo.png'),
-                  fit: BoxFit.cover,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
+        ),
+      ),
     );
   }
 

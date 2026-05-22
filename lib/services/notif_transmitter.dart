@@ -55,14 +55,34 @@ class NotificationTransmitter {
     final url =
         'https://fcm.googleapis.com/v1/projects/$_projectId/messages:send';
 
+    final isCall = data['type']?.contains('call') ?? false;
+
     final body = {
       'message': {
         'token': targetToken,
         'data': data,
-        if (notification != null) 'notification': notification,
+        if (notification != null && !isCall) 'notification': notification,
         'android': {
           'priority': 'high',
           'ttl': '0s',
+          if (notification != null && !isCall)
+            'notification': {
+              'channel_id': 'call_channel_id',
+              'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+              'sound': 'default',
+            },
+        },
+        'apns': {
+          'headers': {
+            'apns-priority': '10',
+          },
+          'payload': {
+            'aps': {
+              'sound': 'default',
+              'content-available': 1,
+              if (notification != null) 'alert': notification,
+            },
+          },
         },
       },
     };
@@ -102,15 +122,19 @@ class NotificationTransmitter {
       'NotificationTransmitter: dispatching call invite to $targetToken (target: $targetId)',
     );
 
-    final callerName = callerData['username']?.toString() ?? 'User';
+    final callerName = callerData['username']?.toString() ?? callerData['name']?.toString() ?? 'User';
 
     await _transmit(
       targetToken: targetToken,
+      notification: {
+        'title': isVideoCall ? '📹 Incoming Video Call' : '📞 Incoming Call',
+        'body': '$callerName is calling...',
+      },
       data: {
         'type': 'incoming_call',
         'roomId': roomId,
         'callerName': callerName,
-        'callerAvatar': callerData['avatarUrl']?.toString() ?? '',
+        'callerAvatar': callerData['avatarUrl']?.toString() ?? callerData['Avatar']?.toString() ?? '',
         'callerToken': callerData['fcmToken']?.toString() ?? targetToken,
         'callerId': callerData['uid']?.toString() ?? '',
         'targetId': targetId,

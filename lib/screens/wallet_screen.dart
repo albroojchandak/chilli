@@ -152,7 +152,7 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
       }
     });
 
-    _tempSelectedIndex = 4; // Default selection (Popular)
+    _tempSelectedIndex = 2; // Default selection (Standard - 599)
 
     _controller = AnimationController(
       duration: const Duration(milliseconds: 200),
@@ -969,24 +969,7 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
       'popular': false,
       'discount': '',
     },
-    {
-      'name': 'Silver', // Rename duplicate 'Starter' to Silver for clarity
-      'tokens': 225, // Requested
-      'price': 199,
-      'color': Color(0xFFFFD700),
-      'icon': Icons.circle,
-      'popular': false,
-      'discount': 'Extra 10%',
-    },
-    {
-      'name': 'Basic',
-      'tokens': 642, // Requested
-      'price': 487,
-      'color': Color(0xFFFFD700),
-      'icon': Icons.circle,
-      'popular': false,
-      'discount': 'Extra 12%',
-    },
+
     {
       'name': 'Standard',
       'tokens': 800,
@@ -1837,13 +1820,13 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
 
     if (userGender == 'female') {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8F9FA),
+        backgroundColor: const Color(0xFF06010F),
         body: _buildCleanWithdrawalUI(),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FA),
+      backgroundColor: const Color(0xFF06010F),
       body: _buildProfessionalRechargeUI(),
       floatingActionButton: _buildFloatingActionButton(),
     );
@@ -1890,19 +1873,13 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
               child: Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: Colors.white.withOpacity(0.05),
                   shape: BoxShape.circle,
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  border: Border.all(color: Colors.white.withOpacity(0.1)),
                 ),
                 child: const Icon(
                   Icons.arrow_back_ios_new_rounded,
-                  color: Colors.black87,
+                  color: Colors.white,
                   size: 20,
                 ),
               ),
@@ -1911,7 +1888,7 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
           Text(
             title,
             style: const TextStyle(
-              color: Colors.black87,
+              color: Colors.white,
               fontSize: 24,
               fontWeight: FontWeight.bold,
               letterSpacing: -0.5,
@@ -1928,24 +1905,18 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: Colors.white,
+                color: const Color(0xFF00F5FF).withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+                border: Border.all(color: const Color(0xFF00F5FF).withOpacity(0.3)),
               ),
               child: const Row(
                 children: [
-                  Icon(Icons.history_rounded, color: Colors.black87, size: 18),
+                  Icon(Icons.history_rounded, color: Color(0xFF00F5FF), size: 18),
                   SizedBox(width: 6),
                   Text(
                     'History',
                     style: TextStyle(
-                      color: Colors.black87,
+                      color: Color(0xFF00F5FF),
                       fontWeight: FontWeight.w600,
                       fontSize: 13,
                     ),
@@ -1964,17 +1935,14 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
       width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Color(0xFF141E30), Color(0xFF243B55)],
-        ),
+        color: const Color(0xFF151525).withOpacity(0.8),
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFBF5AF2).withOpacity(0.3), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF141E30).withOpacity(0.4),
+            color: const Color(0xFFBF5AF2).withOpacity(0.1),
             blurRadius: 20,
-            offset: const Offset(0, 10),
+            spreadRadius: 5,
           ),
         ],
       ),
@@ -1986,12 +1954,12 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.1),
+                  color: const Color(0xFFBF5AF2).withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Icon(
                   Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
+                  color: Color(0xFFBF5AF2),
                   size: 20,
                 ),
               ),
@@ -1999,11 +1967,31 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
               Text(
                 'Available Balance',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withOpacity(0.7),
                   fontSize: 15,
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              if (kDebugMode) ...[
+                const Spacer(),
+                GestureDetector(
+                  onTap: () async {
+                    final newBalance = currentCoins + 1000;
+                    await DataBridge().updateLocalCoins(1000);
+                    DataBridge.broadcastBalance(newBalance.toInt());
+                    _showToast('Added 1000 debug coins', Colors.green);
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.5)),
+                    ),
+                    child: const Text('+1000', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+              ]
             ],
           ),
           const SizedBox(height: 24),
@@ -2024,7 +2012,7 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 48,
-                  fontWeight: FontWeight.bold,
+                  fontWeight: FontWeight.w900,
                   letterSpacing: -1,
                 ),
               ),
@@ -2042,7 +2030,7 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
         const Text(
           'Transfer Destination',
           style: TextStyle(
-            color: Colors.black87,
+            color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.bold,
           ),
@@ -2050,30 +2038,23 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
         const SizedBox(height: 12),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(16),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.03),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-            border: Border.all(color: Colors.grey.withOpacity(0.1)),
+            border: Border.all(color: Colors.white.withOpacity(0.1)),
           ),
           child: TextField(
             controller: _upiController,
             style: const TextStyle(
-              color: Colors.black87,
+              color: Colors.white,
               fontSize: 16,
               fontWeight: FontWeight.w500,
             ),
             decoration: InputDecoration(
               hintText: 'Enter UPI ID (e.g. name@upi)',
-              hintStyle: TextStyle(color: Colors.grey[400]),
+              hintStyle: TextStyle(color: Colors.white38),
               prefixIcon: const Icon(
                 Icons.payment_rounded,
-                color: Color(0xFF243B55),
+                color: Color(0xFF00F5FF),
               ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
@@ -2084,9 +2065,9 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
           ),
         ),
         const SizedBox(height: 8),
-        Text(
+        const Text(
           'Funds will be transferred to this UPI ID within 24 hours.',
-          style: TextStyle(color: Colors.grey[600], fontSize: 12),
+          style: TextStyle(color: Colors.white54, fontSize: 12),
         ),
       ],
     );
@@ -2100,11 +2081,11 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
         width: double.infinity,
         height: 64,
         decoration: BoxDecoration(
-          color: const Color(0xFF243B55),
+          gradient: const LinearGradient(colors: [Color(0xFF00F5FF), Color(0xFF00B4D8)]),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF243B55).withOpacity(0.3),
+              color: const Color(0xFF00F5FF).withOpacity(0.3),
               blurRadius: 15,
               offset: const Offset(0, 8),
             ),
@@ -2116,7 +2097,7 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
                   width: 24,
                   height: 24,
                   child: CircularProgressIndicator(
-                    color: Colors.white,
+                    color: Colors.black,
                     strokeWidth: 2,
                   ),
                 )
@@ -2126,16 +2107,16 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
                     Text(
                       'Withdraw Now',
                       style: TextStyle(
-                        color: Colors.white,
+                        color: Colors.black,
                         fontSize: 18,
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w900,
                         letterSpacing: 0.5,
                       ),
                     ),
                     SizedBox(width: 8),
                     Icon(
                       Icons.arrow_forward_rounded,
-                      color: Colors.white,
+                      color: Colors.black,
                       size: 20,
                     ),
                   ],
@@ -2149,19 +2130,19 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.05),
+        color: const Color(0xFF00F5FF).withOpacity(0.05),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.green.withOpacity(0.1)),
+        border: Border.all(color: const Color(0xFF00F5FF).withOpacity(0.2)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: const [
-          Icon(Icons.lock_outline_rounded, color: Colors.green, size: 20),
+          Icon(Icons.lock_outline_rounded, color: Color(0xFF00F5FF), size: 20),
           SizedBox(width: 8),
           Text(
             "Secured & Encrypted Transaction",
             style: TextStyle(
-              color: Colors.green,
+              color: Color(0xFF00F5FF),
               fontWeight: FontWeight.w600,
               fontSize: 13,
             ),
@@ -2173,7 +2154,7 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
 
   Widget _buildProfessionalRechargeUI() {
     return Container(
-      color: const Color(0xFFF8F9FA),
+      color: const Color(0xFF06010F),
       child: SafeArea(
         child: Column(
           children: [
@@ -2214,36 +2195,29 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
       margin: const EdgeInsets.only(left: 24, right: 24, top: 16),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: const Color(0xFFFF2D78).withOpacity(0.1),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.red.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.red.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFFFF2D78).withOpacity(0.3)),
       ),
       child: Row(
         children: [
           const SizedBox(
             width: 20,
             height: 20,
-            child: CircularProgressIndicator(color: Colors.red, strokeWidth: 2),
+            child: CircularProgressIndicator(color: Color(0xFFFF2D78), strokeWidth: 2),
           ),
           const SizedBox(width: 16),
           const Expanded(
             child: Text(
               'Processing Payment...',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Color(0xFFFF2D78), fontWeight: FontWeight.bold),
             ),
           ),
           TextButton(
             onPressed: () => _resetPaymentState(clearStoredPending: true),
             child: const Text(
               'CANCEL',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+              style: TextStyle(color: Color(0xFFFF2D78), fontWeight: FontWeight.bold),
             ),
           ),
         ],
@@ -2267,137 +2241,128 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
+          gradient: isSelected
+              ? const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF1E1435), Color(0xFF130E26)])
+              : const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [Color(0xFF130E26), Color(0xFF0C071C)]),
+          borderRadius: BorderRadius.circular(22),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF243B55)
-                : Colors.grey.withOpacity(0.15),
+                ? const Color(0xFF00F5FF)
+                : Colors.white.withOpacity(0.06),
             width: isSelected ? 2 : 1,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: isSelected
-                  ? const Color(0xFF243B55).withOpacity(0.15)
-                  : Colors.black.withOpacity(0.03),
-              blurRadius: isSelected ? 15 : 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
-        ),
-        child: Stack(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8F9FA),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.grey.withOpacity(0.1)),
-                    ),
-                    child: const Icon(
-                      Icons.monetization_on_rounded,
-                      color: Color(0xFFFFD700),
-                      size: 28,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    (coins as num).toStringAsFixed(0),
-                    style: const TextStyle(
-                      color: Colors.black87,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
-                  const Text(
-                    'Coins',
-                    style: TextStyle(
-                      color: Colors.black54,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const Spacer(),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? const Color(0xFF243B55)
-                          : const Color(0xFFF8F9FA),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      '₹${(price as num).toStringAsFixed(0)}',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: isSelected
-                            ? Colors.white
-                            : const Color(0xFF243B55),
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: const Color(0xFF00F5FF).withOpacity(0.2),
+                    blurRadius: 16,
+                    spreadRadius: -2,
+                    offset: const Offset(0, 6),
+                  )
+                ]
+              : [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
                   ),
                 ],
-              ),
-            ),
-            if (discount != null && discount.isNotEmpty)
-              Positioned(
-                top: 0,
-                left: 0,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
-                  ),
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF10B981),
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(18),
-                      bottomRight: Radius.circular(12),
+        ),
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Center(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 16.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      (coins as num).toStringAsFixed(0),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.5,
+                      ),
                     ),
-                  ),
-                  child: Text(
-                    discount,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
+                    const SizedBox(height: 2),
+                    Text(
+                      'COINS',
+                      style: TextStyle(
+                        color: isSelected ? const Color(0xFF00F5FF) : Colors.white54,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.2,
+                      ),
                     ),
-                  ),
+                    if (discount != null && discount.isNotEmpty) ...[
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFBF5AF2).withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: const Color(0xFFBF5AF2).withOpacity(0.25)),
+                        ),
+                        child: Text(
+                          discount.toUpperCase(),
+                          style: const TextStyle(
+                            color: Color(0xFFBF5AF2),
+                            fontSize: 9,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 14),
+                    Text(
+                      '₹${(price as num).toStringAsFixed(0)}',
+                      style: TextStyle(
+                        color: isSelected ? const Color(0xFF00F5FF) : Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
                 ),
               ),
+            ),
             if (isPopular)
               Positioned(
-                top: 0,
-                right: 0,
+                top: -8,
+                right: -8,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 4,
+                    horizontal: 10,
+                    vertical: 5,
                   ),
                   decoration: const BoxDecoration(
-                    color: Color(0xFFFF9B7D),
-                    borderRadius: BorderRadius.only(
-                      topRight: Radius.circular(18),
-                      bottomLeft: Radius.circular(12),
-                    ),
+                    gradient: LinearGradient(colors: [Color(0xFFFF2D78), Color(0xFFE91E63)]),
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  child: const Text(
-                    'POPULAR',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 9,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 10),
+                      SizedBox(width: 2),
+                      Text(
+                        'POPULAR',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

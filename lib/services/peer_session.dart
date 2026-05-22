@@ -70,15 +70,6 @@ class PeerSessionController {
     _peerConnection!.onIceConnectionState = (RTCIceConnectionState state) {
       print('PeerSessionController: ICE state ($roomId): $state');
       onConnectionStateChange?.call(state);
-
-      if (state == RTCIceConnectionState.RTCIceConnectionStateConnected ||
-          state == RTCIceConnectionState.RTCIceConnectionStateCompleted) {
-        print('PeerSessionController: P2P connected, cleaning room in 5s');
-        Future.delayed(const Duration(seconds: 5), () {
-          _db.child('calls').child(roomId).remove();
-          print('PeerSessionController: room $roomId removed');
-        });
-      }
     };
 
     _peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:chilli/screens/lang_screen.dart';
 import 'package:chilli/utils/avatar_store.dart';
 
@@ -51,8 +52,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with TickerProv
     final text = value.trim().toLowerCase();
     if (text.isEmpty) return 'Username is required';
     if (text.length < 3) return 'Too short (min 3 chars)';
-    if (RegExp(r'^[0-9]+$').hasMatch(text)) return 'Cannot be only numbers';
-    if (RegExp(r'\d{10}').hasMatch(text)) return 'No phone numbers allowed';
+    if (RegExp(r'[0-9]').hasMatch(text)) return 'Numbers are not allowed';
     
     final restricted = ['whatsapp', 'insta', 'telegram', 'snap', 'facebook', 'porn'];
     for (final word in restricted) {
@@ -240,6 +240,9 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with TickerProv
             controller: _usernameController,
             focusNode: _usernameFocus,
             onChanged: (_) => setState(() {}),
+            inputFormatters: [
+              FilteringTextInputFormatter.deny(RegExp(r'[0-9]')),
+            ],
             style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700, letterSpacing: 0.5),
             decoration: InputDecoration(
               hintText: 'e.g. Maverick',
@@ -283,9 +286,11 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> with TickerProv
     final isSelected = _selectedGender == gender;
     return GestureDetector(
       onTap: () {
+        if (_selectedGender == gender) return;
+
         setState(() {
           _selectedGender = gender;
-          final avatars = gender == 'Male' ? _maleAvatars : _femaleAvatars;
+          final avatars = gender == 'Female' ? _femaleAvatars : _maleAvatars;
           _selectedAvatarUrl = avatars[math.Random().nextInt(avatars.length)];
         });
       },

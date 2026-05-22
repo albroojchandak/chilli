@@ -18,6 +18,7 @@ import '../services/notif_transmitter.dart';
 import '../services/data_bridge.dart';
 import '../services/biometric_scanner.dart';
 import '../services/identity_manager.dart';
+import '../services/presence_repo.dart';
 import '../models/virtual_item.dart';
 
 enum ConnectionStateQuality { excellent, good, poor, disconnected, failed }
@@ -53,7 +54,7 @@ class ChilliCallView extends StatefulWidget {
   State<ChilliCallView> createState() => _ChilliCallViewState();
 }
 
-class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStateMixin {
+class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStateMixin, WidgetsBindingObserver {
   final RTCVideoRenderer _localProxy = RTCVideoRenderer();
   final RTCVideoRenderer _remoteProxy = RTCVideoRenderer();
   final PeerSessionController _sessionCtrl = PeerSessionController();
@@ -131,11 +132,28 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     widget.pushReceiver.isInCall = true;
     _audioHarness = AudioPlayer();
     _sessionCtrl.onConnectionStateChange = _onPeerStateTransition;
     WakelockPlus.enable();
     _initSessionData();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _performCleanup();
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.detached || state == AppLifecycleState.paused) {
+      if (!_isTerminated) {
+        _shutdownCall(reason: 'app_terminated');
+      }
+    }
   }
 
   void _onPeerStateTransition(RTCIceConnectionState state) async {
@@ -325,6 +343,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
     }
 
     _bindSyncListeners();
+    await _spawnRoutingAudio();
     _callRoutingTimer?.cancel();
     _callRoutingTimer = Timer(const Duration(seconds: 45), () {
       if (!_isPipelineActive && !_isTerminated && mounted) _cycleToNextTarget();
@@ -344,12 +363,12 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
     } catch (_) {}
   }
 
-  void _cycleToNextTarget() {
+  void _cycleToNextTarget() async {
     _callRoutingTimer?.cancel();
     _killRoutingAudio();
     _syncObserver?.cancel();
 
-    if (_activeRoomId != null) {
+    if (_activeRoomId != null && _currentTargetIndex < _targets.length) {
       final r = _activeRoomId!;
       final t = _targets[_currentTargetIndex]['uid'];
       _dbRef.child('calls').child(r).remove();
@@ -360,8 +379,39 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
     if (_currentTargetIndex < _targets.length && _dialingAttempts < _maxRetries && !_isTerminated) {
       _isPipelineActive = false;
       _executeDialing();
+    } else if (widget.isOutgoing && _dialingAttempts < _maxRetries && !_isTerminated) {
+      final targetGender = _localGender == 'female' ? 'male' : 'female';
+      try {
+        final presenceRepo = PresenceRepository();
+        final users = await presenceRepo.queryUsers(targetGender: targetGender);
+        if (users.isNotEmpty && mounted && !_isTerminated) {
+          users.shuffle();
+          final triedUids = _targets.map((t) => t['uid']).toSet();
+          final nextUser = users.firstWhere((u) => !triedUids.contains(u.uid), orElse: () => users.first);
+          
+          setState(() {
+            _targets.add({
+              'uid': nextUser.uid,
+              'Name': nextUser.name,
+              'Avatar': nextUser.avatarUrl ?? '',
+              'Token': nextUser.fcmToken,
+            });
+          });
+          _isPipelineActive = false;
+          _executeDialing();
+          return;
+        }
+      } catch (e) {
+        debugPrint('Error finding next target: $e');
+      }
+      
+      if (!_isTerminated && mounted) {
+        _haltInternal('No Answer', 'Disconnected from queue.', Icons.schedule_rounded, Colors.orange);
+      }
     } else {
-      _haltInternal('No Answer', 'Disconnected from queue.', Icons.schedule_rounded, Colors.orange);
+      if (!_isTerminated && mounted) {
+        _haltInternal('No Answer', 'Disconnected from queue.', Icons.schedule_rounded, Colors.orange);
+      }
     }
   }
 
@@ -454,7 +504,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
       }
       final data = Map<String, dynamic>.from(e.snapshot.value as Map);
       if (data['status'] == 'declined' && !_isLocallyTerminated && !_isTerminated) {
-        if (!_isPipelineActive && widget.isOutgoing && _currentTargetIndex < _targets.length - 1) {
+        if (!_isPipelineActive && widget.isOutgoing && _dialingAttempts < _maxRetries) {
           _cycleToNextTarget();
           return;
         }
@@ -531,6 +581,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
   }
 
   void _fireGraceTimer() {
+    if (_graceTimer?.isActive == true) return; // Guard against overlapping timers
     _graceTimer?.cancel();
     _faceGracePeriod = 15;
     _graceTimer = Timer.periodic(const Duration(seconds: 1), (t) {
@@ -612,27 +663,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
     }
   }
 
-  void _toggleVideoStream() {
-    if (_localStream != null && widget.isVideoCall) {
-      final track = _localStream!.getVideoTracks().first;
-      track.enabled = !track.enabled;
-      setState(() {
-        _isCamHidden = !track.enabled;
-        if (_isCamHidden) {
-          _faceWarningActive = false;
-          _graceTimer?.cancel();
-        }
-      });
-    }
-  }
 
-  Future<void> _flipCamera() async {
-    if (_localStream != null && widget.isVideoCall) {
-      final track = _localStream!.getVideoTracks().first;
-      await Helper.switchCamera(track);
-      setState(() => _isSelfieMode = !_isSelfieMode);
-    }
-  }
 
   Future<void> _configureRouting() async {
     if (kIsWeb) return;
@@ -733,9 +764,14 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
+    return WillPopScope(
+      onWillPop: () async {
+        await _shutdownCall(reason: 'manual_end');
+        return false;
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
         children: [
           _buildPrimaryStream(),
           _buildGlassOverlay(),
@@ -744,6 +780,22 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
           if (_isMenuVisible) _buildGiftHub(),
         ],
       ),
+    ));
+  }
+
+  Widget _applyBeautyFilter(Widget child) {
+    return ColorFiltered(
+      colorFilter: const ColorFilter.mode(
+        Color(0x1AFFF0F5),
+        BlendMode.screen,
+      ),
+      child: ColorFiltered(
+        colorFilter: const ColorFilter.mode(
+          Color(0x0DFF69B4),
+          BlendMode.colorDodge,
+        ),
+        child: child,
+      ),
     );
   }
 
@@ -751,7 +803,9 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
     if (!widget.isVideoCall) return _buildAudioLandscape();
     if (!_isPipelineActive) return _buildStaticBackdrop();
 
-    return RTCVideoView(_remoteProxy, mirror: false, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover);
+    return _applyBeautyFilter(
+      RTCVideoView(_remoteProxy, mirror: false, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+    );
   }
 
   Widget _buildAudioLandscape() {
@@ -798,20 +852,14 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
   }
 
   Widget _buildPulseAvatar(double size) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        if (!_isTerminated) ...List.generate(2, (i) => _Ripple(index: i, color: _neonRose)),
-        Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(color: _neonRose.withOpacity(0.5), width: 2),
-            image: DecorationImage(image: NetworkImage(_resolvedAvatar), fit: BoxFit.cover),
-          ),
-        ),
-      ],
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        border: Border.all(color: _neonRose.withOpacity(0.5), width: 2),
+        image: DecorationImage(image: NetworkImage(_resolvedAvatar), fit: BoxFit.cover),
+      ),
     );
   }
 
@@ -915,21 +963,8 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(18),
-              child: _isCamHidden ? Container(color: Colors.black87, child: const Icon(Icons.videocam_off, color: Colors.white24)) : RTCVideoView(_localProxy, mirror: _isSelfieMode, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover),
+              child: _isCamHidden ? Container(color: Colors.black87, child: const Icon(Icons.videocam_off, color: Colors.white24)) : _applyBeautyFilter(RTCVideoView(_localProxy, mirror: _isSelfieMode, objectFit: RTCVideoViewObjectFit.RTCVideoViewObjectFitCover)),
             ),
-            if (!_isCamHidden)
-              Positioned(
-                bottom: 8,
-                right: 8,
-                child: GestureDetector(
-                  onTap: _flipCamera,
-                  child: Container(
-                    padding: const EdgeInsets.all(6),
-                    decoration: BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
-                    child: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white, size: 16),
-                  ),
-                ),
-              ),
           ],
         ),
       ),
@@ -944,7 +979,6 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           _buildCircleButton(icon: _isAudioMuted ? Icons.mic_off_rounded : Icons.mic_rounded, active: _isAudioMuted, color: _neonRose, onTap: _toggleAudioStream),
-          if (widget.isVideoCall) _buildCircleButton(icon: _isCamHidden ? Icons.videocam_off_rounded : Icons.videocam_rounded, active: _isCamHidden, color: _neonRose, onTap: _toggleVideoStream),
           _buildEndButton(),
           _buildCircleButton(icon: _isLoudspeakerActive ? Icons.volume_up_rounded : Icons.volume_off_rounded, active: !_isLoudspeakerActive, color: _neonIce, onTap: _toggleOutput),
           if (_localGender == 'male' && _isPipelineActive) _buildCircleButton(icon: Icons.card_giftcard_rounded, active: _isMenuVisible, color: _neonIce, onTap: () => setState(() => _isMenuVisible = !_isMenuVisible)),
@@ -1071,45 +1105,6 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
   }
 }
 
-class _Ripple extends StatefulWidget {
-  final int index;
-  final Color color;
-  const _Ripple({required this.index, required this.color});
-
-  @override
-  State<_Ripple> createState() => _RippleState();
-}
-
-class _RippleState extends State<_Ripple> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(seconds: 2))..repeat();
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _ctrl,
-      builder: (context, child) {
-        final progress = (_ctrl.value + (widget.index * 0.5)) % 1.0;
-        return Container(
-          width: 120 + (progress * 150),
-          height: 120 + (progress * 150),
-          decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: widget.color.withOpacity(1 - progress), width: 2 - progress)),
-        );
-      },
-    );
-  }
-}
 
 class _ChilliFeedbackDialog extends StatelessWidget {
   final String title, msg, buttonText;

@@ -2,6 +2,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter/material.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:convert';
@@ -12,12 +13,13 @@ class AlertDispatcher {
       FlutterLocalNotificationsPlugin();
 
   static bool _ready = false;
+  static Function(Map<String, dynamic> data)? onNotificationCallAccepted;
 
   static Future<void> bootstrap() async {
     if (_ready) return;
 
     const AndroidInitializationSettings androidSettings =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+        AndroidInitializationSettings('@mipmap/launcher_icon');
 
     const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
@@ -53,11 +55,34 @@ class AlertDispatcher {
 
     _ready = true;
     print('AlertDispatcher: ready');
+
+    try {
+      final launchDetails = await _plugin.getNotificationAppLaunchDetails();
+      if (launchDetails != null && launchDetails.didNotificationLaunchApp) {
+        final response = launchDetails.notificationResponse;
+        if (response != null) {
+          print('AlertDispatcher: app launched from notification action: ${response.actionId}');
+          _onTapped(response);
+        }
+      }
+    } catch (e) {
+      print('AlertDispatcher: error checking notification launch details: $e');
+    }
   }
 
   @pragma('vm:entry-point')
   static void _onTapped(NotificationResponse response) async {
     print('AlertDispatcher: notification tapped: ${response.actionId}');
+
+    try {
+      WidgetsFlutterBinding.ensureInitialized();
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+        print('AlertDispatcher: Firebase initialized inside _onTapped');
+      }
+    } catch (e) {
+      print('AlertDispatcher: Firebase initialization error in _onTapped: $e');
+    }
 
     if (response.payload == null) return;
 
@@ -191,7 +216,8 @@ class AlertDispatcher {
       try {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('last_answered_roomId', roomId.toString());
-        print('AlertDispatcher: marked room $roomId as answered');
+        await prefs.setString('last_answered_call_data', jsonEncode(data));
+        print('AlertDispatcher: marked room $roomId as answered and saved call payload');
       } catch (e) {
         print('AlertDispatcher: prefs write error: $e');
       }
@@ -218,6 +244,10 @@ class AlertDispatcher {
             });
 
         print('AlertDispatcher: RTDB updated for uid=$uid, room=$roomId');
+
+        if (onNotificationCallAccepted != null) {
+          onNotificationCallAccepted!(data);
+        }
       } else {
         print('AlertDispatcher: missing uid or roomId for RTDB update');
       }
@@ -247,14 +277,17 @@ class AlertDispatcher {
           'endedAt': ServerValue.timestamp,
         });
 
-    final currentUser = FirebaseAuth.instance.currentUser;
-    if (currentUser != null) {
-      FirebaseDatabase.instance
+    final uid = FirebaseAuth.instance.currentUser?.uid ?? data['targetId'];
+    if (uid != null) {
+      await FirebaseDatabase.instance
           .ref()
           .child('pending_calls')
-          .child(currentUser.uid)
+          .child(uid)
           .child(data['roomId'])
           .remove();
+      print('AlertDispatcher: pending call removed for uid=$uid, room=${data['roomId']}');
+    } else {
+      print('AlertDispatcher: uid was null, cannot remove pending call');
     }
   }
 }

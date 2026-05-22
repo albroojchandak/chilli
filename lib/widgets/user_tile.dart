@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:chilli/services/firestore_repo.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
 class UserTile extends StatefulWidget {
   final String name;
@@ -58,7 +59,7 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
   static const _neonPink = Color(0xFFFF2D78);
   static const _neonCyan = Color(0xFF00F5FF);
   static const _neonViolet = Color(0xFFBF5AF2);
-  static const _surface = Color(0xFF0A0A12);
+  static const _cardBg = Color(0xFF130E26);
 
   @override
   void initState() {
@@ -74,32 +75,12 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
   }
 
   Future<void> _confirmBlock() async {
-    final confirm = await showDialog<bool>(
-      context: context,
-      builder: (c) => BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: AlertDialog(
-          backgroundColor: const Color(0xFF15082E),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24), side: const BorderSide(color: _neonPink, width: 0.5)),
-          title: const Text('BLOCK USER?', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
-          content: Text('Do you want to block ${widget.name}? They will no longer appear in your feed.', style: const TextStyle(color: Colors.white70)),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(c, false), child: const Text('CANCEL', style: TextStyle(color: Colors.white38))),
-            TextButton(
-              onPressed: () => Navigator.pop(c, true),
-              child: const Text('BLOCK', style: TextStyle(color: _neonPink, fontWeight: FontWeight.w900)),
-            ),
-          ],
-        ),
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Your request has been sent successfully.'),
+        backgroundColor: _neonPink,
       ),
     );
-
-    if (confirm == true && widget.uid != null) {
-      await FirestoreRepository().blockUser(widget.uid!);
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${widget.name} blocked'), backgroundColor: _neonPink));
-      }
-    }
   }
 
   Future<void> _handleReport() async {
@@ -159,366 +140,389 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
 
   @override
   Widget build(BuildContext context) {
-    final bool isBusy = widget.status.toLowerCase() == 'busy';
     final Color accent = widget.gender.toLowerCase() == 'female' ? _neonPink : _neonCyan;
 
     return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: _surface,
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: accent.withOpacity(0.15), width: 1.5),
+        color: _cardBg,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: accent.withOpacity(0.12), width: 1.2),
         boxShadow: [
-          BoxShadow(color: accent.withOpacity(0.05), blurRadius: 20, spreadRadius: -5),
-          BoxShadow(color: Colors.black.withOpacity(0.5), blurRadius: 15, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: accent.withOpacity(0.04),
+            blurRadius: 16,
+            spreadRadius: 2,
+          ),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          ),
         ],
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            _buildImageLayer(accent),
-            _buildOverlayLayer(accent, isBusy),
-            _buildInfoPanel(accent),
-            Positioned(
-              top: 12,
-              left: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Avatar with voice intro play button
+              Stack(
+                clipBehavior: Clip.none,
                 children: [
-                  _buildStatusBadge(accent),
-                  if (widget.audioUrl != null) ...[
-                    const SizedBox(height: 8),
-                    _buildVoiceIndicatorWidget(),
-                  ],
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: accent.withOpacity(0.25), width: 1.5),
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Hero(
+                        tag: 'user_avatar_${widget.uid ?? widget.imageUrl}',
+                        child: widget.imageUrl.isEmpty
+                            ? Container(
+                                color: Colors.white10,
+                                child: Icon(
+                                  widget.gender.toLowerCase() == 'female' ? Icons.face_3_rounded : Icons.face_6_rounded,
+                                  color: accent.withOpacity(0.6),
+                                  size: 36,
+                                ),
+                              )
+                            : CachedNetworkImage(
+                                imageUrl: widget.imageUrl,
+                                fit: BoxFit.cover,
+                                httpHeaders: const {
+                                  'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36',
+                                },
+                                errorListener: (error) {
+                                  debugPrint('CachedNetworkImage error: $error');
+                                },
+                                placeholder: (context, url) => Container(
+                                  color: Colors.white10,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(accent.withOpacity(0.4)),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                errorWidget: (context, url, error) => Container(
+                                  color: Colors.white10,
+                                  child: Icon(Icons.person, color: accent.withOpacity(0.6), size: 36),
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                  // Voice Introduction Player
+                  if (widget.audioUrl != null && widget.audioUrl!.isNotEmpty)
+                    Positioned(
+                      bottom: -2,
+                      right: -2,
+                      child: GestureDetector(
+                        onTap: _toggleAudio,
+                        child: Container(
+                          width: 26,
+                          height: 26,
+                          decoration: BoxDecoration(
+                            color: Colors.black.withOpacity(0.85),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: accent.withOpacity(0.5), width: 1.5),
+                          ),
+                          child: _isLoading
+                              ? const Padding(
+                                  padding: EdgeInsets.all(6),
+                                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                                )
+                              : Icon(
+                                  _isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                                  color: Colors.white,
+                                  size: 14,
+                                ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
+              const SizedBox(width: 14),
+              // User profile details
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            widget.name.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.5,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        const Icon(Icons.verified_rounded, color: _neonViolet, size: 14),
+                        const Spacer(),
+                        _buildBlockButton(),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      widget.career,
+                      style: TextStyle(
+                        color: accent.withOpacity(0.85),
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        ...List.generate(
+                          5,
+                          (index) => const Icon(
+                            Icons.star_rounded,
+                            color: Colors.amber,
+                            size: 14,
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          widget.rating > 0 ? widget.rating.toStringAsFixed(1) : '5.0',
+                          style: const TextStyle(
+                            color: Colors.amber,
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    _buildMetaInfo(accent),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          if (widget.interests.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                children: widget.interests.map((tag) => Padding(
+                  padding: const EdgeInsets.only(right: 6),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.03),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
+                    ),
+                    child: Text(
+                      tag,
+                      style: const TextStyle(
+                        color: Colors.white60,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                )).toList(),
+              ),
             ),
-            _buildBlockButton(),
           ],
-        ),
+          const SizedBox(height: 14),
+          // Large Call Actions spanning full width at the bottom
+          _buildCallActions(accent),
+        ],
       ),
     );
   }
 
   Widget _buildBlockButton() {
-    return Positioned(
-      top: 12,
-      right: 12,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
-            child: PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert_rounded, color: Colors.white54, size: 14),
-              padding: EdgeInsets.zero,
-              color: const Color(0xFF15082E),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: const BorderSide(color: Colors.white10)),
-              onSelected: (val) {
-                if (val == 'block') _confirmBlock();
-                if (val == 'report') _handleReport();
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'report',
-                  child: Row(
-                    children: [
-                      Icon(Icons.flag_rounded, color: Colors.amberAccent, size: 18),
-                      SizedBox(width: 12),
-                      Text('Report Protocol', style: TextStyle(color: Colors.white, fontSize: 14)),
-                    ],
-                  ),
-                ),
-                const PopupMenuItem(
-                  value: 'block',
-                  child: Row(
-                    children: [
-                      Icon(Icons.block_rounded, color: _neonPink, size: 18),
-                      SizedBox(width: 12),
-                      Text('Block Identity', style: TextStyle(color: Colors.white, fontSize: 14)),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+    return PopupMenuButton<String>(
+      icon: const Icon(Icons.more_vert_rounded, color: Colors.white38, size: 20),
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      color: const Color(0xFF15082E),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: const BorderSide(color: Colors.white10),
       ),
-    );
-  }
-
-  Widget _buildImageLayer(Color accent) {
-    return Positioned.fill(
-      child: Hero(
-        tag: 'user_avatar_${widget.uid ?? widget.imageUrl}',
-        child: widget.imageUrl.isEmpty
-            ? Container(
-                color: accent.withOpacity(0.05),
-                child: Icon(
-                  widget.gender.toLowerCase() == 'female' ? Icons.face_3_rounded : Icons.face_6_rounded,
-                  color: accent.withOpacity(0.2),
-                  size: 60,
-                ),
-              )
-            : Image.network(
-                widget.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: _surface, child: Icon(Icons.person, color: accent.withOpacity(0.2), size: 50)),
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(color: _surface);
-                },
-              ),
-      ),
-    );
-  }
-
-  Widget _buildOverlayLayer(Color accent, bool isBusy) {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withOpacity(0.1),
-              Colors.black.withOpacity(0.0),
-              Colors.black.withOpacity(0.4),
-              Colors.black.withOpacity(0.95),
+      onSelected: (val) {
+        if (val == 'block') _confirmBlock();
+        if (val == 'report') _handleReport();
+      },
+      itemBuilder: (context) => [
+        const PopupMenuItem(
+          value: 'report',
+          child: Row(
+            children: [
+              Icon(Icons.flag_rounded, color: Colors.amberAccent, size: 18),
+              SizedBox(width: 12),
+              Text('Report', style: TextStyle(color: Colors.white, fontSize: 14)),
             ],
-            stops: const [0.0, 0.4, 0.7, 1.0],
           ),
         ),
-      ),
+        const PopupMenuItem(
+          value: 'block',
+          child: Row(
+            children: [
+              Icon(Icons.block_rounded, color: _neonPink, size: 18),
+              SizedBox(width: 12),
+              Text('Block', style: TextStyle(color: Colors.white, fontSize: 14)),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _buildInfoPanel(Color accent) {
+  Widget _buildMetaInfo(Color accent) {
     final bool isBusy = widget.status.toLowerCase() == 'busy';
-    String timeText = '';
-    if (widget.lastActive != null) {
-      timeText = _formatTime(widget.lastActive!);
-    } else if (widget.isOnline || isBusy) {
-      timeText = 'Active now';
-    }
 
-    return Positioned(
-      bottom: 0,
-      left: 0,
-      right: 0,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
+    return Row(
+      children: [
+        const Icon(Icons.translate_rounded, color: Colors.white38, size: 12),
+        const SizedBox(width: 4),
+        Text(
+          widget.language,
+          style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w500),
+        ),
+        if (isBusy) ...[
+          const SizedBox(width: 12),
+          const Text(
+            'Busy',
+            style: TextStyle(
+              color: Colors.redAccent,
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildCallActions(Color accent) {
+    final bool isFemale = widget.currentUserGender?.toLowerCase() == 'female';
+    return Row(
+      children: [
+        Expanded(
+          child: _callButton(
+            icon: Icons.mic_rounded,
+            price: widget.audioPrice,
+            isFree: isFemale,
+            onTap: widget.onAudioCall,
+            accent: accent,
+            label: "Voice Call",
+            isPrimary: false,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _callButton(
+            icon: Icons.videocam_rounded,
+            price: widget.videoPrice,
+            isFree: isFemale,
+            onTap: widget.onVideoCall,
+            accent: accent,
+            label: "Video Call",
+            isPrimary: true,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _callButton({
+    required IconData icon,
+    required String price,
+    required bool isFree,
+    required VoidCallback? onTap,
+    required Color accent,
+    required String label,
+    required bool isPrimary,
+  }) {
+    final BoxDecoration deco = isPrimary
+        ? BoxDecoration(
+            gradient: LinearGradient(
+              colors: [
+                accent,
+                accent.withOpacity(0.85),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: accent.withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          )
+        : BoxDecoration(
+            color: Colors.white.withOpacity(0.02),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: accent.withOpacity(0.4), width: 1.5),
+          );
+
+    final Color contentColor = isPrimary ? Colors.white : accent;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        decoration: deco,
+        alignment: Alignment.center,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Row(
+            Icon(icon, color: contentColor, size: 18),
+            const SizedBox(width: 8),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Flexible(
-                            child: Text(
-                              widget.name.toUpperCase(),
-                              style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 0.5, overflow: TextOverflow.ellipsis),
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(Icons.verified_rounded, color: _neonViolet, size: 14),
-                        ],
-                      ),
-                      if (timeText.isNotEmpty) ...[
-                        const SizedBox(height: 2),
-                        Text(
-                          timeText,
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
-                            fontSize: 9,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 2),
-                      Text(
-                        'Speak ${widget.language}',
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 10, fontWeight: FontWeight.bold),
-                      ),
-                    ],
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: contentColor,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+                Text(
+                  isFree ? "FREE" : "₹$price/m",
+                  style: TextStyle(
+                    color: isPrimary ? Colors.white.withOpacity(0.7) : Colors.white.withOpacity(0.55),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 12),
-            _buildQuickActions(accent),
           ],
         ),
       ),
     );
   }
-
-  Widget _buildStatusBadge(Color accent) {
-    final bool isBusy = widget.status.toLowerCase() == 'busy';
-    String statusText = 'Offline';
-    Color statusColor = Colors.grey;
-
-    if (isBusy) {
-      statusText = 'Busy';
-      statusColor = Colors.amber;
-    } else if (widget.isOnline) {
-      statusText = 'Online';
-      statusColor = _neonCyan;
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(20),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-          decoration: BoxDecoration(
-            color: Colors.black38,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.white12),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AnimatedBuilder(
-                animation: _glowController,
-                builder: (context, _) {
-                  final double op = widget.isOnline ? (0.6 + (_glowController.value * 0.4)) : 0.3;
-                  return Container(
-                    width: 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: statusColor,
-                      boxShadow: [
-                        if (widget.isOnline || isBusy)
-                          BoxShadow(
-                            color: statusColor.withOpacity(op),
-                            blurRadius: 8,
-                            spreadRadius: 1,
-                          ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-              const SizedBox(width: 6),
-              Text(
-                statusText,
-                style: TextStyle(
-                  color: statusColor,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inMinutes < 1) {
-      return 'Active now';
-    } else if (difference.inHours < 1) {
-      return 'Active ${difference.inMinutes}m ago';
-    } else if (difference.inDays < 1) {
-      return 'Active ${difference.inHours}h ago';
-    } else if (difference.inDays < 7) {
-      return 'Active ${difference.inDays}d ago';
-    } else {
-      return 'Active ${time.day}/${time.month}/${time.year}';
-    }
-  }
-
-  Widget _buildQuickActions(Color accent) {
-    final bool isFemale = widget.currentUserGender?.toLowerCase() == 'female';
-    return Row(
-      children: [
-        _actionIcon(Icons.mic_rounded, accent, widget.audioPrice, '/min', isFemale, widget.onAudioCall),
-        const SizedBox(width: 8),
-        _actionIcon(Icons.videocam_rounded, accent, widget.videoPrice, '/min', isFemale, widget.onVideoCall),
-      ],
-    );
-  }
-
-  Widget _actionIcon(IconData icon, Color color, String price, String unit, bool isFree, VoidCallback? onTap) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
-            child: Container(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.white.withOpacity(0.1)),
-              ),
-              child: Column(
-                children: [
-                  Icon(icon, color: Colors.white, size: 16),
-                  const SizedBox(height: 2),
-                  FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: isFree ? 'FREE' : '₹$price',
-                            style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900),
-                          ),
-                          if (!isFree)
-                            TextSpan(
-                              text: unit,
-                              style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 7, fontWeight: FontWeight.bold),
-                            ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildVoiceIndicatorWidget() {
-    return GestureDetector(
-      onTap: _toggleAudio,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-          child: Container(
-            width: 32,
-            height: 32,
-            decoration: BoxDecoration(color: Colors.black38, shape: BoxShape.circle, border: Border.all(color: Colors.white12)),
-            child: _isLoading
-                ? const Center(child: SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)))
-                : Icon(_isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: Colors.white, size: 14),
-          ),
-        ),
-      ),
-    );
-  }
 }
+

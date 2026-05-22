@@ -14,6 +14,9 @@ class DataBridge {
 
   static const String _userCacheKey = 'user_data';
 
+  // Concurrency lock: serializes overlapping updateLocalCoins() calls.
+  Future<void>? _activeCoinUpdateLock;
+
   Future<void> cacheUserData(Map<String, dynamic> data) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -52,14 +55,17 @@ class DataBridge {
       }
 
       final presenceRef = _db.child('userPresence').child(user.uid);
+      final profileRef = _db.child('usersProfile').child(user.uid);
 
       if (status == 'offline') {
         debugPrint('DataBridge: removing presence for ${user.uid}');
         await presenceRef.remove();
+        await profileRef.update({'s': 'offline'});
       } else {
         debugPrint('DataBridge: updating status to "$status" for ${user.uid}');
 
         await presenceRef.update({'s': status, 'la': ServerValue.timestamp});
+        await profileRef.update({'s': status, 'la': ServerValue.timestamp});
 
         debugPrint('DataBridge: status updated to $status');
       }
@@ -89,7 +95,14 @@ class DataBridge {
   }
 
   Future<void> updateLocalCoins(num amount, {bool isDeduction = false}) async {
+    // Serialize concurrent calls: each caller waits for the previous one to finish.
+    final previousLock = _activeCoinUpdateLock;
+    final completer = Completer<void>();
+    _activeCoinUpdateLock = completer.future;
+
     try {
+      if (previousLock != null) await previousLock;
+
       final prefs = await SharedPreferences.getInstance();
 
       num currentCoins = await getLocalCoins();
@@ -121,6 +134,8 @@ class DataBridge {
       unawaited(syncBalanceToCloud(newBalance));
     } catch (e) {
       debugPrint('DataBridge: updateLocalCoins error: $e');
+    } finally {
+      completer.complete();
     }
   }
 

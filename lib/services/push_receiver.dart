@@ -29,26 +29,31 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
     await AlertDispatcher.bootstrap();
     debugPrint("PushReceiver: AlertDispatcher ready");
 
-    final String messageType = message.data['type'] ?? '';
+    final String messageType = message.data['type']?.toString() ?? '';
     debugPrint("PushReceiver: type = $messageType");
 
     if (messageType == 'incoming_call' ||
         messageType == 'incoming_audio_call') {
-      final callerName = message.data['callerName'] ?? 'Someone';
-      final callerAvatar = message.data['callerAvatar'] ?? '';
-      final callerToken = message.data['callerToken'] ?? '';
-      final callerId = message.data['callerId'] ?? '';
-      final roomId = message.data['roomId'] ?? '';
+      final callerName = message.data['callerName']?.toString() ?? 'Someone';
+      final callerAvatar = message.data['callerAvatar']?.toString() ?? '';
+      final callerToken = message.data['callerToken']?.toString() ?? '';
+      final callerId = message.data['callerId']?.toString() ?? '';
+      final roomId = message.data['roomId']?.toString() ?? '';
       final isVideo =
-          message.data['isVideoCall'] == 'true' ||
+          message.data['isVideoCall']?.toString() == 'true' ||
           message.data['isVideoCall'] == true ||
-          message.data['isVideo'] == 'true' ||
+          message.data['isVideo']?.toString() == 'true' ||
           message.data['isVideo'] == true;
-      final targetId = message.data['targetId'] ?? '';
+      final targetId = message.data['targetId']?.toString() ?? '';
 
       debugPrint(
-        "PushReceiver: incoming call from $callerName to $targetId (room: $roomId)",
+        "PushReceiver: incoming call from $callerName to $targetId (room: $roomId, isVideo: $isVideo)",
       );
+
+      if (roomId.isEmpty) {
+        debugPrint("PushReceiver: Error - roomId is empty, aborting call alert presentation");
+        return;
+      }
 
       await AlertDispatcher.presentCallAlert(
         roomId: roomId,
@@ -60,7 +65,7 @@ Future<void> handleBackgroundMessage(RemoteMessage message) async {
         isVideoCall: isVideo,
       );
 
-      debugPrint("PushReceiver: background alert shown");
+      debugPrint("PushReceiver: background alert shown successfully");
     } else {
       debugPrint("PushReceiver: unhandled type: $messageType");
     }
@@ -88,6 +93,17 @@ class PushReceiver {
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
       debugPrint('PushReceiver: FCM permission granted');
+    }
+
+    try {
+      await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
+        alert: false,
+        badge: false,
+        sound: false,
+      );
+      debugPrint('PushReceiver: Foreground notification presentation options set to silent');
+    } catch (e) {
+      debugPrint('PushReceiver: Error setting foreground presentation options: $e');
     }
 
     await AlertDispatcher.bootstrap();

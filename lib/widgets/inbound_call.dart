@@ -22,15 +22,7 @@ class InboundCallOverlay extends StatefulWidget {
   State<InboundCallOverlay> createState() => _InboundCallOverlayState();
 }
 
-class _InboundCallOverlayState extends State<InboundCallOverlay> with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  
-  late Animation<double> _fadeHeader;
-  late Animation<double> _scaleAvatar;
-  late Animation<double> _fadeInfo;
-  late Animation<double> _slideButtons;
-  late Animation<double> _pulseGlow;
-
+class _InboundCallOverlayState extends State<InboundCallOverlay> {
   static const _neonRose = Color(0xFFFF2D78);
   static const _neonCyan = Color(0xFF00F5FF);
   static const _bg = Color(0xFF050510);
@@ -38,24 +30,11 @@ class _InboundCallOverlayState extends State<InboundCallOverlay> with SingleTick
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
-
-    _fadeHeader = CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.4, curve: Curves.easeOut));
-    _scaleAvatar = CurvedAnimation(parent: _ctrl, curve: const Interval(0.1, 0.6, curve: Curves.easeOutBack));
-    _fadeInfo = CurvedAnimation(parent: _ctrl, curve: const Interval(0.3, 0.7, curve: Curves.easeOut));
-    _slideButtons = CurvedAnimation(parent: _ctrl, curve: const Interval(0.5, 1.0, curve: Curves.easeOutQuart));
-    
-    _pulseGlow = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: const Interval(0.7, 1.0, curve: Curves.easeInOut)),
-    );
-
-    _ctrl.forward();
     HapticFeedback.lightImpact();
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
     super.dispose();
   }
 
@@ -87,22 +66,13 @@ class _InboundCallOverlayState extends State<InboundCallOverlay> with SingleTick
                             child: Column(
                               children: [
                                 const SizedBox(height: 40),
-                                FadeTransition(opacity: _fadeHeader, child: _buildTypeBadge()),
+                                _buildTypeBadge(),
                                 const Spacer(flex: 3),
-                                ScaleTransition(scale: _scaleAvatar, child: _buildAvatarCircle()),
+                                _buildAvatarCircle(),
                                 const Spacer(flex: 2),
-                                FadeTransition(opacity: _fadeInfo, child: _buildCallerDetails()),
+                                _buildCallerDetails(),
                                 const Spacer(flex: 4),
-                                AnimatedBuilder(
-                                  animation: _slideButtons,
-                                  builder: (context, child) {
-                                    return Transform.translate(
-                                      offset: Offset(0, 50 * (1 - _slideButtons.value)),
-                                      child: Opacity(opacity: _slideButtons.value, child: child),
-                                    );
-                                  },
-                                  child: _buildActions(),
-                                ),
+                                _buildActions(),
                                 const SizedBox(height: 60),
                               ],
                             ),

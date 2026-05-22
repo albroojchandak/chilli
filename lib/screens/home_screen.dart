@@ -1,11 +1,12 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:chilli/theme/palette.dart';
 import 'dart:ui';
 import 'package:chilli/widgets/user_tile.dart';
 import 'package:chilli/screens/call_log_screen.dart';
@@ -14,6 +15,7 @@ import 'package:chilli/screens/profile_screen.dart';
 import 'package:chilli/screens/chilli_call_view.dart';
 import 'package:chilli/services/firestore_repo.dart';
 import 'package:chilli/services/push_receiver.dart';
+import 'package:chilli/services/alert_dispatcher.dart';
 import 'package:chilli/services/data_bridge.dart';
 import 'package:chilli/services/presence_repo.dart';
 import 'package:chilli/services/identity_manager.dart';
@@ -23,7 +25,6 @@ import 'package:chilli/models/profile.dart';
 import 'package:chilli/utils/avatar_store.dart';
 import 'package:chilli/utils/role_picker.dart';
 import 'package:chilli/widgets/inbound_call.dart';
-import 'package:chilli/widgets/funds_sheet.dart';
 
 class ChilliHomeScreen extends StatefulWidget {
   const ChilliHomeScreen({super.key});
@@ -46,6 +47,13 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   StreamSubscription<num>? _coinSub;
   StreamSubscription<DocumentSnapshot>? _userSub;
   Timer? _statusTimer;
+
+  String? _activeIncomingRoomId;
+  BuildContext? _incomingDialogContext;
+
+  StreamSubscription? _pendingCallsAddedSub;
+  StreamSubscription? _pendingCallsChangedSub;
+  StreamSubscription? _pendingCallsRemovedSub;
 
   String? _gender;
   String? _lang;
@@ -85,11 +93,61 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     _setupListeners();
     _syncProfile();
     _bridge.syncCoinsWithServer();
+    _checkLastAnsweredCall();
+  }
+
+  void _dismissIncomingCallDialog() {
+    if (_incomingDialogContext != null && mounted) {
+      try {
+        debugPrint('HomeScreen: Dismissing active incoming call dialog');
+        Navigator.of(_incomingDialogContext!).pop();
+      } catch (e) {
+        debugPrint('HomeScreen: error popping incoming call dialog: $e');
+      }
+    }
+    _incomingDialogContext = null;
+    _activeIncomingRoomId = null;
+  }
+
+  void _checkLastAnsweredCall() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.reload();
+      final callDataStr = prefs.getString('last_answered_call_data');
+      if (callDataStr != null) {
+        debugPrint('HomeScreen: found last_answered_call_data: $callDataStr');
+        final data = jsonDecode(callDataStr) as Map<String, dynamic>;
+
+        await prefs.remove('last_answered_call_data');
+        await prefs.remove('last_answered_roomId');
+
+        final roomId = data['roomId']?.toString();
+        if (roomId != null) {
+          if (!_push.isInCall) {
+            debugPrint('HomeScreen: Auto-accepting call from SharedPreferences for room: $roomId');
+            _dismissIncomingCallDialog();
+            _acceptCall(data);
+          } else {
+            debugPrint('HomeScreen: Already in call, ignoring SharedPreferences auto-routing');
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('HomeScreen: error checking last answered call: $e');
+    }
   }
 
   void _setupListeners() {
     _push.initialize();
     _push.onIncomingCall = (d) => Future.delayed(const Duration(milliseconds: 200), () => _handleIncomingCall(d));
+
+    AlertDispatcher.onNotificationCallAccepted = (data) {
+      if (mounted && !_push.isInCall) {
+        debugPrint('HomeScreen: handling notification call accept directly');
+        _dismissIncomingCallDialog();
+        _acceptCall(data);
+      }
+    };
 
     _coinSub = DataBridge.balanceStream.listen((c) => setState(() => _coins = c));
     _statusTimer = Timer.periodic(const Duration(minutes: 1), (_) => _updateOnlineStatus());
@@ -111,22 +169,45 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
       });
     }
 
-    _db.child('pending_calls').child(_auth.currentUser?.uid ?? '').onChildAdded.listen((e) {
-      if (e.snapshot.value != null && mounted) {
-        final d = Map<String, dynamic>.from(e.snapshot.value as Map);
-        d['roomId'] = e.snapshot.key;
-        
-        final createTime = d['createdAt'] as int?;
-        final now = DateTime.now().millisecondsSinceEpoch;
-        
-        if (createTime != null && (now - createTime) < 60000) {
-          _handleIncomingCall(d);
-        } else {
-          _db.child('pending_calls').child(_auth.currentUser?.uid ?? '').child(e.snapshot.key!).remove();
+    final uid = _auth.currentUser?.uid ?? '';
+    if (uid.isNotEmpty) {
+      _pendingCallsAddedSub = _db.child('pending_calls').child(uid).onChildAdded.listen((e) {
+        if (e.snapshot.value != null && mounted) {
+          final d = Map<String, dynamic>.from(e.snapshot.value as Map);
+          d['roomId'] = e.snapshot.key;
+          
+          final createTime = d['createdAt'] as int?;
+          final now = DateTime.now().millisecondsSinceEpoch;
+          
+          if (createTime != null && (now - createTime) < 60000) {
+            _handleIncomingCall(d);
+          } else {
+            _db.child('pending_calls').child(uid).child(e.snapshot.key!).remove();
+          }
         }
-      }
-    });
+      });
 
+      _pendingCallsChangedSub = _db.child('pending_calls').child(uid).onChildChanged.listen((e) {
+        if (e.snapshot.value != null && mounted) {
+          final d = Map<String, dynamic>.from(e.snapshot.value as Map);
+          d['roomId'] = e.snapshot.key;
+          
+          final accepted = d['accepted'] == true || d['accepted'] == 'true';
+          if (accepted && d['roomId'] == _activeIncomingRoomId) {
+            debugPrint('HomeScreen: call was accepted elsewhere/notification, transitioning...');
+            _dismissIncomingCallDialog();
+            _acceptCall(d);
+          }
+        }
+      });
+
+      _pendingCallsRemovedSub = _db.child('pending_calls').child(uid).onChildRemoved.listen((e) {
+        if (mounted && e.snapshot.key == _activeIncomingRoomId) {
+          debugPrint('HomeScreen: pending call removed, dismissing dialog');
+          _dismissIncomingCallDialog();
+        }
+      });
+    }
   }
 
   Future<void> _syncProfile() async {
@@ -157,6 +238,10 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
 
   @override
   void dispose() {
+    AlertDispatcher.onNotificationCallAccepted = null;
+    _pendingCallsAddedSub?.cancel();
+    _pendingCallsChangedSub?.cancel();
+    _pendingCallsRemovedSub?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     _entranceCtrl.dispose();
     _callSub?.cancel();
@@ -169,7 +254,10 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _updateOnlineStatus();
+    if (state == AppLifecycleState.resumed) {
+      _updateOnlineStatus();
+      _checkLastAnsweredCall();
+    }
   }
 
   void _handleIncomingCall(Map<String, dynamic> data) async {
@@ -177,24 +265,49 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
     final roomId = data['roomId']?.toString();
     if (roomId == null) return;
 
+    if (_activeIncomingRoomId == roomId) {
+      debugPrint('HomeScreen: Incoming call dialog already showing for room: $roomId');
+      return;
+    }
+
+    if (data['accepted'] == true || data['accepted'] == 'true') {
+      debugPrint('HomeScreen: incoming call is already accepted, routing directly instead of overlay');
+      _acceptCall(data);
+      return;
+    }
+
+    _activeIncomingRoomId = roomId;
     final isVideo = data['isVideoCall'] == true || data['isVideoCall'] == 'true';
+    
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (c) => InboundCallOverlay(
-        callerName: data['callerName'] ?? 'Chilli User',
-        callerAvatar: data['callerAvatar'] ?? '',
-        isVideoCall: isVideo,
-        onAccept: () {
-          Navigator.pop(c);
-          _acceptCall(data);
-        },
-        onDecline: () {
-          Navigator.pop(c);
-          _declineCall(data);
-        },
-      ),
-    );
+      builder: (c) {
+        _incomingDialogContext = c;
+        return InboundCallOverlay(
+          callerName: data['callerName'] ?? 'Chilli User',
+          callerAvatar: data['callerAvatar'] ?? '',
+          isVideoCall: isVideo,
+          onAccept: () {
+            _incomingDialogContext = null;
+            _activeIncomingRoomId = null;
+            Navigator.pop(c);
+            _acceptCall(data);
+          },
+          onDecline: () {
+            _incomingDialogContext = null;
+            _activeIncomingRoomId = null;
+            Navigator.pop(c);
+            _declineCall(data);
+          },
+        );
+      },
+    ).then((_) {
+      if (_activeIncomingRoomId == roomId) {
+        _incomingDialogContext = null;
+        _activeIncomingRoomId = null;
+      }
+    });
   }
 
   void _acceptCall(Map<String, dynamic> data) async {
@@ -520,6 +633,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
         }
         
         var users = snap.data ?? [];
+        
         if (_selectedFilter != 'All') {
           users = users.where((u) => u.language.toLowerCase() == _selectedFilter.toLowerCase()).toList();
         }
@@ -537,6 +651,26 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
               }
               
               var fUsers = fSnap.data ?? [];
+              
+              // Sort Firestore fallback users by status (online first) and lastActive descending
+              fUsers.sort((a, b) {
+                int statusWeight(String s) {
+                  final lowerStatus = s.toLowerCase();
+                  if (lowerStatus == 'online' || lowerStatus == 'active') return 3;
+                  if (lowerStatus == 'busy') return 2;
+                  return 1;
+                }
+
+                int sA = statusWeight(a.status);
+                int sB = statusWeight(b.status);
+
+                if (sA != sB) return sB.compareTo(sA);
+
+                final laA = a.lastActive?.millisecondsSinceEpoch ?? 0;
+                final laB = b.lastActive?.millisecondsSinceEpoch ?? 0;
+                return laB.compareTo(laA);
+              });
+
               if (_selectedFilter != 'All') {
                 fUsers = fUsers.where((u) => u.language.toLowerCase() == _selectedFilter.toLowerCase()).toList();
               }
@@ -571,36 +705,55 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   }
 
   Widget _buildGrid(List<ChilliProfile> users) {
+    final allInterests = [
+      '🎵 Music',
+      '✈️ Travel',
+      '🍿 Movies',
+      '🎮 Gaming',
+      '💃 Dancing',
+      '🍳 Cooking',
+      '🎨 Art',
+      '📚 Reading',
+      '📸 Photography',
+      '🍕 Foodie',
+      '🧘 Yoga',
+      '🛍️ Shopping',
+      '🏋️ Fitness',
+      '🐾 Pets',
+      '✍️ Writing',
+    ];
+
     return SliverPadding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-      sliver: SliverGrid(
-        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-          maxCrossAxisExtent: 240,
-          crossAxisSpacing: 14,
-          mainAxisSpacing: 14,
-          childAspectRatio: 0.75,
-        ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      sliver: SliverList(
         delegate: SliverChildBuilderDelegate(
-          (context, i) => UserTile(
-            name: users[i].name,
-            imageUrl: users[i].avatarUrl ?? '',
-            language: users[i].language,
-            gender: users[i].gender,
-            isOnline: users[i].status == 'online',
-            onAudioCall: () => _startCall(users[i], false),
-            onVideoCall: () => _startCall(users[i], true),
-            rating: 5.0,
-            interests: const ['Chat', 'Connect'],
-            audioPrice: ((DataBridge.appConfig['male_audio_cost'] as num? ?? 2.5) * 2).toStringAsFixed(2),
-            videoPrice: ((DataBridge.appConfig['male_video_cost'] as num? ?? 5.0) * 2).toStringAsFixed(2),
-            audioUrl: users[i].audioUrl,
-            coins: users[i].coins.toDouble(),
-            currentUserGender: _gender,
-            lastActive: users[i].lastActive,
-            status: users[i].status,
-            career: users[i].career,
-            uid: users[i].uid,
-          ),
+          (context, i) {
+            final user = users[i];
+            final random = math.Random((user.uid ?? user.name).hashCode);
+            final shuffled = List<String>.from(allInterests)..shuffle(random);
+            final userInterests = shuffled.take(4 + random.nextInt(2)).toList();
+
+            return UserTile(
+              name: user.name,
+              imageUrl: user.avatarUrl ?? '',
+              language: user.language,
+              gender: user.gender,
+              isOnline: user.status == 'online',
+              onAudioCall: () => _startCall(user, false),
+              onVideoCall: () => _startCall(user, true),
+              rating: 5.0,
+              interests: userInterests,
+              audioPrice: ((DataBridge.appConfig['male_audio_cost'] as num? ?? 2.5) * 2).toStringAsFixed(2),
+              videoPrice: ((DataBridge.appConfig['male_video_cost'] as num? ?? 5.0) * 2).toStringAsFixed(2),
+              audioUrl: user.audioUrl,
+              coins: user.coins.toDouble(),
+              currentUserGender: _gender,
+              lastActive: user.lastActive,
+              status: user.status,
+              career: user.career,
+              uid: user.uid,
+            );
+          },
           childCount: users.length,
         ),
       ),

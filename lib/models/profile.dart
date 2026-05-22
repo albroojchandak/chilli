@@ -61,6 +61,8 @@ class ChilliProfile {
     'a': avatarUrl,
     'ft': fcmToken,
     'coins': coins,
+    'la': lastActive?.millisecondsSinceEpoch,
+    's': status.isNotEmpty ? status : 'online',
   };
 
   factory ChilliProfile.fromMap(Map<String, dynamic> map) {

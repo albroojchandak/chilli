@@ -1,14 +1,11 @@
 import 'dart:async';
-import 'dart:io';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:chilli/services/identity_manager.dart';
 import 'package:chilli/services/firestore_repo.dart';
-import 'package:chilli/services/media_uploader.dart';
 import 'package:chilli/services/presence_repo.dart';
 import 'package:chilli/services/data_bridge.dart';
 import 'package:chilli/utils/avatar_store.dart';
@@ -29,7 +26,6 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateMixin {
   final _identity = IdentityManager();
   final _firestore = FirestoreRepository();
-  final _media = MediaUploader();
   final _presence = PresenceRepository();
 
   Map<String, dynamic>? _profile;
@@ -84,27 +80,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Future<void> _pickFromGallery() async {
-    Navigator.pop(context);
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.gallery, imageQuality: 50);
-    if (image == null) return;
 
-    setState(() => _isUpdating = true);
-    try {
-      final url = await _media.uploadAvatar(_profile?['uid'] ?? '', File(image.path));
-      if (url != null) {
-        await _firestore.patchProfile(avatarUrl: url);
-        if (_profile?['uid'] != null) {
-          await _presence.patchFields(_profile!['uid'], {'avatarUrl': url});
-        }
-        await _identity.patchLocalProfile({'avatarUrl': url, 'a': url});
-        _loadData();
-      }
-    } finally {
-      if (mounted) setState(() => _isUpdating = false);
-    }
-  }
 
   Future<void> _selectPredefined(String url) async {
     Navigator.pop(context);
@@ -180,8 +156,6 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
                 ),
               ),
               const SizedBox(height: 16),
-              _buildUploadOption(),
-              const SizedBox(height: 24),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: Row(
@@ -286,50 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     );
   }
 
-  Widget _buildUploadOption() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      child: GestureDetector(
-        onTap: _pickFromGallery,
-        child: Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: _primaryNeon.withOpacity(0.05),
-            borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: _primaryNeon.withOpacity(0.1)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: _primaryNeon.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(Icons.add_photo_alternate_rounded, color: _primaryNeon, size: 24),
-              ),
-              const SizedBox(width: 20),
-              const Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'UPLOAD CUSTOM',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1),
-                  ),
-                  Text(
-                    'Pick from your local storage',
-                    style: TextStyle(color: Colors.white38, fontSize: 11),
-                  ),
-                ],
-              ),
-              const Spacer(),
-              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.1), size: 14),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+
 
   Future<void> _editName() async {
     final ctrl = TextEditingController(text: _profile?['username'] ?? '');
