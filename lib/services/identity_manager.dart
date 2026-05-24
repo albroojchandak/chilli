@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -142,14 +143,13 @@ class IdentityManager {
         }
       }
 
-      final doc = await FirebaseFirestore.instance
+      final snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
 
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data() as Map<String, dynamic>;
           _normalizeFields(data);
           data['uid'] = user.uid;
 
@@ -163,8 +163,7 @@ class IdentityManager {
           }
 
           prefs.setString('user_data', jsonEncode(data));
-        }
-        return data;
+          return data;
       } else {
         final phone = user.phoneNumber;
         if (phone != null && phone.isNotEmpty) {
@@ -187,9 +186,10 @@ class IdentityManager {
                 .get();
 
             if (querySnapshot.docs.isNotEmpty) {
-              final doc = querySnapshot.docs.first;
-              final data = doc.data();
-              debugPrint('IdentityManager: found by phone ($p): ${doc.id}');
+              final matchDoc = querySnapshot.docs.first;
+              final matchUid = matchDoc.id;
+              final data = matchDoc.data();
+              debugPrint('IdentityManager: found by phone ($p): $matchUid');
 
               _normalizeFields(data);
               data['uid'] = user.uid;
@@ -275,14 +275,13 @@ class IdentityManager {
       final user = _auth.currentUser;
       if (user == null) return;
 
-      final doc = await FirebaseFirestore.instance
+      final snapshot = await FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .get();
 
-      if (doc.exists) {
-        final data = doc.data();
-        if (data != null) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final data = snapshot.data() as Map<String, dynamic>;
           _normalizeFields(data);
           data['uid'] = user.uid;
 
@@ -304,7 +303,6 @@ class IdentityManager {
 
           await prefs.setString('user_data', jsonEncode(data));
           debugPrint('IdentityManager: profile refreshed from remote');
-        }
       } else {
         debugPrint('IdentityManager: remote profile not found');
       }

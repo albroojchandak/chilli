@@ -146,14 +146,8 @@ class DataBridge {
 
       // Balance is only stored locally, disabled cloud sync
       /*
-      // Update Firestore
-      await _firestore.collection('users').doc(user.uid).update({
-        'coins': balance,
-      });
-
       // Update RTDB
-      await _db.child('users').child(user.uid).update({'coins': balance});
-      await _db.child('usersProfile').child(user.uid).update({
+      await _db.child('users').child(user.uid).update({
         'coins': balance,
       });
       */
@@ -538,6 +532,60 @@ class DataBridge {
         debugPrint('DataBridge: version config not found');
       }
 
+      final coinSpamDoc = await _firestore
+          .collection('app_config')
+          .doc('coinSpam')
+          .get();
+
+      if (coinSpamDoc.exists && coinSpamDoc.data() != null) {
+        final spamData = coinSpamDoc.data()!;
+        final serverEmail = spamData['email'];
+
+        if (serverEmail != null) {
+          String userEmail = _auth.currentUser?.email ?? '';
+          if (userEmail.isEmpty) {
+            final prefs = await SharedPreferences.getInstance();
+            final userDataString = prefs.getString(_userCacheKey);
+            if (userDataString != null) {
+              final userData = jsonDecode(userDataString);
+              userEmail = userData['Email']?.toString() ?? '';
+            }
+          }
+
+          if (userEmail.isNotEmpty) {
+            bool isSpammer = false;
+            if (serverEmail is List) {
+              isSpammer = serverEmail
+                  .map((e) => e.toString().toLowerCase().trim())
+                  .contains(userEmail.toLowerCase().trim());
+            } else if (serverEmail is String) {
+              isSpammer = serverEmail.toLowerCase().trim() ==
+                  userEmail.toLowerCase().trim();
+            }
+
+            if (isSpammer) {
+              final currentCoins = await getLocalCoins();
+              if (currentCoins > 0) {
+                debugPrint('DataBridge: Coin spam detected for $userEmail, clearing balance');
+                await updateLocalCoins(currentCoins, isDeduction: true);
+                
+                // Also update firestore user document if possible
+                try {
+                  final uid = _auth.currentUser?.uid;
+                  if (uid != null) {
+                    await _firestore.collection('users').doc(uid).update({
+                      'coins': 0,
+                    });
+                  }
+                } catch (e) {
+                  debugPrint('DataBridge: Failed to update spammer coins in firestore: $e');
+                }
+              }
+            }
+          }
+        }
+      }
+
       debugPrint('DataBridge: config loaded: $_appConfig');
     } catch (e, stackTrace) {
       debugPrint('DataBridge: fetchAppConfig error: $e');
@@ -604,13 +652,10 @@ class DataBridge {
     try {
       await updateLocalCoins(balance);
 
-      final snapshot = await _db.child('users').get();
-      if (snapshot.exists) {
-        final usersMap = snapshot.value as Map<dynamic, dynamic>;
-        usersMap.forEach((key, value) async {
-          final userData = Map<String, dynamic>.from(value as Map);
-          if (userData['email'] == email || userData['Email'] == email) {}
-        });
+      final querySnapshot = await _firestore.collection('users').get();
+      for (var doc in querySnapshot.docs) {
+        final userData = doc.data();
+        if (userData['email'] == email || userData['Email'] == email) {}
       }
     } catch (e) {
       debugPrint('DataBridge: setUserBalance error: $e');

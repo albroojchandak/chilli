@@ -2,6 +2,7 @@ import 'package:chilli/screens/lang_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -33,7 +34,12 @@ void main() async {
   WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-  // Removed global screen protection to allow user screenshots as requested
+  // Enable global screen protection to prevent screenshots and recording
+  try {
+    await ScreenProtector.preventScreenshotOn();
+  } catch (e) {
+    debugPrint('ScreenProtector init error: $e');
+  }
 
   try {
     await Firebase.initializeApp();
@@ -174,8 +180,13 @@ class _SessionRouterState extends State<SessionRouter> {
   }
 
   Future<void> _onAuthChanged(User? user) async {
-    // Ensuring screen protection is OFF for everyone to allow screenshots
-    await ScreenProtector.preventScreenshotOff();
+    // Ensuring screen protection is ON for everyone
+    try {
+      await ScreenProtector.preventScreenshotOn();
+      await ScreenProtector.protectDataLeakageWithBlur();
+    } catch (e) {
+      debugPrint('ScreenProtector error: $e');
+    }
   }
 
   @override
@@ -205,13 +216,12 @@ class _SessionRouterState extends State<SessionRouter> {
                     }
                   }
 
-                  debugPrint('SessionRouter: no cache, checking Firestore');
-                  final doc = await FirebaseFirestore.instance
-                      .collection('users')
-                      .doc(user.uid)
+                  debugPrint('SessionRouter: no cache, checking RTDB');
+                  final snapshot = await FirebaseDatabase.instance.ref('users')
+                      .child(user.uid)
                       .get();
-                  if (doc.exists) {
-                    final data = doc.data() as Map<String, dynamic>;
+                  if (snapshot.exists) {
+                    final data = Map<String, dynamic>.from(snapshot.value as Map);
                     data['uid'] = user.uid;
                     await DataBridge().cacheUserData(data);
                     return true;

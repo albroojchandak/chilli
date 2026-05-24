@@ -1,4 +1,4 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -167,12 +167,12 @@ class PushReceiver {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
+        await FirebaseDatabase.instance.ref()
+            .child('users')
+            .child(user.uid)
             .update({
               'fcmToken': token,
-              'lastTokenUpdate': FieldValue.serverTimestamp(),
+              'lastTokenUpdate': ServerValue.timestamp,
             });
 
         await FirebaseDatabase.instance.ref()
@@ -182,7 +182,7 @@ class PushReceiver {
               'ft': token,
             });
 
-        debugPrint('PushReceiver: token persisted across Firestore and RTDB');
+        debugPrint('PushReceiver: token persisted across RTDB profiles');
       } else {
         debugPrint('PushReceiver: no user, token not persisted');
       }

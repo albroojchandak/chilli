@@ -1,10 +1,12 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:chilli/models/profile.dart';
 
 class FirestoreRepository {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseDatabase _database = FirebaseDatabase.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   CollectionReference get _usersRef => _firestore.collection('users');
@@ -67,10 +69,10 @@ class FirestoreRepository {
       final user = _auth.currentUser;
       if (user == null) return null;
 
-      final doc = await _usersRef.doc(user.uid).get();
-      if (!doc.exists) return null;
+      final snapshot = await _usersRef.doc(user.uid).get();
+      if (!snapshot.exists) return null;
 
-      return ChilliProfile.fromMap(doc.data() as Map<String, dynamic>);
+      return ChilliProfile.fromMap(snapshot.data() as Map<String, dynamic>);
     } catch (e) {
       debugPrint('FirestoreRepository: fetchSelf error: $e');
       return null;
@@ -79,10 +81,10 @@ class FirestoreRepository {
 
   Future<ChilliProfile?> fetchById(String uid) async {
     try {
-      final doc = await _usersRef.doc(uid).get();
-      if (!doc.exists) return null;
+      final snapshot = await _usersRef.doc(uid).get();
+      if (!snapshot.exists) return null;
 
-      return ChilliProfile.fromMap(doc.data() as Map<String, dynamic>);
+      return ChilliProfile.fromMap(snapshot.data() as Map<String, dynamic>);
     } catch (e) {
       debugPrint('FirestoreRepository: fetchById error: $e');
       return null;
@@ -98,16 +100,18 @@ class FirestoreRepository {
       List<String> blockedUids = [];
       if (currentUid != null) {
         final selfDoc = await _usersRef.doc(currentUid).get();
-        if (selfDoc.exists) {
+        if (selfDoc.exists && selfDoc.data() != null) {
           final data = selfDoc.data() as Map<String, dynamic>;
-          blockedUids = List<String>.from(data['blockedUsers'] ?? []);
+          if (data['blockedUsers'] != null && data['blockedUsers'] is List) {
+            blockedUids = List<String>.from(data['blockedUsers']);
+          } else if (data['blockedUsers'] != null && data['blockedUsers'] is Map) {
+            blockedUids = List<String>.from((data['blockedUsers'] as Map).keys);
+          }
         }
       }
 
       final list = snapshot.docs
-          .map(
-            (doc) => ChilliProfile.fromMap(doc.data() as Map<String, dynamic>),
-          )
+          .map((doc) => ChilliProfile.fromMap(doc.data() as Map<String, dynamic>))
           .where((user) {
             final isNotMe = user.uid != currentUid;
             final isNotBlocked = !blockedUids.contains(user.uid);
@@ -124,6 +128,7 @@ class FirestoreRepository {
     try {
       final user = _auth.currentUser;
       if (user == null) return;
+      
       await _usersRef.doc(user.uid).update({
         'blockedUsers': FieldValue.arrayUnion([targetUid])
       });
@@ -136,6 +141,7 @@ class FirestoreRepository {
     try {
       final user = _auth.currentUser;
       if (user == null) return;
+      
       await _usersRef.doc(user.uid).update({
         'blockedUsers': FieldValue.arrayRemove([targetUid])
       });
@@ -148,29 +154,42 @@ class FirestoreRepository {
     final user = _auth.currentUser;
     if (user == null) return Stream.value([]);
 
-    return _usersRef.doc(user.uid).snapshots().asyncMap((snap) async {
-      if (!snap.exists) return [];
-      final data = snap.data() as Map<String, dynamic>;
-      final List<String> blockedUids = List<String>.from(data['blockedUsers'] ?? []);
+    return _usersRef.doc(user.uid).snapshots().asyncMap((snapshot) async {
+      if (!snapshot.exists || snapshot.data() == null) return [];
+      final data = snapshot.data() as Map<String, dynamic>;
+      
+      List<String> blockedUids = [];
+      if (data['blockedUsers'] != null) {
+        if (data['blockedUsers'] is List) {
+          blockedUids = List<String>.from(data['blockedUsers']);
+        } else if (data['blockedUsers'] is Map) {
+          blockedUids = List<String>.from((data['blockedUsers'] as Map).keys);
+        }
+      }
       
       if (blockedUids.isEmpty) return [];
 
-      // Fetch profiles for these UIDs
-      final profilesSnap = await _usersRef.where('uid', whereIn: blockedUids).get();
-      return profilesSnap.docs.map((d) => ChilliProfile.fromMap(d.data() as Map<String, dynamic>)).toList();
+      // Fetch profiles for these UIDs manually since there's no whereIn
+      final futures = blockedUids.map((uid) => _usersRef.doc(uid).get());
+      final snaps = await Future.wait(futures);
+      
+      return snaps
+          .where((s) => s.exists && s.data() != null)
+          .map((s) => ChilliProfile.fromMap(s.data() as Map<String, dynamic>))
+          .toList();
     });
   }
 
   Future<List<ChilliProfile>> queryAllUsers({String? targetGender}) async {
     try {
       final snapshot = await _usersRef.get();
+      if (snapshot.docs.isEmpty) return [];
+      
       final currentUid = _auth.currentUser?.uid;
       final target = targetGender?.toLowerCase();
 
       return snapshot.docs
-          .map(
-            (doc) => ChilliProfile.fromMap(doc.data() as Map<String, dynamic>),
-          )
+          .map((doc) => ChilliProfile.fromMap(doc.data() as Map<String, dynamic>))
           .where((user) {
             final isNotMe = user.uid != currentUid;
             if (target == null) return isNotMe;
@@ -233,8 +252,8 @@ class FirestoreRepository {
 
   Future<bool> userExists(String uid) async {
     try {
-      final doc = await _usersRef.doc(uid).get();
-      return doc.exists;
+      final snapshot = await _usersRef.doc(uid).get();
+      return snapshot.exists;
     } catch (e) {
       debugPrint('FirestoreRepository: userExists error: $e');
       return false;

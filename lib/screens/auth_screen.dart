@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:chilli/services/identity_manager.dart';
 import 'package:chilli/services/data_bridge.dart';
 import 'package:chilli/services/fb_reporter.dart';
@@ -755,14 +756,13 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
           profileRecord['username'] != null;
 
       if (hasProfile) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(firebaseUser.uid)
-            .set({
+        await FirebaseDatabase.instance.ref('users')
+            .child(firebaseUser.uid)
+            .update({
               'email': email,
               'Email': email,
               'uid': firebaseUser.uid,
-            }, SetOptions(merge: true));
+            });
 
         await _identityManager.patchLocalProfile({
           'email': email,

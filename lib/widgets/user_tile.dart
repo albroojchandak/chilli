@@ -251,6 +251,24 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
                         ),
                       ),
                     ),
+                  // Status Dot
+                  Positioned(
+                    top: -2,
+                    right: -2,
+                    child: Container(
+                      width: 14,
+                      height: 14,
+                      decoration: BoxDecoration(
+                        color: widget.status.toLowerCase() == 'busy'
+                            ? Colors.amber
+                            : (widget.isOnline || widget.status.toLowerCase() == 'online')
+                                ? Colors.greenAccent
+                                : Colors.grey,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: _cardBg, width: 2),
+                      ),
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(width: 14),
@@ -393,8 +411,6 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
   }
 
   Widget _buildMetaInfo(Color accent) {
-    final bool isBusy = widget.status.toLowerCase() == 'busy';
-
     return Row(
       children: [
         const Icon(Icons.translate_rounded, color: Colors.white38, size: 12),
@@ -403,17 +419,6 @@ class _UserTileState extends State<UserTile> with SingleTickerProviderStateMixin
           widget.language,
           style: const TextStyle(color: Colors.white54, fontSize: 11, fontWeight: FontWeight.w500),
         ),
-        if (isBusy) ...[
-          const SizedBox(width: 12),
-          const Text(
-            'Busy',
-            style: TextStyle(
-              color: Colors.redAccent,
-              fontSize: 10,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
       ],
     );
   }

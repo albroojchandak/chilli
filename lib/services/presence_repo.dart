@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:chilli/models/profile.dart';
 import 'package:chilli/utils/avatar_store.dart';
-import 'package:cloud_firestore/cloud_firestore.dart' hide Query;
+
 import 'dart:async';
 
 class PresenceRepository {
@@ -38,12 +39,13 @@ class PresenceRepository {
 
   Future<void> patchFields(String uid, Map<String, dynamic> updates) async {
     try {
-      await _db.child('users').child(uid).update(updates);
       final profileUpdates = <String, dynamic>{};
-      if (updates.containsKey('username'))
+      if (updates.containsKey('username')) {
         profileUpdates['n'] = updates['username'];
-      if (updates.containsKey('avatarUrl'))
+      }
+      if (updates.containsKey('avatarUrl')) {
         profileUpdates['a'] = updates['avatarUrl'];
+      }
 
       if (profileUpdates.isNotEmpty) {
         await _db.child('usersProfile').child(uid).update(profileUpdates);
@@ -109,7 +111,7 @@ class PresenceRepository {
     bool isProfilesLoaded = false;
 
     debugPrint('PresenceRepository: watchUsers streaming all profiles for client-side filtering (Target: $targetGender)');
-    Query profileQuery = _db.child('usersProfile').orderByChild('la').limitToLast(500);
+    final profileQuery = _db.child('usersProfile').orderByChild('la').limitToLast(500);
 
     void emitMerged() async {
       if (!isProfilesLoaded && cachedUsers.isEmpty) return;
@@ -122,9 +124,14 @@ class PresenceRepository {
       final currentUid = _auth.currentUser?.uid;
       if (currentUid != null) {
         try {
-          final snap = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
-          if (snap.exists) {
-            blockedUids = List<String>.from(snap.data()?['blockedUsers'] ?? []);
+          final docSnap = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
+          if (docSnap.exists && docSnap.data() != null) {
+            final data = docSnap.data() as Map<String, dynamic>;
+            if (data['blockedUsers'] != null && data['blockedUsers'] is List) {
+              blockedUids = List<String>.from(data['blockedUsers']);
+            } else if (data['blockedUsers'] != null && data['blockedUsers'] is Map) {
+              blockedUids = List<String>.from((data['blockedUsers'] as Map).keys);
+            }
           }
         } catch (e) {
           debugPrint('PresenceRepository: block fetch error: $e');
@@ -261,6 +268,24 @@ class PresenceRepository {
 
       final currentUid = _auth.currentUser?.uid;
 
+      // Fetch blocked users from Firestore
+      List<String> blockedUids = [];
+      if (currentUid != null) {
+        try {
+          final docSnap = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
+          if (docSnap.exists && docSnap.data() != null) {
+            final data = docSnap.data() as Map<String, dynamic>;
+            if (data['blockedUsers'] != null && data['blockedUsers'] is List) {
+              blockedUids = List<String>.from(data['blockedUsers']);
+            } else if (data['blockedUsers'] != null && data['blockedUsers'] is Map) {
+              blockedUids = List<String>.from((data['blockedUsers'] as Map).keys);
+            }
+          }
+        } catch (e) {
+          debugPrint('PresenceRepository: block fetch error in queryUsers: $e');
+        }
+      }
+
       final List<ChilliProfile> users = [];
       usersMap.forEach((key, value) {
         try {
@@ -311,6 +336,7 @@ class PresenceRepository {
             final user = ChilliProfile.fromMap(data);
 
             if (user.uid == currentUid) return;
+            if (blockedUids.contains(user.uid)) return;
 
             // Filter by gender in Dart
             if (targetGender != null && targetGender.isNotEmpty) {

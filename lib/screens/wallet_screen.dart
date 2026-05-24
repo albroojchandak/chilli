@@ -14,6 +14,7 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -162,9 +163,63 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
     CFPaymentGatewayService().setCallback(verifyPayment, onError);
   }
 
+  Future<void> _checkCashfreePaymentStatus(String orderId) async {
+    final String appId;
+    final String secretKey;
+    final String environmentUrl;
+
+    if (kDebugMode) {
+      appId = 'TEST11025156928ec9186fcc0dbef20c65152011';
+      secretKey = 'cfsk_ma_test_7b08216f7826f56045b029122a611706_1752373a';
+      environmentUrl = 'https://sandbox.cashfree.com/pg/orders';
+    } else {
+      appId = DataBridge.appConfig['cashfree_app_id']?.toString().trim() ?? '';
+      secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString().trim() ?? '';
+      environmentUrl = 'https://api.cashfree.com/pg/orders';
+    }
+
+    if (appId.isEmpty || secretKey.isEmpty) {
+      debugPrint('Cashfree config missing for verification');
+      _showToast('Verification failed: config missing', Colors.red);
+      _resetPaymentState(clearStoredPending: true);
+      return;
+    }
+
+    try {
+      final url = Uri.parse('$environmentUrl/$orderId');
+      final headers = {
+        'Content-Type': 'application/json',
+        'x-client-id': appId,
+        'x-client-secret': secretKey,
+        'x-api-version': '2023-08-01',
+      };
+
+      final response = await http.get(url, headers: headers).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['order_status'] == 'PAID') {
+          await _handleSuccessfulPayment();
+        } else {
+          debugPrint('Cashfree Payment Not PAID: ${data['order_status']}');
+          _showToast('Payment not successful: ${data['order_status']}', Colors.red);
+          _resetPaymentState(clearStoredPending: true);
+        }
+      } else {
+        debugPrint('Cashfree verify API error ${response.statusCode}');
+        _showToast('Payment verification failed', Colors.red);
+        _resetPaymentState(clearStoredPending: true);
+      }
+    } catch (e) {
+      debugPrint('Cashfree verify Network error $e');
+      _showToast('Network error during verification', Colors.red);
+      _resetPaymentState(clearStoredPending: true);
+    }
+  }
+
   void verifyPayment(String orderId) {
     debugPrint("Cashfree Verify Payment: $orderId");
-    _handleSuccessfulPayment();
+    _checkCashfreePaymentStatus(orderId);
   }
 
   void onError(CFErrorResponse errorResponse, String orderId) {
@@ -403,9 +458,8 @@ class _ChilliWalletScreenState extends State<ChilliWalletScreen>
       // update Firestore (via IdentityManager helper or direct if needed)
       // Here we use updateLocalData to update cache, and we should also push to Firestore
       await _identityManager.patchLocalProfile(updates);
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_identityManager.activeUser?.uid)
+      await FirebaseDatabase.instance.ref('users')
+          .child(_identityManager.activeUser!.uid)
           .update(updates);
 
       final prefs = await SharedPreferences.getInstance();

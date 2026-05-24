@@ -15,6 +15,7 @@ import 'package:chilli/legal/terms_screen.dart';
 import 'package:chilli/legal/refund_screen.dart';
 import 'package:chilli/screens/support_screen.dart';
 import 'package:chilli/models/profile.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -32,6 +33,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
   num _coins = 0;
   bool _isLoading = true;
   bool _isUpdating = false;
+  String _appVersion = '';
 
   late final AnimationController _meshController;
   late final AnimationController _floatController;
@@ -48,6 +50,16 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
     _meshController = AnimationController(vsync: this, duration: const Duration(seconds: 15))..repeat();
     _floatController = AnimationController(vsync: this, duration: const Duration(seconds: 3))..repeat(reverse: true);
     _loadData();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final info = await PackageInfo.fromPlatform();
+    if (mounted) {
+      setState(() {
+        _appVersion = 'CHILLI OS v${info.version}+${info.buildNumber}';
+      });
+    }
   }
 
   @override
@@ -772,7 +784,7 @@ class _ProfileScreenState extends State<ProfileScreen> with TickerProviderStateM
           ),
           const SizedBox(height: 8),
           Text(
-            'CHILLI OS v2.4.0-STABLE',
+            _appVersion.isEmpty ? 'CHILLI OS' : _appVersion,
             style: TextStyle(
               color: Colors.white.withOpacity(0.15),
               fontSize: 10,

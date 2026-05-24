@@ -45,7 +45,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
 
   StreamSubscription? _callSub;
   StreamSubscription<num>? _coinSub;
-  StreamSubscription<DocumentSnapshot>? _userSub;
+  StreamSubscription? _userSub;
   Timer? _statusTimer;
 
   String? _activeIncomingRoomId;
@@ -58,7 +58,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   String? _gender;
   String? _lang;
   String? _avatar;
-  String? _target;
+  String _target = 'female';
   num _coins = 0;
   bool _isActionLock = false;
 
@@ -154,10 +154,10 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
 
     final user = _auth.currentUser;
     if (user != null) {
-      _userSub = FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots().listen((snap) {
-        if (snap.exists && mounted) {
-          final d = snap.data()!;
-          final g = (d['gender'] ?? d['Gender'])?.toString().toLowerCase().trim();
+      _userSub = FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots().listen((snapshot) {
+        if (snapshot.exists && mounted && snapshot.data() != null) {
+          final d = snapshot.data() as Map<String, dynamic>;
+          final g = (d['gender'] ?? d['Gender'])?.toString().toLowerCase().trim() ?? 'male';
           if (g != _gender) {
             _gender = g;
             _target = g == 'male' ? 'female' : 'male';
