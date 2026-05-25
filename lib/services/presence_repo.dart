@@ -1,4 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -100,7 +99,7 @@ class PresenceRepository {
 
   Future<void> syncBalance(num coins) async {}
 
-  Stream<List<ChilliProfile>> watchUsers({String? targetGender}) {
+  Stream<List<ChilliProfile>> watchUsers({String? targetGender, List<String>? blockedUids}) {
     debugPrint(
       'PresenceRepository: watchUsers requested (target: $targetGender)',
     );
@@ -119,27 +118,10 @@ class PresenceRepository {
       final now = DateTime.now();
       final List<ChilliProfile> mergedUsers = [];
 
-      // Fetch blocked users from Firestore
-      List<String> blockedUids = [];
-      final currentUid = _auth.currentUser?.uid;
-      if (currentUid != null) {
-        try {
-          final docSnap = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
-          if (docSnap.exists && docSnap.data() != null) {
-            final data = docSnap.data() as Map<String, dynamic>;
-            if (data['blockedUsers'] != null && data['blockedUsers'] is List) {
-              blockedUids = List<String>.from(data['blockedUsers']);
-            } else if (data['blockedUsers'] != null && data['blockedUsers'] is Map) {
-              blockedUids = List<String>.from((data['blockedUsers'] as Map).keys);
-            }
-          }
-        } catch (e) {
-          debugPrint('PresenceRepository: block fetch error: $e');
-        }
-      }
+      final localBlockedUids = blockedUids ?? [];
 
       for (var user in cachedUsers) {
-        if (blockedUids.contains(user.uid)) continue; // Filter blocked
+        if (localBlockedUids.contains(user.uid)) continue; // Filter blocked
 
         final pData = Map<dynamic, dynamic>.from(
           presenceInfoMap[user.uid] ?? {'s': 'offline'},
@@ -155,7 +137,7 @@ class PresenceRepository {
           final diff = now.difference(lastActiveDate);
 
           if (diff.inMinutes > 10 &&
-              (status == 'online' || status == 'active')) {
+              (status == 'online' || status == 'active' || status == 'busy')) {
             status = 'offline';
           }
         } else {
@@ -252,7 +234,7 @@ class PresenceRepository {
     return controller.stream;
   }
 
-  Future<List<ChilliProfile>> queryUsers({String? targetGender}) async {
+  Future<List<ChilliProfile>> queryUsers({String? targetGender, List<String>? blockedUids}) async {
     try {
       debugPrint('PresenceRepository: queryUsers fetching all for target: $targetGender');
       final snapshot = await _db.child('usersProfile').limitToLast(1000).get();
@@ -267,24 +249,7 @@ class PresenceRepository {
       );
 
       final currentUid = _auth.currentUser?.uid;
-
-      // Fetch blocked users from Firestore
-      List<String> blockedUids = [];
-      if (currentUid != null) {
-        try {
-          final docSnap = await FirebaseFirestore.instance.collection('users').doc(currentUid).get();
-          if (docSnap.exists && docSnap.data() != null) {
-            final data = docSnap.data() as Map<String, dynamic>;
-            if (data['blockedUsers'] != null && data['blockedUsers'] is List) {
-              blockedUids = List<String>.from(data['blockedUsers']);
-            } else if (data['blockedUsers'] != null && data['blockedUsers'] is Map) {
-              blockedUids = List<String>.from((data['blockedUsers'] as Map).keys);
-            }
-          }
-        } catch (e) {
-          debugPrint('PresenceRepository: block fetch error in queryUsers: $e');
-        }
-      }
+      final localBlockedUids = blockedUids ?? [];
 
       final List<ChilliProfile> users = [];
       usersMap.forEach((key, value) {
@@ -311,7 +276,7 @@ class PresenceRepository {
                 final diff = DateTime.now().difference(lastActiveDate);
 
                 if (diff.inMinutes > 10 &&
-                    (status == 'online' || status == 'active')) {
+                    (status == 'online' || status == 'active' || status == 'busy')) {
                   status = 'offline';
                 }
               } else {
@@ -336,7 +301,7 @@ class PresenceRepository {
             final user = ChilliProfile.fromMap(data);
 
             if (user.uid == currentUid) return;
-            if (blockedUids.contains(user.uid)) return;
+            if (localBlockedUids.contains(user.uid)) return;
 
             // Filter by gender in Dart
             if (targetGender != null && targetGender.isNotEmpty) {

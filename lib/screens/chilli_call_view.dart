@@ -112,6 +112,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
   String? _localEmail;
   String? _localDisplay;
   String? _localGender;
+  List<String> _blockedUsers = [];
 
   String get _effectiveRoom => _activeRoomId ?? widget.roomId;
   String? get _effectiveToken => _activeTargetToken ?? widget.receiverToken;
@@ -229,10 +230,18 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
       }
       final cloud = await _idStore.loadProfile();
       if (cloud != null) {
+        List<String> parsedBlocked = [];
+        if (cloud['blockedUsers'] != null && cloud['blockedUsers'] is List) {
+          parsedBlocked = List<String>.from(cloud['blockedUsers']);
+        } else if (cloud['blockedUsers'] != null && cloud['blockedUsers'] is Map) {
+          parsedBlocked = List<String>.from((cloud['blockedUsers'] as Map).keys);
+        }
+
         setState(() {
           _localLabel = cloud['name'] ?? cloud['username'] ?? _localLabel;
           _localDisplay = cloud['avatarUrl'] ?? cloud['Avatar'] ?? _localDisplay;
           _localGender = (cloud['gender'] ?? cloud['Gender'])?.toString().toLowerCase().trim() ?? _localGender;
+          _blockedUsers = parsedBlocked;
         });
       }
     } catch (_) {}
@@ -383,7 +392,7 @@ class _ChilliCallViewState extends State<ChilliCallView> with TickerProviderStat
       final targetGender = _localGender == 'female' ? 'male' : 'female';
       try {
         final presenceRepo = PresenceRepository();
-        final users = await presenceRepo.queryUsers(targetGender: targetGender);
+        final users = await presenceRepo.queryUsers(targetGender: targetGender, blockedUids: _blockedUsers);
         if (users.isNotEmpty && mounted && !_isTerminated) {
           users.shuffle();
           final triedUids = _targets.map((t) => t['uid']).toSet();

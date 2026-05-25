@@ -61,6 +61,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   String _target = 'female';
   num _coins = 0;
   bool _isActionLock = false;
+  List<String> _blockedUsers = [];
 
   final TextEditingController _searchCtrl = TextEditingController();
   String _searchQuery = '';
@@ -158,11 +159,23 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
         if (snapshot.exists && mounted && snapshot.data() != null) {
           final d = snapshot.data() as Map<String, dynamic>;
           final g = (d['gender'] ?? d['Gender'])?.toString().toLowerCase().trim() ?? 'male';
-          if (g != _gender) {
+
+          List<String> parsedBlocked = [];
+          if (d['blockedUsers'] != null && d['blockedUsers'] is List) {
+            parsedBlocked = List<String>.from(d['blockedUsers']);
+          } else if (d['blockedUsers'] != null && d['blockedUsers'] is Map) {
+            parsedBlocked = List<String>.from((d['blockedUsers'] as Map).keys);
+          }
+
+          if (g != _gender || parsedBlocked.length != _blockedUsers.length) {
             _gender = g;
             _target = g == 'male' ? 'female' : 'male';
+            _blockedUsers = parsedBlocked;
             setState(() {});
+          } else {
+            _blockedUsers = parsedBlocked;
           }
+
           _lang = d['language']?.toString();
           _avatar = d['avatarUrl']?.toString();
         }
@@ -626,7 +639,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
   Widget _buildUserGrid() {
     debugPrint('HomeScreen: searching profiles for target gender: $_target');
     return StreamBuilder<List<ChilliProfile>>(
-      stream: _presence.watchUsers(targetGender: _target),
+      stream: _presence.watchUsers(targetGender: _target, blockedUids: _blockedUsers),
       builder: (context, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: _neonCyan)));
@@ -644,7 +657,7 @@ class _ChilliHomeScreenState extends State<ChilliHomeScreen> with WidgetsBinding
         if (users.isEmpty) {
           debugPrint('HomeScreen: RTDB empty, falling back to Firestore');
           return StreamBuilder<List<ChilliProfile>>(
-            stream: _firestore.watchAllUsers(targetGender: _target),
+            stream: _firestore.watchAllUsers(targetGender: _target, blockedUids: _blockedUsers),
             builder: (context, fSnap) {
               if (fSnap.connectionState == ConnectionState.waiting) {
                 return const SliverFillRemaining(child: Center(child: CircularProgressIndicator(color: _neonCyan)));

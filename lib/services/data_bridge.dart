@@ -257,6 +257,7 @@ class DataBridge {
   };
 
   static Map<String, dynamic> get appConfig => _appConfig;
+  static bool _isConfigLoaded = false;
 
   // ✅ Initialize Firestore Config - CALL THIS ONCE TO SET UP YOUR DATABASE
   Future<void> initializeFirestoreConfig() async {
@@ -366,6 +367,8 @@ class DataBridge {
   }
 
   Future<void> fetchAppConfig() async {
+    if (_isConfigLoaded) return;
+    
     double parseDouble(dynamic value, double def) {
       if (value == null) return def;
       if (value is num) return value.toDouble();
@@ -587,6 +590,7 @@ class DataBridge {
       }
 
       debugPrint('DataBridge: config loaded: $_appConfig');
+      _isConfigLoaded = true;
     } catch (e, stackTrace) {
       debugPrint('DataBridge: fetchAppConfig error: $e');
       debugPrint('DataBridge: stack: $stackTrace');

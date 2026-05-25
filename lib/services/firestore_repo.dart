@@ -91,30 +91,18 @@ class FirestoreRepository {
     }
   }
 
-  Stream<List<ChilliProfile>> watchAllUsers({String? targetGender}) {
+  Stream<List<ChilliProfile>> watchAllUsers({String? targetGender, List<String>? blockedUids}) {
     return _usersRef.snapshots().asyncMap((snapshot) async {
       final currentUid = _auth.currentUser?.uid;
       final target = targetGender?.toLowerCase();
 
-      // Fetch current user's blocked list
-      List<String> blockedUids = [];
-      if (currentUid != null) {
-        final selfDoc = await _usersRef.doc(currentUid).get();
-        if (selfDoc.exists && selfDoc.data() != null) {
-          final data = selfDoc.data() as Map<String, dynamic>;
-          if (data['blockedUsers'] != null && data['blockedUsers'] is List) {
-            blockedUids = List<String>.from(data['blockedUsers']);
-          } else if (data['blockedUsers'] != null && data['blockedUsers'] is Map) {
-            blockedUids = List<String>.from((data['blockedUsers'] as Map).keys);
-          }
-        }
-      }
+      final localBlockedUids = blockedUids ?? [];
 
       final list = snapshot.docs
           .map((doc) => ChilliProfile.fromMap(doc.data() as Map<String, dynamic>))
           .where((user) {
             final isNotMe = user.uid != currentUid;
-            final isNotBlocked = !blockedUids.contains(user.uid);
+            final isNotBlocked = !localBlockedUids.contains(user.uid);
             if (target == null) return isNotMe && isNotBlocked;
             return isNotMe && isNotBlocked && user.gender.toLowerCase() == target;
           })
