@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:chilli/pages/language_select_page.dart';
 
 import 'dart:math';
@@ -10,15 +11,36 @@ class UserDetailsPage extends StatefulWidget {
   State<UserDetailsPage> createState() => _UserDetailsPageState();
 }
 
-class _UserDetailsPageState extends State<UserDetailsPage> {
+class _UserDetailsPageState extends State<UserDetailsPage> with TickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
   String? selectedGender;
   String? selectedAvatar;
   bool genderVerified = false; // ✅ Track verification status
   bool _isUploadingAudio = false; // Stub for removed upload logic
 
+  late AnimationController _fadeController;
+  late AnimationController _slideController;
+  late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeController = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
+    _fadeAnimation = CurvedAnimation(parent: _fadeController, curve: Curves.easeInOut);
+
+    _slideController = AnimationController(vsync: this, duration: const Duration(milliseconds: 800));
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _slideController, curve: Curves.easeOutCubic));
+
+    _fadeController.forward();
+    _slideController.forward();
+  }
+
   @override
   void dispose() {
+    _fadeController.dispose();
+    _slideController.dispose();
     _nameController.dispose();
     super.dispose();
   }
@@ -93,9 +115,9 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       return 'Username must be at least 3 characters';
     }
 
-    // Check if username contains only numbers
-    if (RegExp(r'^[0-9]+$').hasMatch(text)) {
-      return 'Username cannot contain only numbers';
+    // Check if username contains any numbers
+    if (RegExp(r'[0-9]').hasMatch(text)) {
+      return 'Username cannot contain numbers';
     }
 
     // Check for phone numbers (various formats)
@@ -194,91 +216,102 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
 
   // ❌ Removed _buildAudioRecorder and _buildProfileAvatar (now using _buildAvatarSection)
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF6B4CE6),
-              const Color(0xFF4834DF),
-              const Color(0xFF2E1F8A),
-            ],
-            stops: const [0.0, 0.5, 1.0],
-          ),
-        ),
-        child: SafeArea(
-          child: CustomScrollView(
-            slivers: [
-              // Collapsing header
-              SliverToBoxAdapter(child: _buildModernHeader()),
-
-              // Main content in card
-              SliverToBoxAdapter(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 10),
-
-                        // Step 1: Gender Selection
-                        _buildStepCard(
-                          stepNumber: 1,
-                          title: 'Select Gender',
-                          isCompleted: genderVerified,
-                          child: _buildGenderSection(),
-                        ),
-
-                        const SizedBox(height: 20),
-
-                        // Step 2: Username
-                        _buildStepCard(
-                          stepNumber: 2,
-                          title: 'Enter Username',
-                          isCompleted: _nameController.text.isNotEmpty,
-                          child: _buildUsernameSection(),
-                        ),
-
-                        const SizedBox(height: 40),
-
-                        // Continue button with gradient
-                        _buildContinueButton(),
-
-                        const SizedBox(height: 20),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+  Widget _buildGlowingOrb(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: size / 2, spreadRadius: size / 2),
+        ],
       ),
     );
   }
 
-  Widget _buildModernHeader() {
-    return Container(
+  @override
+  Widget build(BuildContext context) {
+    final Size size = MediaQuery.of(context).size;
+    final bool isSmallDevice = size.height < 700;
+
+    return Scaffold(
+      backgroundColor: const Color(0xFF0F172A), // Dark GenZ background
+      body: Stack(
+        children: [
+          // Ambient Background Glows
+          Positioned(
+            top: -150,
+            left: -100,
+            child: _buildGlowingOrb(450, const Color(0xFF8B5CF6).withOpacity(0.12)),
+          ),
+          Positioned(
+            bottom: -200,
+            right: -100,
+            child: _buildGlowingOrb(500, const Color(0xFF06B6D4).withOpacity(0.12)),
+          ),
+          
+          SafeArea(
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: SlideTransition(
+                position: _slideAnimation,
+                child: CustomScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  slivers: [
+                    SliverToBoxAdapter(child: _buildModernHeader(isSmallDevice)),
+                    SliverToBoxAdapter(
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B).withOpacity(0.6), // Dark Glass
+                          borderRadius: BorderRadius.circular(32),
+                          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 10)),
+                            BoxShadow(color: const Color(0xFF06B6D4).withOpacity(0.05), blurRadius: 30, spreadRadius: -5),
+                          ],
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Step 1: Gender Selection
+                              _buildStepCard(
+                                stepNumber: 1,
+                                title: 'Select Gender',
+                                isCompleted: genderVerified,
+                                child: _buildGenderSection(),
+                              ),
+                              const SizedBox(height: 24),
+                              // Step 2: Username
+                              _buildStepCard(
+                                stepNumber: 2,
+                                title: 'Enter Username',
+                                isCompleted: _nameController.text.isNotEmpty,
+                                child: _buildUsernameSection(),
+                              ),
+                              const SizedBox(height: 40),
+                              _buildContinueButton(),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SliverToBoxAdapter(child: SizedBox(height: 40)),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModernHeader(bool isSmall) {
+    return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -288,196 +321,95 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: const Color(0xFF1E293B).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
                 ),
-                child: const Icon(
-                  Icons.person_add_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                child: const Icon(Icons.person_add_rounded, color: Color(0xFF06B6D4), size: 28),
               ),
               const Spacer(),
-              // Progress indicator
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: const Color(0xFF1E293B).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18),
                     const SizedBox(width: 6),
-                    Text(
-                      '2 Steps',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
+                    Text('2 Steps', style: TextStyle(color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w600, fontSize: 14)),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Create Your\nProfile',
-            style: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1.2,
-              letterSpacing: -0.5,
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(bounds),
+            child: Text(
+              'Create Your\nProfile',
+              style: TextStyle(
+                fontSize: isSmall ? 32 : 36,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.2,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            'Let\'s get to know you better',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w400,
-            ),
+            'Let\'s get to know you better.',
+            style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w500),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStepCard({
-    required int stepNumber,
-    required String title,
-    required bool isCompleted,
-    required Widget child,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: isCompleted
-              ? const Color(0xFF6B4CE6).withOpacity(0.3)
-              : Colors.grey.shade200,
-          width: 2,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: isCompleted
-                ? const Color(0xFF6B4CE6).withOpacity(0.1)
-                : Colors.black.withOpacity(0.03),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Step header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: isCompleted
-                  ? LinearGradient(
-                      colors: [
-                        const Color(0xFF6B4CE6).withOpacity(0.1),
-                        const Color(0xFF4834DF).withOpacity(0.05),
-                      ],
-                    )
-                  : null,
-              color: isCompleted ? null : Colors.grey.shade50,
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(18),
-                topRight: Radius.circular(18),
+  Widget _buildStepCard({required int stepNumber, required String title, required bool isCompleted, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                gradient: isCompleted ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)]) : null,
+                color: isCompleted ? null : const Color(0xFF14141E),
+                shape: BoxShape.circle,
+                border: Border.all(color: isCompleted ? Colors.transparent : Colors.white.withOpacity(0.2), width: 1.5),
+              ),
+              child: Center(
+                child: isCompleted
+                    ? const Icon(Icons.check, color: Colors.white, size: 18)
+                    : Text('$stepNumber', style: TextStyle(color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
-            child: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    gradient: isCompleted
-                        ? const LinearGradient(
-                            colors: [Color(0xFF6B4CE6), Color(0xFF4834DF)],
-                          )
-                        : null,
-                    color: isCompleted ? null : Colors.grey.shade300,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Center(
-                    child: isCompleted
-                        ? const Icon(Icons.check, color: Colors.white, size: 20)
-                        : Text(
-                            '$stepNumber',
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 16,
-                            ),
-                          ),
-                  ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: isCompleted ? Colors.white : Colors.white.withOpacity(0.7),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isCompleted
-                          ? const Color(0xFF6B4CE6)
-                          : Colors.grey.shade700,
-                    ),
-                  ),
-                ),
-                if (isCompleted)
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFF10D078), Color(0xFF06A85D)],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'Done',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-              ],
+              ),
             ),
-          ),
-
-          // Step content
-          Padding(padding: const EdgeInsets.all(20), child: child),
-        ],
-      ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        child,
+      ],
     );
   }
 
@@ -494,140 +426,80 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   Widget _buildModernGenderCard(String gender, IconData icon) {
     final isSelected = selectedGender == gender;
     final isMale = gender == 'Male';
-    final gradientColors = isMale
-        ? [const Color(0xFF3B82F6), const Color(0xFF1D4ED8)]
-        : [const Color(0xFFEC4899), const Color(0xFFDB2777)];
+    
+    // GenZ vibrant gradient styles
+    final activeGradient = isMale
+        ? const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF06B6D4)]) // Blue to Cyan
+        : const LinearGradient(colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)]); // Pink to Purple
 
     return GestureDetector(
       onTap: () {
-        // Male users: Direct selection without verification
-        if (isMale) {
-          setState(() {
-            selectedGender = gender;
-            genderVerified = true;
-
-            final random = Random();
-            // ✅ Automatically generate random avatar
-            if (selectedAvatar == null) {
-              selectedAvatar = maleAvatars[random.nextInt(maleAvatars.length)];
-            } else {
-              // Check if current avatar is valid for selected gender
-              final currentList = maleAvatars;
-              if (!currentList.contains(selectedAvatar)) {
-                selectedAvatar =
-                    maleAvatars[random.nextInt(maleAvatars.length)];
-              }
-            }
-          });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('✅ $gender selected with auto avatar'),
-                backgroundColor: Colors.blue,
-                duration: const Duration(seconds: 1),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
+        setState(() {
+          selectedGender = gender;
+          genderVerified = true;
+          final random = Random();
+          final list = isMale ? maleAvatars : femaleAvatars;
+          if (selectedAvatar == null || !list.contains(selectedAvatar)) {
+            selectedAvatar = list[random.nextInt(list.length)];
           }
-        } else {
-          // Female users: Direct selection without verification
-          setState(() {
-            selectedGender = gender;
-            genderVerified = true;
-
-            final random = Random();
-            // ✅ Automatically generate random avatar for female
-            if (selectedAvatar == null) {
-              selectedAvatar =
-                  femaleAvatars[random.nextInt(femaleAvatars.length)];
-            } else {
-              final currentList = femaleAvatars;
-              if (!currentList.contains(selectedAvatar)) {
-                selectedAvatar =
-                    femaleAvatars[random.nextInt(femaleAvatars.length)];
-              }
-            }
-          });
-
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('✅ $gender selected with auto avatar'),
-                backgroundColor: Colors.pink,
-                duration: const Duration(seconds: 1),
-                behavior: SnackBarBehavior.floating,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            );
-          }
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ $gender selected'),
+              backgroundColor: const Color(0xFF1E293B),
+              duration: const Duration(seconds: 1),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isMale ? const Color(0xFF06B6D4) : const Color(0xFF8B5CF6))),
+            ),
+          );
         }
       },
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          gradient: isSelected ? LinearGradient(colors: gradientColors) : null,
-          color: isSelected ? null : Colors.grey.shade100,
-          borderRadius: BorderRadius.circular(16),
+          color: isSelected ? Colors.transparent : const Color(0xFF14141E),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.transparent : Colors.grey.shade300,
-            width: 2,
+            color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.1),
+            width: 1.5,
           ),
+          gradient: isSelected ? activeGradient : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: gradientColors[0].withOpacity(0.4),
-                    blurRadius: 15,
-                    offset: const Offset(0, 8),
-                  ),
+                    color: (isMale ? const Color(0xFF06B6D4) : const Color(0xFF8B5CF6)).withOpacity(0.4),
+                    blurRadius: 20,
+                    offset: const Offset(0, 5),
+                  )
                 ]
               : null,
         ),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              icon,
-              size: 40,
-              color: isSelected ? Colors.white : Colors.grey.shade600,
-            ),
+            Icon(icon, size: 40, color: isSelected ? Colors.white : Colors.white.withOpacity(0.4)),
             const SizedBox(height: 8),
             Text(
               gender,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.grey.shade700,
+                color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
             ),
-            if (isSelected && genderVerified) ...[
+            if (isSelected) ...[
               const SizedBox(height: 6),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.25),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.25), borderRadius: BorderRadius.circular(12)),
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified, color: Colors.white, size: 14),
+                    Icon(Icons.verified, color: Colors.white, size: 12),
                     SizedBox(width: 4),
-                    Text(
-                      'Verified',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
+                    Text('Verified', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -639,40 +511,42 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
   }
 
   Widget _buildUsernameSection() {
+    final isNotEmpty = _nameController.text.isNotEmpty;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           decoration: BoxDecoration(
-            color: Colors.grey.shade50,
+            color: const Color(0xFF14141E),
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: _nameController.text.isNotEmpty
-                  ? const Color(0xFF6B4CE6)
-                  : Colors.grey.shade300,
-              width: 2,
+              color: isNotEmpty ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.1),
+              width: 1.5,
             ),
+            boxShadow: isNotEmpty
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF06B6D4).withOpacity(0.2),
+                      blurRadius: 15,
+                    )
+                  ]
+                : null,
           ),
           child: TextField(
             controller: _nameController,
+            inputFormatters: [
+              FilteringTextInputFormatter.deny(RegExp(r'[0-9]')),
+            ],
             onChanged: (value) => setState(() {}),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
             decoration: InputDecoration(
               hintText: 'Enter your username',
-              hintStyle: TextStyle(
-                color: Colors.grey.shade400,
-                fontSize: 16,
-                fontWeight: FontWeight.normal,
-              ),
+              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 16, fontWeight: FontWeight.normal),
               prefixIcon: Icon(
-                Icons.person_outline_rounded,
-                color: _nameController.text.isNotEmpty
-                    ? const Color(0xFF6B4CE6)
-                    : Colors.grey.shade400,
+                Icons.alternate_email_rounded,
+                color: isNotEmpty ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.3),
               ),
-              suffixIcon: _nameController.text.isNotEmpty
-                  ? Icon(Icons.check_circle, color: const Color(0xFF10D078))
-                  : null,
+              suffixIcon: isNotEmpty ? const Icon(Icons.check_circle, color: Color(0xFF06B6D4)) : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(20),
             ),
@@ -681,40 +555,30 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
         const SizedBox(height: 12),
         Text(
           '• At least 3 characters\n• No phone numbers or social media',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.grey.shade600,
-            height: 1.5,
-          ),
+          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.4), height: 1.5),
         ),
       ],
     );
   }
 
   Widget _buildContinueButton() {
-    final allCompleted =
-        selectedAvatar != null &&
-        genderVerified &&
-        _nameController.text.isNotEmpty;
+    final allCompleted = selectedAvatar != null && genderVerified && _nameController.text.isNotEmpty;
 
     return Container(
       width: double.infinity,
       height: 60,
       decoration: BoxDecoration(
-        gradient: allCompleted
-            ? const LinearGradient(
-                colors: [Color(0xFF6B4CE6), Color(0xFF4834DF)],
-              )
-            : null,
-        color: allCompleted ? null : Colors.grey.shade300,
+        gradient: allCompleted ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)], begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
+        color: allCompleted ? null : const Color(0xFF14141E),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: allCompleted ? Colors.transparent : Colors.white.withOpacity(0.1)),
         boxShadow: allCompleted
             ? [
                 BoxShadow(
-                  color: const Color(0xFF6B4CE6).withOpacity(0.4),
+                  color: const Color(0xFF06B6D4).withOpacity(0.4),
                   blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
+                  offset: const Offset(0, 8),
+                )
               ]
             : null,
       ),
@@ -730,11 +594,9 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('⚠️ $usernameError'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.redAccent,
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     );
                     return;
@@ -744,11 +606,9 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('Please select your gender'),
-                        backgroundColor: Colors.red,
+                        backgroundColor: Colors.redAccent,
                         behavior: SnackBarBehavior.floating,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
                     );
                     return;
@@ -757,9 +617,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                   String? audioUrl;
                   String? finalAvatar = selectedAvatar;
                   if (finalAvatar == null) {
-                    final avatars = selectedGender?.toLowerCase() == 'male'
-                        ? maleAvatars
-                        : femaleAvatars;
+                    final avatars = selectedGender?.toLowerCase() == 'male' ? maleAvatars : femaleAvatars;
                     finalAvatar = avatars[Random().nextInt(avatars.length)];
                   }
 
@@ -782,10 +640,7 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                 ? const SizedBox(
                     width: 24,
                     height: 24,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                   )
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -793,19 +648,15 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
                       Text(
                         'Continue to Next Step',
                         style: TextStyle(
-                          color: allCompleted
-                              ? Colors.white
-                              : Colors.grey.shade600,
+                          color: allCompleted ? Colors.white : Colors.white.withOpacity(0.4),
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        color: allCompleted
-                            ? Colors.white
-                            : Colors.grey.shade600,
+                        color: allCompleted ? Colors.white : Colors.white.withOpacity(0.4),
                         size: 20,
                       ),
                     ],
@@ -815,6 +666,4 @@ class _UserDetailsPageState extends State<UserDetailsPage> {
       ),
     );
   }
-
-  // ❌ Removed old _buildGenderCard (now using _buildModernGenderCard)
 }

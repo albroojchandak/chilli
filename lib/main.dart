@@ -197,9 +197,7 @@ class _MainAppState extends State<MainApp> {
         ),
         useMaterial3: true,
       ),
-      home:
-          //  DiagnosticsPage()
-          const AuthWrapper(),
+      home: const AuthWrapper(),
       routes: {
         '/login': (context) => const AuthPage(),
         '/home': (context) => const MainPage(),

@@ -110,14 +110,20 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
           Positioned(
             top: -150,
             left: -100,
-            child: _buildGlowingOrb(450, const Color(0xFF8B5CF6).withOpacity(0.12)), // Massive Purple
+            child: _buildGlowingOrb(
+              450,
+              const Color(0xFF8B5CF6).withOpacity(0.12),
+            ), // Massive Purple
           ),
           Positioned(
             bottom: -200,
             right: -100,
-            child: _buildGlowingOrb(500, const Color(0xFF06B6D4).withOpacity(0.12)), // Massive Cyan
+            child: _buildGlowingOrb(
+              500,
+              const Color(0xFF06B6D4).withOpacity(0.12),
+            ), // Massive Cyan
           ),
-          
+
           // 2. Animated Floating Elements
           Positioned(
             top: 200,
@@ -144,7 +150,10 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
               child: SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 40,
+                  ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -156,9 +165,14 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                           child: Container(
                             width: double.infinity,
                             constraints: const BoxConstraints(maxWidth: 400),
-                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 40),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 32,
+                              vertical: 40,
+                            ),
                             decoration: BoxDecoration(
-                              color: const Color(0xFF1E293B).withOpacity(0.6), // Dark Glass
+                              color: const Color(
+                                0xFF1E293B,
+                              ).withOpacity(0.6), // Dark Glass
                               borderRadius: BorderRadius.circular(32),
                               border: Border.all(
                                 color: Colors.white.withOpacity(0.1),
@@ -171,7 +185,9 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                   offset: const Offset(0, 10),
                                 ),
                                 BoxShadow(
-                                  color: const Color(0xFF06B6D4).withOpacity(0.05),
+                                  color: const Color(
+                                    0xFF06B6D4,
+                                  ).withOpacity(0.05),
                                   blurRadius: 30,
                                   spreadRadius: -5,
                                 ),
@@ -186,7 +202,9 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                   child: AnimatedBuilder(
                                     animation: _pulseAnimation,
                                     builder: (context, child) {
-                                      double logoSize = isSmallDevice ? 80 : 100;
+                                      double logoSize = isSmallDevice
+                                          ? 80
+                                          : 100;
 
                                       return Transform.scale(
                                         scale: _pulseAnimation.value,
@@ -194,31 +212,40 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                           width: logoSize,
                                           height: logoSize,
                                           decoration: BoxDecoration(
-                                            borderRadius: BorderRadius.circular(24),
+                                            borderRadius: BorderRadius.circular(
+                                              24,
+                                            ),
                                             color: const Color(0xFF14141E),
                                             border: Border.all(
-                                              color: const Color(0xFF06B6D4).withOpacity(0.6),
+                                              color: const Color(
+                                                0xFF06B6D4,
+                                              ).withOpacity(0.6),
                                               width: 2,
                                             ),
                                             boxShadow: [
                                               BoxShadow(
-                                                color: const Color(0xFF06B6D4).withOpacity(0.4),
+                                                color: const Color(
+                                                  0xFF06B6D4,
+                                                ).withOpacity(0.4),
                                                 blurRadius: 20,
                                               ),
                                             ],
                                           ),
                                           child: ClipRRect(
-                                            borderRadius: BorderRadius.circular(22),
+                                            borderRadius: BorderRadius.circular(
+                                              22,
+                                            ),
                                             child: Image.network(
-                                              'https://play-lh.googleusercontent.com/-wX9RRR_nwI5StNnH1CB4KB6IIiuV_FARk4WK5clydhX398x4pcln6gYj7bfbTQEK-zu5Hzf6EgAlQuA2M04cQ=w480-h960-rw',
+                                              'https://play-lh.googleusercontent.com/cdzMWiJebn2kjeCrUt7bI47-QQF-ttZGQZY6g0CVMcREiztlyFKRLSYY-tdCehS7Cfq5Z9_lzNl6x7S4Kr6ET5c=w240-h480-rw',
                                               fit: BoxFit.cover,
-                                              errorBuilder: (context, error, stackTrace) {
-                                                return Icon(
-                                                  Icons.video_call_rounded,
-                                                  size: logoSize * 0.5,
-                                                  color: Colors.white,
-                                                );
-                                              },
+                                              errorBuilder:
+                                                  (context, error, stackTrace) {
+                                                    return Icon(
+                                                      Icons.video_call_rounded,
+                                                      size: logoSize * 0.5,
+                                                      color: Colors.white,
+                                                    );
+                                                  },
                                             ),
                                           ),
                                         ),
@@ -227,7 +254,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 const SizedBox(height: 24),
-                                
+
                                 // App Name
                                 ShaderMask(
                                   shaderCallback: (bounds) =>
@@ -250,10 +277,10 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                   ),
                                 ),
                                 const SizedBox(height: 8),
-                                
+
                                 // Tagline
                                 Text(
-                                  'Connect • Chat • Celebrate',
+                                  'Meet. Match. Vibe.',
                                   style: TextStyle(
                                     fontSize: isSmallDevice ? 12 : 14,
                                     color: Colors.white.withOpacity(0.6),
@@ -265,7 +292,9 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
 
                                 // Welcome Text
                                 Text(
-                                  LocaleManager(Locale(_currentLocale.languageCode)).welcomeBack,
+                                  LocaleManager(
+                                    Locale(_currentLocale.languageCode),
+                                  ).welcomeBack,
                                   style: TextStyle(
                                     fontSize: isSmallDevice ? 24 : 28,
                                     fontWeight: FontWeight.bold,
@@ -275,7 +304,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                 ),
                                 const SizedBox(height: 8),
                                 Text(
-                                  'Sign in to get started',
+                                  'Dive in and find your people',
                                   style: TextStyle(
                                     fontSize: isSmallDevice ? 14 : 15,
                                     color: Colors.white.withOpacity(0.5),
@@ -300,14 +329,18 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                     borderRadius: BorderRadius.circular(16),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: const Color(0xFF06B6D4).withOpacity(0.3),
+                                        color: const Color(
+                                          0xFF06B6D4,
+                                        ).withOpacity(0.3),
                                         blurRadius: 15,
                                         offset: const Offset(0, 5),
                                       ),
                                     ],
                                   ),
                                   child: ElevatedButton(
-                                    onPressed: isLoading ? null : _handleGoogleSignIn,
+                                    onPressed: isLoading
+                                        ? null
+                                        : _handleGoogleSignIn,
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: Colors.transparent,
                                       shadowColor: Colors.transparent,
@@ -326,13 +359,17 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                             ),
                                           )
                                         : Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            mainAxisAlignment:
+                                                MainAxisAlignment.center,
                                             children: [
                                               Container(
-                                                padding: const EdgeInsets.all(6),
+                                                padding: const EdgeInsets.all(
+                                                  6,
+                                                ),
                                                 decoration: BoxDecoration(
                                                   color: Colors.white,
-                                                  borderRadius: BorderRadius.circular(10),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
                                                 ),
                                                 child: Image.network(
                                                   'https://cdn1.iconfinder.com/data/icons/google-s-logo/150/Google_Icons-09-512.png',
@@ -341,9 +378,11 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                               ),
                                               const SizedBox(width: 12),
                                               Text(
-                                                'Continue with Google',
+                                                'Jump in with Google',
                                                 style: TextStyle(
-                                                  fontSize: isSmallDevice ? 15 : 17,
+                                                  fontSize: isSmallDevice
+                                                      ? 15
+                                                      : 17,
                                                   fontWeight: FontWeight.w800,
                                                   letterSpacing: 0.5,
                                                 ),
@@ -360,7 +399,8 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                   children: [
                                     Theme(
                                       data: ThemeData(
-                                        unselectedWidgetColor: Colors.white.withOpacity(0.3),
+                                        unselectedWidgetColor: Colors.white
+                                            .withOpacity(0.3),
                                       ),
                                       child: SizedBox(
                                         width: 20,
@@ -370,7 +410,9 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                           activeColor: const Color(0xFF06B6D4),
                                           checkColor: const Color(0xFF14141E),
                                           shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(4),
+                                            borderRadius: BorderRadius.circular(
+                                              4,
+                                            ),
                                           ),
                                           onChanged: (value) {
                                             setState(() {
@@ -386,12 +428,16 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                         text: TextSpan(
                                           style: TextStyle(
                                             fontSize: isSmallDevice ? 11 : 12,
-                                            color: Colors.white.withOpacity(0.5),
+                                            color: Colors.white.withOpacity(
+                                              0.5,
+                                            ),
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
                                           ),
                                           children: [
-                                            const TextSpan(text: 'I agree to the '),
+                                            const TextSpan(
+                                              text: 'I agree to the ',
+                                            ),
                                             TextSpan(
                                               text: 'Privacy Policy',
                                               style: const TextStyle(
@@ -402,7 +448,10 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                                 ..onTap = () {
                                                   Navigator.push(
                                                     context,
-                                                    MaterialPageRoute(builder: (context) => const PrivacyPage()),
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          const PrivacyPage(),
+                                                    ),
                                                   );
                                                 },
                                             ),
@@ -417,7 +466,10 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                                                 ..onTap = () {
                                                   Navigator.push(
                                                     context,
-                                                    MaterialPageRoute(builder: (context) => const Terms_Page()),
+                                                    MaterialPageRoute(
+                                                      builder: (context) =>
+                                                          const Terms_Page(),
+                                                    ),
                                                   );
                                                 },
                                             ),
@@ -473,15 +525,33 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
                   itemBuilder: (BuildContext context) => const [
                     PopupMenuItem(
                       value: 'en',
-                      child: Text('English', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'English',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     PopupMenuItem(
                       value: 'hi',
-                      child: Text('हिंदी (Hindi)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'हिंदी (Hindi)',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                     PopupMenuItem(
                       value: 'ta',
-                      child: Text('தமிழ் (Tamil)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600)),
+                      child: Text(
+                        'தமிழ் (Tamil)',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -501,11 +571,7 @@ class _AuthPageState extends State<AuthPage> with TickerProviderStateMixin {
         shape: BoxShape.circle,
         color: color,
         boxShadow: [
-          BoxShadow(
-            color: color,
-            blurRadius: size / 2,
-            spreadRadius: size / 2,
-          ),
+          BoxShadow(color: color, blurRadius: size / 2, spreadRadius: size / 2),
         ],
       ),
     );

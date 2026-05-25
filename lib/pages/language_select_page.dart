@@ -48,6 +48,7 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
   bool isCreatingAccount = false;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
+  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
@@ -64,6 +65,8 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
       parent: _animationController,
       curve: Curves.easeInOut,
     );
+    _slideAnimation = Tween<Offset>(begin: const Offset(0, 0.2), end: Offset.zero)
+        .animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
     _animationController.forward();
   }
 
@@ -73,66 +76,81 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
     super.dispose();
   }
 
+  Widget _buildGlowingOrb(double size, Color color) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: color,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: size / 2, spreadRadius: size / 2),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              const Color(0xFF6B4CE6),
-              const Color(0xFF4834DF),
-              const Color(0xFF2E1F8A),
-            ],
-            stops: const [0.0, 0.5, 1.0],
+      backgroundColor: const Color(0xFF0F172A), // Dark GenZ background
+      body: Stack(
+        children: [
+          // Ambient Background Glows
+          Positioned(
+            top: -150,
+            left: -100,
+            child: _buildGlowingOrb(450, const Color(0xFF8B5CF6).withOpacity(0.12)),
           ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              // Modern header
-              _buildHeader(),
+          Positioned(
+            bottom: -200,
+            right: -100,
+            child: _buildGlowingOrb(500, const Color(0xFF06B6D4).withOpacity(0.12)),
+          ),
+          
+          SafeArea(
+            child: Column(
+              children: [
+                // Modern header
+                _buildHeader(),
 
-              // Language grid
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.1),
-                        blurRadius: 20,
-                        offset: const Offset(0, -5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      const SizedBox(height: 30),
-                      _buildSelectionIndicator(),
-                      const SizedBox(height: 20),
-                      Expanded(
-                        child: FadeTransition(
-                          opacity: _fadeAnimation,
-                          child: _buildLanguageGrid(),
+                // Language grid
+                Expanded(
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: SlideTransition(
+                      position: _slideAnimation,
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B).withOpacity(0.6), // Dark Glass
+                          borderRadius: BorderRadius.circular(32),
+                          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                          boxShadow: [
+                            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 10)),
+                            BoxShadow(color: const Color(0xFF06B6D4).withOpacity(0.05), blurRadius: 30, spreadRadius: -5),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 24),
+                            _buildSelectionIndicator(),
+                            const SizedBox(height: 16),
+                            Expanded(
+                              child: _buildLanguageGrid(),
+                            ),
+                            _buildContinueButton(),
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       ),
-                      _buildContinueButton(),
-                      const SizedBox(height: 20),
-                    ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -148,72 +166,46 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: const Color(0xFF1E293B).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
                 ),
-                child: const Icon(
-                  Icons.language_rounded,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                child: const Icon(Icons.language_rounded, color: Color(0xFF06B6D4), size: 28),
               ),
               const Spacer(),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: const Color(0xFF1E293B).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1.5,
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
                 ),
                 child: Row(
                   children: [
-                    const Icon(
-                      Icons.check_circle,
-                      color: Colors.white,
-                      size: 18,
-                    ),
+                    const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18),
                     const SizedBox(width: 6),
-                    Text(
-                      'Final Step',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
+                    Text('Final Step', style: TextStyle(color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w600, fontSize: 14)),
                   ],
                 ),
               ),
             ],
           ),
           const SizedBox(height: 24),
-          const Text(
-            'Choose Your\nLanguage',
-            style: TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
-              height: 1.2,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Select the language you\'re most comfortable with',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white.withOpacity(0.9),
-              fontWeight: FontWeight.w400,
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ).createShader(bounds),
+            child: const Text(
+              'Choose Your\nLanguage',
+              style: TextStyle(
+                fontSize: 36,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.2,
+                letterSpacing: -0.5,
+              ),
             ),
           ),
         ],
@@ -226,16 +218,11 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            const Color(0xFF6B4CE6).withOpacity(0.1),
-            const Color(0xFF4834DF).withOpacity(0.05),
-          ],
-        ),
+        color: const Color(0xFF14141E),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: const Color(0xFF6B4CE6).withOpacity(0.2),
-          width: 1,
+          color: selectedLanguage != null ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.1),
+          width: 1.5,
         ),
       ),
       child: Row(
@@ -243,25 +230,17 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF6B4CE6), Color(0xFF4834DF)],
-              ),
+              gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)]),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(
-              Icons.info_outline_rounded,
-              color: Colors.white,
-              size: 20,
-            ),
+            child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
-              selectedLanguage == null
-                  ? 'Tap on a language to select'
-                  : 'Selected: $selectedLanguage',
+              selectedLanguage == null ? 'Tap on a language to select' : 'Selected: $selectedLanguage',
               style: TextStyle(
-                color: const Color(0xFF6B4CE6),
+                color: selectedLanguage != null ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.6),
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -270,11 +249,11 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
           if (selectedLanguage != null)
             Container(
               padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: const Color(0xFF10D078),
+              decoration: const BoxDecoration(
+                color: Color(0xFF1E293B),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.check, color: Colors.white, size: 16),
+              child: const Icon(Icons.check, color: Color(0xFF06B6D4), size: 16),
             ),
         ],
       ),
@@ -288,7 +267,7 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
         crossAxisCount: 2,
         crossAxisSpacing: 16,
         mainAxisSpacing: 16,
-        childAspectRatio: 1.5,
+        mainAxisExtent: 100,
       ),
       itemCount: languages.length,
       itemBuilder: (context, index) {
@@ -305,32 +284,24 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeInOut,
             decoration: BoxDecoration(
-              gradient: isSelected
-                  ? const LinearGradient(
-                      colors: [Color(0xFF6B4CE6), Color(0xFF4834DF)],
-                    )
-                  : null,
-              color: isSelected ? null : Colors.grey.shade50,
+              color: isSelected ? Colors.transparent : const Color(0xFF14141E),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? Colors.transparent : Colors.grey.shade200,
-                width: 2,
+                color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.1),
+                width: 1.5,
               ),
+              gradient: isSelected
+                  ? const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF06B6D4)])
+                  : null,
               boxShadow: isSelected
                   ? [
                       BoxShadow(
-                        color: const Color(0xFF6B4CE6).withOpacity(0.4),
+                        color: const Color(0xFF06B6D4).withOpacity(0.4),
                         blurRadius: 15,
-                        offset: const Offset(0, 8),
-                      ),
+                        offset: const Offset(0, 5),
+                      )
                     ]
-                  : [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.03),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                  : null,
             ),
             child: Stack(
               children: [
@@ -338,16 +309,14 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(language['icon'], style: TextStyle(fontSize: 32)),
+                      Text(language['icon'], style: const TextStyle(fontSize: 32)),
                       const SizedBox(height: 8),
                       Text(
                         language['native'],
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isSelected
-                              ? Colors.white
-                              : Colors.grey.shade800,
+                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -355,9 +324,7 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
                         language['name'],
                         style: TextStyle(
                           fontSize: 12,
-                          color: isSelected
-                              ? Colors.white.withOpacity(0.8)
-                              : Colors.grey.shade500,
+                          color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
                         ),
                       ),
                     ],
@@ -373,11 +340,7 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
                         color: Colors.white.withOpacity(0.3),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(
-                        Icons.check,
-                        color: Colors.white,
-                        size: 16,
-                      ),
+                      child: const Icon(Icons.check, color: Colors.white, size: 16),
                     ),
                   ),
               ],
@@ -397,19 +360,18 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
       height: 60,
       decoration: BoxDecoration(
         gradient: isEnabled
-            ? const LinearGradient(
-                colors: [Color(0xFF6B4CE6), Color(0xFF4834DF)],
-              )
+            ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)], begin: Alignment.topLeft, end: Alignment.bottomRight)
             : null,
-        color: isEnabled ? null : Colors.grey.shade300,
+        color: isEnabled ? null : const Color(0xFF14141E),
         borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: isEnabled ? Colors.transparent : Colors.white.withOpacity(0.1)),
         boxShadow: isEnabled
             ? [
                 BoxShadow(
-                  color: const Color(0xFF6B4CE6).withOpacity(0.4),
+                  color: const Color(0xFF06B6D4).withOpacity(0.4),
                   blurRadius: 20,
-                  offset: const Offset(0, 10),
-                ),
+                  offset: const Offset(0, 8),
+                )
               ]
             : null,
       ),
@@ -485,7 +447,7 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content: Text('Error creating account: $e'),
-                          backgroundColor: Colors.red.shade600,
+                          backgroundColor: Colors.redAccent,
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -508,18 +470,18 @@ class _LanguageSelectPageState extends State<LanguageSelectPage>
                 : Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const Text(
+                      Text(
                         'Get Started',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: isEnabled ? Colors.white : Colors.white.withOpacity(0.4),
                           fontSize: 16,
-                          fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
                       const SizedBox(width: 8),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        color: isEnabled ? Colors.white : Colors.grey.shade600,
+                        color: isEnabled ? Colors.white : Colors.white.withOpacity(0.4),
                         size: 20,
                       ),
                     ],
