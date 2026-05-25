@@ -1,364 +1,230 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class PrivacyPage extends StatelessWidget {
-  const PrivacyPage({Key? key}) : super(key: key);
+  const PrivacyPage({super.key});
 
-  // App theme colors - updated to blue palette
-  static const Color primaryColor = Color(0xFF4285F4);
-  static const Color accentColor = Color(0xFF1A73E8);
-  static const Color textPrimaryColor = Color(0xFF424242);
-  static const Color textSecondaryColor = Color(0xFF757575);
-  static const Color cardColor = Color(0xFFF0F8FF);
+  static const Color _bg = Color(0xFF06010F);
+  static const Color _neonCyan = Color(0xFF00F5FF);
+  static const Color _neonPink = Color(0xFFFF2D78);
+  static const Color _neonViolet = Color(0xFFBF5AF2);
+  static const Color _surface = Color(0xFF151525);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Privacy Policy',
-          style: TextStyle(fontWeight: FontWeight.w600),
-        ),
-        backgroundColor: primaryColor,
-        elevation: 0,
-      ),
-      backgroundColor: Colors.white,
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildHeader(),
-            _buildParagraph(
-              'Inflyratech ("we," "our," or "us") is committed to protecting your privacy and ensuring the security of your personal information when using chilli. This Privacy Policy explains our practices regarding the collection, use, and safeguarding of your data when you use our mobile application chilli (the "App" or "Platform"). This policy is designed to comply with all applicable data protection and privacy laws. Your use of chilli signifies your acceptance of this Privacy Policy.',
-            ),
-
-            _buildSectionCard(
-              '1. Information Collection',
-              content: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildSubsection('1.1 Personal Information', [
-                    'Primary Data: Name, contact information, and authentication details for chilli account',
-                    'Account Data: User credentials, profile information, and chilli app settings',
-                    'Usage Data: Interaction patterns, preferences, and chilli platform activity',
-                  ]),
-                ],
+      backgroundColor: _bg,
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              backgroundColor: _bg.withOpacity(0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
               ),
-            ),
-
-            _buildSectionCard(
-              '2. Data Usage and Processing',
-              content: _buildBulletPoints([
-                'Service Delivery: chilli account management and platform functionality',
-                'Security Measures: Fraud prevention and chilli platform protection',
-                'Experience Enhancement: chilli service improvement and personalization',
-                'Communication: chilli updates, support, and essential notifications',
-                'Analytics: chilli platform performance and user experience optimization',
-                'Compliance: Legal and regulatory requirements adherence',
-              ]),
-            ),
-
-            _buildSectionCard(
-              '3. Data Protection',
-              content: _buildSubsection('Security Measures for chilli', [
-                'Industry-standard encryption protocols for chilli data',
-                'Regular security audits and updates for chilli platform',
-                'Strict access controls and authentication for chilli accounts',
-                'Continuous monitoring and threat detection for chilli services',
-              ]),
-            ),
-
-            _buildSectionCard(
-              '4. User Rights',
-              content: _buildBulletPoints([
-                'Access your personal data stored in chilli',
-                'Request data correction or deletion from chilli',
-                'Withdraw consent for chilli data processing',
-                'Export your chilli data in a portable format',
-                'Lodge privacy-related complaints regarding chilli',
-              ]),
-            ),
-
-            _buildSectionCard(
-              '5. Data Sharing',
-              content: _buildSubsection('Third-Party Disclosure', [
-                'Service Providers: Essential chilli platform operations',
-                'Legal Requirements: Compliance with applicable laws regarding chilli',
-                'Business Transfers: Corporate restructuring or acquisition affecting chilli',
-              ]),
-            ),
-
-            _buildSectionCard(
-              '6. Data Retention',
-              content: _buildParagraph(
-                'We retain your chilli information for as long as necessary to provide our services and comply with legal obligations. Upon chilli account deletion, we follow a secure data disposal protocol.',
-                bottomPadding: 0,
-              ),
-            ),
-
-            _buildSectionCard(
-              '7. Children\'s Privacy',
-              content: _buildParagraph(
-                'chilli is not intended for users under the age of 18. We do not knowingly collect or maintain information from children through the chilli platform.',
-                bottomPadding: 0,
-              ),
-            ),
-
-            _buildSectionCard(
-              '8. Updates to Privacy Policy',
-              content: _buildParagraph(
-                'We may update this Privacy Policy for chilli periodically. Users will be notified of significant changes through the chilli platform or via email.',
-                bottomPadding: 0,
-              ),
-            ),
-
-            _buildSectionCard(
-              '9. Contact Information',
-              content: _buildParagraph('''
-Privacy Officer - chilli App
-Inflyratech
-88, Kehnu, PO + PS Mandi
-Fatehpur, Poonch
-Jammu & Kashmir, India - 185102
-
-Email: info@inflyratech.site
-
-For chilli privacy-related inquiries or concerns, please contact us using the above information.
-              ''', bottomPadding: 0),
-            ),
-
-            const SizedBox(height: 20),
-            _buildFooter(),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.privacy_tip_rounded, size: 32, color: accentColor),
-              const SizedBox(width: 12),
-              Text(
-                'Privacy Policy',
+              title: const Text(
+                'PRIVACY PROTOCOL',
                 style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: accentColor,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: 2,
                 ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Container(
-            height: 4,
-            width: 60,
-            decoration: BoxDecoration(
-              color: primaryColor,
-              borderRadius: BorderRadius.circular(2),
             ),
           ),
-        ],
+        ),
       ),
-    );
-  }
-
-  Widget _buildSectionCard(String title, {required Widget content}) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16.0),
-      decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            offset: const Offset(0, 2),
-            blurRadius: 6,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      body: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 16.0,
-              vertical: 12.0,
-            ),
-            decoration: BoxDecoration(
-              color: primaryColor.withOpacity(0.15),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-              ),
-            ),
-            child: Row(
+          Positioned(
+            top: -100,
+            right: -100,
+            child: _buildGlow(_neonCyan.withOpacity(0.1), 400),
+          ),
+          Positioned(
+            bottom: -50,
+            left: -100,
+            child: _buildGlow(_neonViolet.withOpacity(0.1), 350),
+          ),
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 100, 24, 60),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 24,
-                  width: 4,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                _buildDynamicHeader(),
+                const SizedBox(height: 48),
+                _buildProtocolSection(
+                  '01',
+                  'DATA COLLECTION',
+                  'We collect personal identification information (email, username, phone number), profile media, and usage metadata. We also access device permissions for camera, microphone, and storage to facilitate P2P voice and video communication.',
                 ),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: textPrimaryColor,
-                  ),
+                _buildProtocolSection(
+                  '02',
+                  'DATA PROCESSING & USAGE',
+                  'Collected data is strictly used to maintain your identity node, provide secure communication handshakes, and manage virtual wallet balances. We use Firebase services to synchronize real-time data across the network.',
                 ),
+                _buildProtocolSection(
+                  '03',
+                  'SHARING & DISCLOSURE',
+                  'Nurxian does not sell user data to third-party entities. We only disclose information to our core infrastructure providers (Firebase, Google Cloud) or when required by legal authorities under the laws of India.',
+                ),
+                _buildProtocolSection(
+                  '04',
+                  'CHILDREN’S PRIVACY',
+                  'This application is not intended for users under the age of 18. We do not knowingly collect data from children. If we discover such data, it is immediately purged from our mainframe.',
+                ),
+                _buildProtocolSection(
+                  '05',
+                  'YOUR PRIVACY RIGHTS',
+                  'You have the right to access, rectify, or delete your data at any time. You can initiate account deletion through the support node, which results in the permanent erasure of your identity from our systems.',
+                ),
+                const SizedBox(height: 40),
+                _buildContactNode(),
+                const SizedBox(height: 60),
+                _buildLegalFooter(),
               ],
             ),
           ),
-          Padding(padding: const EdgeInsets.all(16.0), child: content),
         ],
       ),
     );
   }
 
-  Widget _buildSubsection(String title, List<String> points) {
+  Widget _buildGlow(Color color, double radius) {
+    return Container(
+      width: radius,
+      height: radius,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: radius, spreadRadius: radius / 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDynamicHeader() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: textPrimaryColor,
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: _neonCyan.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: _neonCyan.withOpacity(0.3)),
+          ),
+          child: const Text(
+            'LAST UPDATED: APRIL 2026',
+            style: TextStyle(color: _neonCyan, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
           ),
         ),
-        const SizedBox(height: 12),
-        ...points.map(
-          (point) => Padding(
-            padding: const EdgeInsets.only(left: 8.0, bottom: 8.0),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  margin: const EdgeInsets.only(top: 6, right: 8),
-                  height: 6,
-                  width: 6,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-                Expanded(
-                  child: Text(
-                    point,
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: textSecondaryColor,
-                      height: 1.5,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+        const SizedBox(height: 20),
+        const Text(
+          'Nurxian Privacy Policy\nData Sovereignty Protocol.',
+          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.2),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'At Chilli, operated by Nurxian, we ensure the absolute integrity of your digital footprint. This protocol outlines our commitment to transparency and play-console compliance.',
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
         ),
       ],
     );
   }
 
-  Widget _buildParagraph(String text, {double bottomPadding = 16.0}) {
-    return Padding(
-      padding: EdgeInsets.only(bottom: bottomPadding),
-      child: Text(
-        text,
-        style: TextStyle(fontSize: 14, color: textSecondaryColor, height: 1.5),
-        textAlign: TextAlign.justify,
+  Widget _buildProtocolSection(String index, String title, String description) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                index,
+                style: TextStyle(color: _neonPink.withOpacity(0.5), fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 2),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: Text(
+              description,
+              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildBulletPoints(List<String> points) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: points
-          .map(
-            (point) => Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    margin: const EdgeInsets.only(top: 6, right: 8),
-                    height: 6,
-                    width: 6,
-                    decoration: BoxDecoration(
-                      color: accentColor,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      point,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textSecondaryColor,
-                        height: 1.5,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-
-  Widget _buildFooter() {
+  Widget _buildContactNode() {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: cardColor,
-        borderRadius: BorderRadius.circular(12),
+        color: _surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withOpacity(0.05)),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Divider(color: primaryColor),
+          const Row(
+            children: [
+              Icon(Icons.hub_rounded, color: _neonCyan, size: 20),
+              SizedBox(width: 12),
+              Text('NURXIAN HEADQUARTERS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
+            ],
+          ),
+          const SizedBox(height: 20),
+          _contactItem(Icons.location_on_rounded, 'Poonch, J&K, India - 185102'),
           const SizedBox(height: 12),
+          _contactItem(Icons.phone_android_rounded, '+91 8899841923'),
+          const SizedBox(height: 12),
+          _contactItem(Icons.alternate_email_rounded, 'info@nurxian.site'),
+        ],
+      ),
+    );
+  }
+
+  Widget _contactItem(IconData icon, String label) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Colors.white.withOpacity(0.3)),
+        const SizedBox(width: 12),
+        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+      ],
+    );
+  }
+
+  Widget _buildLegalFooter() {
+    return Center(
+      child: Column(
+        children: [
           Text(
-            'Last updated: 2025',
-            style: TextStyle(
-              fontSize: 12,
-              fontStyle: FontStyle.italic,
-              color: textSecondaryColor,
-            ),
-            textAlign: TextAlign.center,
+            'CHILLI OS | NURXIAN CORE',
+            style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
           ),
           const SizedBox(height: 8),
           Text(
-            '© Inflyratech - chilli App. All rights reserved.',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: textPrimaryColor,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'This app is owned and operated by INFLYRATECH PRIVATE LIMITED.',
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-              color: textPrimaryColor,
-            ),
-            textAlign: TextAlign.center,
+            '© ESTB DEC 2025 NURXIAN. ALL RIGHTS RESERVED.',
+            style: TextStyle(color: Colors.white.withOpacity(0.1), fontSize: 9, letterSpacing: 1),
           ),
         ],
       ),

@@ -2174,63 +2174,76 @@ class _VideoCallPageState extends State<VideoCallPage>
                 ),
 
               Positioned(
-                bottom: 20,
-                left: 20,
-                right: 20,
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(30),
-                        border: Border.all(
-                          color: Colors.white.withOpacity(0.3),
-                          width: 1.5,
+                bottom: 32,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(40),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 25, sigmaY: 25),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 12,
                         ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF1E293B).withOpacity(0.65),
+                          borderRadius: BorderRadius.circular(40),
+                          border: Border.all(
+                            color: Colors.white.withOpacity(0.15),
+                            width: 1,
                           ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildCallButton(
-                            icon: _isMuted
-                                ? Icons.mic_off_rounded
-                                : Icons.mic_rounded,
-                            label: _isMuted ? 'Unmute' : 'Mute',
-                            onPressed: _toggleMute,
-                            isActive: _isMuted,
-                            activeColor: Colors.redAccent,
-                          ),
-                          _buildCallButton(
-                            icon: _isSpeakerOn
-                                ? Icons.volume_up_rounded
-                                : Icons.headset_rounded,
-                            label: _isSpeakerOn ? 'Speaker' : 'Earpiece',
-                            onPressed: _toggleSpeaker,
-                            isActive: _isSpeakerOn,
-                            activeColor: const Color(0xFF10B981),
-                          ),
-                          if (_isConnected && _currentUserGender == 'male')
-                            _buildGiftModelButton(),
-                          _buildCallButton(
-                            icon: Icons.call_end_rounded,
-                            label: 'End',
-                            onPressed: _endCall,
-                            bgColor: Colors.red,
-                          ),
-                        ],
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            _buildCallButton(
+                              icon: _isMuted
+                                  ? Icons.mic_off_rounded
+                                  : Icons.mic_rounded,
+                              label: 'Mute',
+                              onPressed: _toggleMute,
+                              isActive: _isMuted,
+                              activeColor: Colors.white, // Invert on active
+                              bgColor: _isMuted ? Colors.white : Colors.white.withOpacity(0.2),
+                              iconColor: _isMuted ? Colors.black : Colors.white,
+                            ),
+                            const SizedBox(width: 16),
+                            _buildCallButton(
+                              icon: _isSpeakerOn
+                                  ? Icons.volume_up_rounded
+                                  : Icons.volume_off_rounded,
+                              label: 'Speaker',
+                              onPressed: _toggleSpeaker,
+                              isActive: _isSpeakerOn,
+                              activeColor: Colors.white,
+                              bgColor: _isSpeakerOn ? Colors.white : Colors.white.withOpacity(0.2),
+                              iconColor: _isSpeakerOn ? Colors.black : Colors.white,
+                            ),
+
+                            if (_isConnected && _currentUserGender == 'male') ...[
+                              const SizedBox(width: 16),
+                              _buildGiftModelButton(),
+                            ],
+                            const SizedBox(width: 16),
+                            _buildCallButton(
+                              icon: Icons.call_end_rounded,
+                              label: 'End',
+                              onPressed: _endCall,
+                              bgColor: const Color(0xFFFF3B30), // Apple Red
+                              iconColor: Colors.white,
+                            ),
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -2253,6 +2266,7 @@ class _VideoCallPageState extends State<VideoCallPage>
     bool isActive = false,
     Color? activeColor,
     Color? bgColor,
+    Color? iconColor,
   }) {
     final Color resolvedBg =
         bgColor ??
@@ -2277,7 +2291,7 @@ class _VideoCallPageState extends State<VideoCallPage>
             ),
           ],
         ),
-        child: Icon(icon, color: Colors.white, size: 26),
+        child: Icon(icon, color: iconColor ?? Colors.white, size: 26),
       ),
     );
   }

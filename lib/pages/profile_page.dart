@@ -25,6 +25,7 @@ import 'package:uuid/uuid.dart';
 import 'package:chilli/legal_pages/privacy_page.dart';
 import 'package:chilli/legal_pages/terms_page.dart';
 import 'package:chilli/legal_pages/refund_page.dart';
+import 'package:chilli/components/genz_dialog.dart'; // ✅ Added GenZDialog
 import 'package:chilli/legal_pages/restrictions_page.dart';
 import 'package:chilli/pages/contact_us_page.dart';
 
@@ -440,33 +441,43 @@ class _ProfilePageState extends State<ProfilePage>
     );
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Edit Name'),
-        content: TextField(
+      builder: (context) => GenZDialog(
+        title: 'EDIT IDENTITY',
+        message: 'Update your display name across the Nurxian network.',
+        type: GenZDialogType.info,
+        customContent: TextField(
           controller: nameController,
-          decoration: const InputDecoration(labelText: 'Name'),
+          style: const TextStyle(color: Colors.white),
+          decoration: InputDecoration(
+            labelText: 'New Name',
+            labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(16),
+              borderSide: const BorderSide(color: Color(0xFF06B6D4)),
+            ),
+            filled: true,
+            fillColor: Colors.black.withOpacity(0.3),
+          ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newName = nameController.text.trim();
-              Navigator.pop(context);
+        primaryButtonText: 'SAVE CHANGES',
+        secondaryButtonText: 'CANCEL',
+        onSecondaryPressed: () => Navigator.pop(context),
+        onPrimaryPressed: () {
+          final newName = nameController.text.trim();
+          Navigator.pop(context);
 
-              // Validate username with comprehensive checks
-              final usernameError = _validateUsername(newName);
-              if (usernameError != null) {
-                _showSnackBar('⚠️ $usernameError', Colors.red);
-              } else {
-                _updateProfile(name: newName);
-              }
-            },
-            child: const Text('Save'),
-          ),
-        ],
+          // Validate username with comprehensive checks
+          final usernameError = _validateUsername(newName);
+          if (usernameError != null) {
+            _showSnackBar('⚠️ $usernameError', Colors.red);
+          } else {
+            _updateProfile(name: newName);
+          }
+        },
       ),
     );
   }
@@ -494,20 +505,14 @@ Join me on chilli! 🚀
   Future<void> _handleLogout() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout?'),
-        content: const Text('Are you sure you want to logout?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text('Logout', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      builder: (context) => GenZDialog(
+        title: 'DISCONNECT NODE?',
+        message: 'Are you sure you want to log out and terminate your current session on this device?',
+        type: GenZDialogType.error, // Red glow for destructive action
+        primaryButtonText: 'LOGOUT',
+        secondaryButtonText: 'CANCEL',
+        onSecondaryPressed: () => Navigator.pop(context, false),
+        onPrimaryPressed: () => Navigator.pop(context, true),
       ),
     );
 

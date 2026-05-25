@@ -1,329 +1,201 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
-class RefundPolicy {
-  static String getRefundPolicyTitle() {
-    return "Refund Policy";
-  }
-
-  static String getRefundPolicyText() {
-    return '''
-# Refund Policy
-
-## 1. Overview
-At chilli, we strive to ensure your satisfaction with our services. This refund policy outlines the terms and conditions regarding refunds for purchases made through our application.
-
-## 2. Eligibility for Refunds
-### 2.1 Eligible Refund Scenarios:
-- Service unavailability due to technical issues on our end
-- Incorrect charges or billing errors
-- Premium features not delivered as described
-
-### 2.2 Ineligible Refund Scenarios:
-- Requests made after 14 days of purchase
-- Services that have been fully or partially consumed
-- Cancellation of subscription after the billing cycle has begun
-- Purchases made using promotional credits or GiftModel cards
-
-## 3. Refund Process
-### 3.1 How to Request a Refund:
-- Contact our customer support team through the app's "Help & Support" section
-- Provide your transaction ID and reason for refund
-- Submit any relevant documentation or evidence if applicable
-
-### 3.2 Processing Time:
-- Refund requests are typically processed within 3-5 business days
-- The actual refund may take 7-14 business days to reflect in your account, depending on your payment provider
-
-## 4. Special Considerations
-### 4.1 Subscription Cancellations:
-- Cancelling a subscription will not result in a refund for the current billing period
-- Subscription will remain active until the end of the current billing cycle
-
-### 4.2 Technical Issues:
-- If you experience technical issues that prevent you from using our service, please contact our support team before requesting a refund so we can attempt to resolve the issue
-
-## 5. Changes to This Policy
-We reserve the right to modify this refund policy at any time. Changes will be effective immediately upon posting to the app.
-
-Last Updated: ${DateTime.now().toString().split(' ')[0]}
-''';
-  }
-
-  static Widget getRefundPolicyWidget(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(getRefundPolicyTitle()),
-        centerTitle: true,
-        elevation: 0,
-      ),
-      body: const RefundPolicyContent(),
-    );
-  }
-}
-
 class RefundPolicyContent extends StatelessWidget {
-  const RefundPolicyContent({Key? key}) : super(key: key);
+  const RefundPolicyContent({super.key});
+
+  static const Color _bg = Color(0xFF06010F);
+  static const Color _neonCyan = Color(0xFF00F5FF);
+  static const Color _neonPink = Color(0xFFFF2D78);
+  static const Color _surface = Color(0xFF151525);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeaderCard(context),
-              const SizedBox(height: 16),
-              _buildSectionCard(
-                context,
-                title: "Eligibility for Refunds",
-                icon: Icons.check_circle_outline,
-                content: _buildEligibilityContent(context),
+      backgroundColor: _bg,
+      extendBodyBehindAppBar: true,
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(80),
+        child: ClipRRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: AppBar(
+              backgroundColor: _bg.withOpacity(0.7),
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
+                onPressed: () => Navigator.pop(context),
               ),
-              const SizedBox(height: 16),
-              _buildSectionCard(
-                context,
-                title: "Refund Process",
-                icon: Icons.sync,
-                content: _buildProcessContent(context),
-              ),
-              const SizedBox(height: 16),
-              _buildSectionCard(
-                context,
-                title: "Special Considerations",
-                icon: Icons.info_outline,
-                content: _buildConsiderationsContent(context),
-              ),
-              const SizedBox(height: 16),
-              _buildSectionCard(
-                context,
-                title: "Changes to This Policy",
-                icon: Icons.update,
-                content: _buildChangesContent(context),
-              ),
-              const SizedBox(height: 24),
-              Center(
-                child: Text(
-                  "Last Updated: ${DateTime.now().toString().split(' ')[0]}",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey,
-                  ),
+              title: const Text(
+                'REFUND PROTOCOL',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 18,
+                  letterSpacing: 2,
                 ),
               ),
-              const SizedBox(height: 16),
-              Center(
-                child: Text(
-                  "This app is owned and operated by INFLYRATECH PRIVATE LIMITED.",
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey[700],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 32),
-            ],
+            ),
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeaderCard(BuildContext context) {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Theme.of(context).primaryColor,
-              Theme.of(context).primaryColor.withOpacity(0.7),
-            ],
+      body: Stack(
+        children: [
+          Positioned(
+            top: -100,
+            right: -100,
+            child: _buildGlow(_neonCyan.withOpacity(0.05), 400),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              RefundPolicy.getRefundPolicyTitle(),
-              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              "At chilli, we strive to ensure your satisfaction with our services. This refund policy outlines the terms and conditions regarding refunds for purchases made through our application.",
-              style: Theme.of(
-                context,
-              ).textTheme.bodyMedium?.copyWith(color: Colors.white),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSectionCard(
-    BuildContext context, {
-    required String title,
-    required IconData icon,
-    required Widget content,
-  }) {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 12),
-                Text(
-                  title,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const Divider(height: 24),
-            content,
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildEligibilityContent(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSubsection(
-          context,
-          title: "Eligible Refund Scenarios:",
-          items: [
-            "Service unavailability due to technical issues on our end",
-            "Incorrect charges or billing errors",
-            "Premium features not delivered as described",
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSubsection(
-          context,
-          title: "Ineligible Refund Scenarios:",
-          items: [
-            "Requests made after 2 days of purchase",
-            "Services that have been fully or partially consumed",
-            "Cancellation of subscription after the billing cycle has begun",
-            "Purchases made using promotional credits or GiftModel cards",
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildProcessContent(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSubsection(
-          context,
-          title: "How to Request a Refund:",
-          items: [
-            "Contact our customer support team through the app's \"Help & Support\" section",
-            "Provide your transaction ID and reason for refund",
-            "Submit any relevant documentation or evidence if applicable",
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSubsection(
-          context,
-          title: "Processing Time:",
-          items: [
-            "Refund requests are typically processed within 3-5 business days",
-            "The actual refund may take 7-14 business days to reflect in your account, depending on your payment provider",
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildConsiderationsContent(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildSubsection(
-          context,
-          title: "Subscription Cancellations:",
-          items: [
-            "Cancelling a subscription will not result in a refund for the current billing period",
-            "Subscription will remain active until the end of the current billing cycle",
-          ],
-        ),
-        const SizedBox(height: 16),
-        _buildSubsection(
-          context,
-          title: "Technical Issues:",
-          items: [
-            "If you experience technical issues that prevent you from using our service, please contact our support team before requesting a refund so we can attempt to resolve the issue",
-          ],
-        ),
-      ],
-    );
-  }
-
-  Widget _buildChangesContent(BuildContext context) {
-    return Text(
-      "We reserve the right to modify this refund policy at any time. Changes will be effective immediately upon posting to the app.",
-      style: Theme.of(context).textTheme.bodyMedium,
-    );
-  }
-
-  Widget _buildSubsection(
-    BuildContext context, {
-    required String title,
-    required List<String> items,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          title,
-          style: Theme.of(
-            context,
-          ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        ...items.map(
-          (item) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
+          SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.fromLTRB(24, MediaQuery.of(context).padding.top + 100, 24, 60),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(Icons.arrow_right, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    item,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
+                _buildHeader(),
+                const SizedBox(height: 48),
+                _buildPolicySection(
+                  '01',
+                  'VIRTUAL ASSET POLICY',
+                  'All coin purchases within the Chilli network are final. As virtual assets are consumed immediately upon credit to your wallet, Nurxian does not offer standard refunds for used or partially used assets.',
                 ),
+                _buildPolicySection(
+                  '02',
+                  'ELIGIBLE EXCEPTIONS',
+                  'Refunds may be considered only in cases of documented technical failure where coins were not credited after a successful transaction, or in cases of unintentional double-billing within a 24-hour window.',
+                ),
+                _buildPolicySection(
+                  '03',
+                  'REFUND TIMELINE',
+                  'Eligible refund requests must be filed within 48 hours of the transaction. Once approved by the Nurxian billing node, the reversal may take 5-7 business days to reflect in your original payment source.',
+                ),
+                _buildPolicySection(
+                  '04',
+                  'REQUEST PROCEDURE',
+                  'To initiate a reversal, navigate to the Support Hub and provide your Transaction ID, date, and a brief description of the technical anomaly. Screenshots of the debit notification are required.',
+                ),
+                _buildPolicySection(
+                  '05',
+                  'DENIAL CRITERIA',
+                  'Requests will be rejected if coins have already been consumed for services, if the account is currently blacklisted for conduct violations, or if the claim is made after the 48-hour mandatory window.',
+                ),
+                const SizedBox(height: 40),
+                _buildWarningBox(),
+                const SizedBox(height: 60),
+                _buildLegalFooter(),
               ],
             ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildGlow(Color color, double radius) {
+    return Container(
+      width: radius,
+      height: radius,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        boxShadow: [
+          BoxShadow(color: color, blurRadius: radius, spreadRadius: radius / 2),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'TRANSACTION REVERSAL',
+          style: TextStyle(color: _neonCyan, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 2),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Nurxian Billing\nStandard Protocols.',
+          style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, height: 1.1),
+        ),
+        const SizedBox(height: 16),
+        Text(
+          'Our billing node ensures fair transactions. This protocol outlines the conditions under which a reversal can be initiated.',
+          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
         ),
       ],
+    );
+  }
+
+  Widget _buildPolicySection(String index, String title, String description) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 32),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                '[$index]',
+                style: const TextStyle(color: _neonCyan, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1),
+              ),
+              const SizedBox(width: 12),
+              Text(
+                title,
+                style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: Text(
+              description,
+              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 14, height: 1.6),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWarningBox() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: _neonPink.withOpacity(0.05),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _neonPink.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.info_outline_rounded, color: _neonPink, size: 24),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Text(
+              'For Play Store / App Store billing, refunds must be requested directly through the respective platform vendor policy.',
+              style: TextStyle(color: _neonPink.withOpacity(0.8), fontSize: 12, height: 1.6, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegalFooter() {
+    return Center(
+      child: Column(
+        children: [
+          Text(
+            'CHILLI OS | BILLING CORE',
+            style: TextStyle(color: Colors.white.withOpacity(0.15), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'POONCH, J&K | NURXIAN PRIVATE LIMITED',
+            style: TextStyle(color: Colors.white.withOpacity(0.05), fontSize: 9, letterSpacing: 1),
+          ),
+        ],
+      ),
     );
   }
 }

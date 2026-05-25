@@ -10,6 +10,7 @@ import '../core_services/push_notification_service.dart'
 import '../core_services/video_call_service.dart';
 import '../core_services/push_notification_service.dart';
 import '../core_services/http_service.dart';
+import 'package:chilli/components/genz_dialog.dart'; // ✅ Added GenZDialog
 
 class ChatPage extends StatefulWidget {
   final String roomId;
@@ -323,39 +324,15 @@ class _ChatPageState extends State<ChatPage>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.money_off, color: Colors.red, size: 28),
-            SizedBox(width: 10),
-            Text('Balance Low'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.account_balance_wallet, size: 60, color: Colors.red),
-            SizedBox(height: 16),
-            Text(
-              'Your coin balance has reached 0.\nThe chat will end now.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _endChat();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF667eea),
-            ),
-            child: const Text('OK', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      builder: (context) => GenZDialog(
+        title: 'BALANCE LOW',
+        message: 'Your coin balance has reached 0.\nThe chat will end now.',
+        type: GenZDialogType.error,
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {
+          Navigator.pop(context);
+          _endChat();
+        },
       ),
     );
   }
@@ -471,39 +448,15 @@ class _ChatPageState extends State<ChatPage>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.exit_to_app, color: Colors.orange, size: 28),
-            SizedBox(width: 10),
-            Text('Chat Ended'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.person_off, size: 60, color: Colors.grey),
-            SizedBox(height: 16),
-            Text(
-              'User left the chat',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF667eea),
-            ),
-            child: const Text('OK', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      builder: (context) => GenZDialog(
+        title: 'CHAT ENDED',
+        message: 'User left the chat',
+        type: GenZDialogType.warning,
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {
+          Navigator.pop(context);
+          Navigator.pop(context);
+        },
       ),
     );
   }
@@ -657,93 +610,14 @@ class _ChatPageState extends State<ChatPage>
 
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: [
-            Icon(
-              Icons.warning_amber_rounded,
-              color: Colors.orange[700],
-              size: 28,
-            ),
-            const SizedBox(width: 10),
-            const Text('Insufficient Coins'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(15),
-              decoration: BoxDecoration(
-                color: Colors.orange[50],
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Icon(Icons.chat_bubble, color: Colors.orange[700], size: 40),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Need 2 Coins',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange[900],
-                    ),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    '2 coins per message',
-                    style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 15),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.red[50],
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.red[200]!),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(
-                    Icons.account_balance_wallet,
-                    color: Colors.red,
-                    size: 20,
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Current balance: $_currentTokens Coins',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton.icon(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.add_circle, size: 20),
-            label: const Text('Add Coins'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF6C5CE7),
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ],
+      builder: (context) => GenZDialog(
+        title: 'INSUFFICIENT COINS',
+        message: '2 coins per message\nCurrent balance: $_currentTokens Coins',
+        type: GenZDialogType.warning,
+        primaryButtonText: 'ADD COINS',
+        secondaryButtonText: 'CANCEL',
+        onSecondaryPressed: () => Navigator.pop(context),
+        onPrimaryPressed: () => Navigator.pop(context),
       ),
     );
   }
@@ -754,20 +628,15 @@ class _ChatPageState extends State<ChatPage>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Connection Failed'),
-        content: const Text(
-          'Could not establish chat connection. Please try again.',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              _endChat();
-            },
-            child: const Text('OK'),
-          ),
-        ],
+      builder: (context) => GenZDialog(
+        title: 'CONNECTION FAILED',
+        message: 'Could not establish chat connection. Please try again.',
+        type: GenZDialogType.error,
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {
+          Navigator.pop(context);
+          _endChat();
+        },
       ),
     );
   }
@@ -783,39 +652,15 @@ class _ChatPageState extends State<ChatPage>
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Row(
-          children: const [
-            Icon(Icons.cancel_rounded, color: Colors.red, size: 28),
-            SizedBox(width: 10),
-            Text('Chat Declined'),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.person_off, size: 60, color: Colors.grey),
-            const SizedBox(height: 16),
-            Text(
-              '$declinedBy declined the chat request',
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              Navigator.pop(context);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF667eea),
-            ),
-            child: const Text('OK', style: TextStyle(color: Colors.white)),
-          ),
-        ],
+      builder: (context) => GenZDialog(
+        title: 'CHAT DECLINED',
+        message: '$declinedBy declined the chat request',
+        type: GenZDialogType.error,
+        primaryButtonText: 'OK',
+        onPrimaryPressed: () {
+          Navigator.pop(context);
+          Navigator.pop(context);
+        },
       ),
     );
   }

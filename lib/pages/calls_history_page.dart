@@ -9,6 +9,7 @@ import 'package:uuid/uuid.dart';
 import 'package:chilli/pages/video_call_page.dart';
 import 'package:chilli/core_services/push_notification_service.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:chilli/components/genz_dialog.dart'; // ✅ Added GenZDialog
 
 class CallsHistoryPage extends StatefulWidget {
   const CallsHistoryPage({super.key});
@@ -99,65 +100,14 @@ class _CallsHistoryPageState extends State<CallsHistoryPage> {
   Future<void> _clearHistory() async {
     final confirm = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        backgroundColor: _cardColor,
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [_error.withOpacity(0.2), _error.withOpacity(0.1)],
-                ),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                Icons.delete_forever_rounded,
-                color: _error,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 14),
-            const Expanded(
-              child: Text(
-                'Clear All History',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
-              ),
-            ),
-          ],
-        ),
-        content: const Text(
-          'This will permanently delete all your call records. This action cannot be undone.',
-          style: TextStyle(color: _textMuted, height: 1.5),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: _textMuted, fontWeight: FontWeight.w600),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _error,
-              elevation: 0,
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-            ),
-            child: const Text(
-              'Delete All',
-              style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-        ],
+      builder: (ctx) => GenZDialog(
+        title: 'CLEAR HISTORY?',
+        message: 'This will permanently delete all your call records. This action cannot be undone.',
+        type: GenZDialogType.error,
+        primaryButtonText: 'DELETE ALL',
+        secondaryButtonText: 'CANCEL',
+        onSecondaryPressed: () => Navigator.pop(ctx, false),
+        onPrimaryPressed: () => Navigator.pop(ctx, true),
       ),
     );
 

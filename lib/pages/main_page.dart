@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -429,28 +430,44 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF14141E), // Dark GenZ background
+      appBar: _selectedIndex == 1 ? _buildAppBar() : null,
       body: _buildBody(),
-      // Custom Bottom Navigation - Modern GenZ design
+      extendBody: true, // Needed for floating nav bar so body flows under it
+      // Custom Floating Bottom Navigation - Modern GenZ design
       bottomNavigationBar: SafeArea(
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E293B).withOpacity(0.9), // Dark glass
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.3),
-                blurRadius: 15,
-                offset: const Offset(0, -5),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(30),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
+              child: Container(
+                height: 70,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E293B).withOpacity(0.7),
+                  borderRadius: BorderRadius.circular(30),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.1),
+                    width: 1.5,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    _buildNavItem(Icons.history_rounded, 'History', 0),
+                    _buildNavItem(Icons.home_rounded, 'Home', 1),
+                    _buildNavItem(Icons.account_balance_wallet_rounded, 'Wallet', 2),
+                  ],
+                ),
               ),
-            ],
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildNavItem(Icons.history_outlined, 'History', 0),
-              _buildNavItem(Icons.home_rounded, 'Home', 1),
-              _buildNavItem(Icons.account_balance_wallet_outlined, 'Wallet', 2),
-            ],
+            ),
           ),
         ),
       ),
@@ -467,9 +484,6 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       default:
         return Column(
           children: [
-            // Custom Header
-            _buildHeader(),
-
             // Content
             Expanded(
               child: SingleChildScrollView(
@@ -1711,7 +1725,6 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
       onTap: () {
         setState(() {
           _selectedIndex = index;
-          // ✅ Re-initialize stream when switching to Home or clicking Home again
           if (index == 1) {
             _usersStream = _rtdbService.getAllUsers(
               targetGender: _targetGender,
@@ -1719,245 +1732,161 @@ class _MainPageState extends State<MainPage> with WidgetsBindingObserver {
           }
         });
       },
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            icon,
-            color: isSelected ? const Color(0xFF06B6D4) : Colors.grey[500],
-            size: 28,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: isSelected ? const Color(0xFF06B6D4) : Colors.grey[500],
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutQuint,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFF06B6D4).withOpacity(0.15) : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: isSelected ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.5),
+              size: 26,
             ),
-          ),
-        ],
+            if (isSelected) ...[
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF06B6D4),
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      color: Colors.transparent, // GenZ style transparent
-      child: SafeArea(
-        bottom: false,
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            // Left: Profile Avatar
-            GestureDetector(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ProfilePage(),
-                  ),
-                );
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: const Color(0xFF14141E),
+      elevation: 0,
+      centerTitle: true,
+      title: _isSearching
+          ? TextField(
+              controller: _searchController,
+              autofocus: true,
+              decoration: InputDecoration(
+                hintText: 'Search...',
+                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                border: InputBorder.none,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+              style: const TextStyle(fontSize: 16, color: Colors.white),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                });
               },
-              child: Container(
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: const Color(0xFF06B6D4),
-                    width: 2,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF06B6D4).withOpacity(0.4),
-                      blurRadius: 10,
-                    ),
-                  ],
-                ),
-                child: CircleAvatar(
-                  radius: 20,
-                  backgroundColor: const Color(0xFF1E293B),
-                  backgroundImage:
-                      _currentUserAvatar != null &&
-                          _currentUserAvatar!.isNotEmpty
-                      ? NetworkImage(_currentUserAvatar!)
-                      : null,
-                  child:
-                      _currentUserAvatar == null ||
-                          _currentUserAvatar!.isEmpty
-                      ? const Icon(
-                          Icons.person,
-                          color: Color(0xFF8B5CF6),
-                          size: 20,
-                        )
-                      : null,
-                ),
+            )
+          : const Text(
+              'chilli',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.5,
               ),
             ),
-            
-            // Center: App Name or Search Bar
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: _isSearching
-                    ? Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: const Color(0xFF06B6D4).withOpacity(0.5),
-                            width: 1.5,
-                          ),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.search,
-                              color: Color(0xFF06B6D4),
-                              size: 18,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: TextField(
-                                controller: _searchController,
-                                autofocus: true,
-                                decoration: InputDecoration(
-                                  hintText: 'Search...',
-                                  hintStyle: TextStyle(
-                                    color: Colors.white.withOpacity(0.5),
-                                  ),
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: const EdgeInsets.symmetric(
-                                    vertical: 10,
-                                  ),
-                                ),
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.white,
-                                ),
-                                onChanged: (value) {
-                                  setState(() {
-                                    _searchQuery = value;
-                                  });
-                                },
-                              ),
-                            ),
-                            if (_searchQuery.isNotEmpty)
-                              GestureDetector(
-                                onTap: () {
-                                  setState(() {
-                                    _searchController.clear();
-                                    _searchQuery = '';
-                                  });
-                                },
-                                child: const Icon(
-                                  Icons.clear,
-                                  color: Colors.grey,
-                                  size: 18,
-                                ),
-                              ),
-                          ],
-                        ),
-                      )
-                    : const Center(
-                        child: Text(
-                          'chilli',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 28,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -1,
-                          ),
-                        ),
-                      ),
-              ),
+      leading: Padding(
+        padding: const EdgeInsets.only(left: 16.0, top: 8.0, bottom: 8.0),
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const ProfilePage()),
+            );
+          },
+          child: Container(
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: const Color(0xFF06B6D4), width: 1.5),
             ),
-
-            // Right: Search Icon + Balance Button
-            Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Search Icon
-                IconButton(
-                  icon: Icon(
-                    _isSearching ? Icons.close : Icons.search,
-                    color: Colors.white,
-                    size: 26,
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      _isSearching = !_isSearching;
-                      if (!_isSearching) {
-                        _searchController.clear();
-                        _searchQuery = '';
-                      }
-                    });
-                  },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
-                ),
-                const SizedBox(width: 12),
-                
-                // Coins Display (Square with border radius)
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const BalancePage(),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFF59E0B), Color(0xFFD97706)],
-                      ),
-                      borderRadius: BorderRadius.circular(12), // Square with border radius
-                      boxShadow: [
-                        BoxShadow(
-                          color: const Color(0xFFF59E0B).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Text(
-                          '₹',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(width: 2),
-                        Text(
-                          _currentCoins.toStringAsFixed(1),
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w900,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ],
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFF0F172A),
+              backgroundImage: _currentUserAvatar != null && _currentUserAvatar!.isNotEmpty
+                  ? NetworkImage(_currentUserAvatar!)
+                  : null,
+              child: _currentUserAvatar == null || _currentUserAvatar!.isEmpty
+                  ? const Icon(Icons.person, color: Color(0xFF8B5CF6), size: 20)
+                  : null,
             ),
-          ],
+          ),
         ),
       ),
+      actions: [
+        IconButton(
+          icon: Icon(
+            _isSearching ? Icons.close : Icons.search,
+            color: Colors.white.withOpacity(0.9),
+            size: 24,
+          ),
+          onPressed: () {
+            setState(() {
+              _isSearching = !_isSearching;
+              if (!_isSearching) {
+                _searchController.clear();
+                _searchQuery = '';
+              }
+            });
+          },
+        ),
+        Padding(
+          padding: const EdgeInsets.only(right: 16.0, top: 10.0, bottom: 10.0),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BalancePage()),
+              );
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF06B6D4).withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.account_balance_wallet_rounded, color: Colors.white, size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    _currentCoins.toStringAsFixed(0),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
