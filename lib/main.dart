@@ -1,192 +1,232 @@
-import 'package:chilli/screens/lang_screen.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+// import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:chilli/theme/palette.dart';
-import 'package:chilli/screens/auth_screen.dart';
-import 'package:chilli/screens/home_screen.dart';
-import 'package:chilli/screens/onboard_screen.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:chilli/locale/lang_bundle.dart';
-import 'package:chilli/services/push_receiver.dart';
-import 'package:chilli/services/data_bridge.dart';
-import 'package:chilli/services/fb_reporter.dart';
-import 'package:chilli/screens/splash_screen.dart';
+import 'package:chilli/config/theme_colors.dart';
+import 'package:chilli/pages/diagnostics_page.dart' show DiagnosticsPage;
+import 'package:chilli/pages/auth_page.dart';
+import 'package:chilli/pages/main_page.dart';
+import 'package:chilli/pages/user_details_page.dart';
+import 'package:flutter_localizations/flutter_localizations.dart'; // ✅ For localization
+import 'package:chilli/localization/locale_manager.dart'; // ✅ Custom localizations
+import 'package:chilli/core_services/push_notification_service.dart';
+import 'package:chilli/core_services/http_service.dart';
+import 'package:chilli/core_services/fb_analytics_service.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:screen_protector/screen_protector.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-@pragma('vm:entry-point')
-Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await handleBackgroundMessage(message);
-}
-
 void main() async {
-  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
-  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
+  WidgetsFlutterBinding.ensureInitialized();
 
-  // Enable global screen protection to prevent screenshots and recording
+  // Prevent screenshots and screen recording
   try {
-    await ScreenProtector.preventScreenshotOn();
+    await ScreenProtector.preventScreenshotOff();
+    debugPrint('🔓 Screen protection disabled');
   } catch (e) {
-    debugPrint('ScreenProtector init error: $e');
+    debugPrint('❌ Error disabling screen protection: $e');
   }
 
+  // Initialize Firebase before running the app
+  // ✅ Try to initialize, but ignore if already initialized by FlutterFire plugins
   try {
-    await Firebase.initializeApp();
-    debugPrint('Firebase initialized');
+    await Firebase.initializeApp(
+      // options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('✅ Firebase initialized in main()');
+    // Install debug App Check provider for development to avoid
+    // "No AppCheckProvider installed" errors. Remove or replace
+    // with Play Integrity / DeviceCheck in production.
     try {
       await FirebaseAppCheck.instance.activate(
-        androidProvider: AndroidProvider.playIntegrity,
+        androidProvider: AndroidProvider.debug,
       );
-      debugPrint('App Check activated');
+      debugPrint('✅ Firebase App Check debug provider installed');
     } catch (e) {
-      debugPrint('App Check error: $e');
+      debugPrint('⚠️ App Check install failed (dev only): $e');
     }
   } on FirebaseException catch (e) {
     if (e.code == 'duplicate-app') {
-      debugPrint('Firebase already initialized');
+      debugPrint('✅ Firebase already initialized by FlutterFire plugins');
     } else {
-      debugPrint('Firebase error: $e');
+      debugPrint('❌ Firebase initialization error: $e');
       rethrow;
     }
   }
 
+  // ✅ CRITICAL: Register background handler FIRST, before runApp()
   FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
-  debugPrint('Background FCM handler registered');
+  debugPrint('✅ Background FCM handler registered in main()');
 
+  // ✅ Initialize FCM Early (registers background handler)
   try {
-    await PushReceiver().initialize();
+    await PushNotificationService().initialize();
   } catch (e) {
-    debugPrint('FCM init error:988 $e');
+    debugPrint("Error initializing FCM in main: $e");
   }
 
+  // ✅ Initialize Facebook App Events Tracking
   try {
-    await FbInsightsReporter().setup();
-    debugPrint('Facebook Events initialized');
+    await FbAnalyticsService().initialize();
+    debugPrint('✅ Facebook App Events initialized');
   } catch (e) {
-    debugPrint('Facebook Events error: $e');
+    debugPrint('❌ Error initializing Facebook tracking: $e');
   }
 
-  try {
-    await GoogleSignIn.instance.initialize(
-      serverClientId:
-          '278527617965-4dsk3c4eri7f0p8ojvv6hpo8mpmt716r.apps.googleusercontent.com',
-    );
-    debugPrint('GoogleSignIn initialized');
-  } catch (e) {
-    debugPrint('GoogleSignIn init error: $e');
-  }
-
+  // Set status bar color
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
     ),
   );
 
-  await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.portraitUp,
-    DeviceOrientation.portraitDown,
-  ]);
-
-  FlutterNativeSplash.remove();
-  runApp(const ChilliApp());
+  runApp(const MainApp());
 }
 
-class ChilliApp extends StatefulWidget {
-  const ChilliApp({super.key});
+class MainApp extends StatefulWidget {
+  const MainApp({super.key});
 
   @override
-  State<ChilliApp> createState() => _ChilliAppState();
+  State<MainApp> createState() => _MainAppState();
 }
 
-class _ChilliAppState extends State<ChilliApp> {
+class _MainAppState extends State<MainApp> {
   @override
   void initState() {
     super.initState();
+    _setupScreenProtection();
+  }
+
+  void _setupScreenProtection() async {
+    return; // Disabled as per user request
+    // Listen for screenshot events (iOS/Android)
+    ScreenProtector.addListener(
+      () {
+        // Screenshot detected
+        debugPrint('📸 Screenshot detected!');
+
+        // Skip for specific user
+        final user = FirebaseAuth.instance.currentUser;
+        if (user?.email == 'inflyratechnew@gmail.com') {
+          debugPrint('🔓 Screenshot allowed for admin user.');
+          return;
+        }
+
+        if (mounted) {
+          ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Screenshots are restricted for security reasons.',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.redAccent,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      },
+      (isCaptured) {
+        // Screen recording detected
+        debugPrint('📹 Screen recording state changed: $isCaptured');
+
+        // Skip for specific user
+        final user = FirebaseAuth.instance.currentUser;
+        if (user?.email == 'inflyratechnew@gmail.com') {
+          debugPrint('🔓 Screen recording allowed for admin user.');
+          return;
+        }
+
+        if (isCaptured && mounted) {
+          ScaffoldMessenger.of(navigatorKey.currentContext!).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Screen recording detected! Please stop recording to protect privacy.',
+                style: TextStyle(color: Colors.white),
+              ),
+              backgroundColor: Colors.redAccent,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'Chilli',
+      navigatorKey: navigatorKey, // ✅ Global Navigation Key
+      title: 'chilli',
       debugShowCheckedModeBanner: false,
+      // ✅ Localization Configuration
       localizationsDelegates: const [
-        LangBundle.delegate,
+        LocaleManager.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
       supportedLocales: const [
-        Locale('en', ''),
-        Locale('hi', ''),
-        Locale('ta', ''),
-        Locale('te', ''),
-        Locale('mr', ''),
-        Locale('bn', ''),
-        Locale('gu', ''),
-        Locale('kn', ''),
-        Locale('ml', ''),
-        Locale('pa', ''),
-        Locale('or', ''),
-        Locale('as', ''),
+        Locale('en', ''), // English
+        Locale('hi', ''), // Hindi - हिंदी
+        Locale('ta', ''), // Tamil - தமிழ்
+        Locale('te', ''), // Telugu - తెలుగు
+        Locale('mr', ''), // Marathi - मराठी
+        Locale('bn', ''), // Bengali - বাংলা
+        Locale('gu', ''), // Gujarati - ગુજરાતી
+        Locale('kn', ''), // Kannada - ಕನ್ನಡ
+        Locale('ml', ''), // Malayalam - മലയാളം
+        Locale('pa', ''), // Punjabi - ਪੰਜਾਬੀ
+        Locale('or', ''), // Odia - ଓଡ଼ିଆ
+        Locale('as', ''), // Assamese - অসমীয়া
       ],
-      locale: const Locale('en', ''),
+      locale: const Locale('en', ''), // Default: English
       theme: ThemeData(
-        primaryColor: AppPalette.primary,
-        scaffoldBackgroundColor: AppPalette.background,
+        primaryColor: ThemeColors.primary,
+        scaffoldBackgroundColor: ThemeColors.background,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: AppPalette.primary,
-          primary: AppPalette.primary,
-          secondary: AppPalette.secondary,
-          brightness: Brightness.dark,
+          seedColor: ThemeColors.primary,
+          primary: ThemeColors.primary,
+          secondary: ThemeColors.secondary,
         ),
         useMaterial3: true,
-        fontFamily: 'SF Pro Display',
       ),
-      home: const SessionRouter(),
+      home:
+          //  DiagnosticsPage()
+          const AuthWrapper(),
       routes: {
-        '/login': (context) => const AuthScreen(),
-        '/home': (context) => const ChilliHomeScreen(),
-        '/user_info': (context) => const ProfileSetupScreen(),
+        '/login': (context) => const AuthPage(),
+        '/home': (context) => const MainPage(),
+        '/user_info': (context) => const UserDetailsPage(),
       },
     );
   }
 }
 
-class SessionRouter extends StatefulWidget {
-  const SessionRouter({super.key});
+class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
 
   @override
-  State<SessionRouter> createState() => _SessionRouterState();
+  State<AuthWrapper> createState() => _AuthWrapperState();
 }
 
-class _SessionRouterState extends State<SessionRouter> {
+class _AuthWrapperState extends State<AuthWrapper> {
   @override
   void initState() {
     super.initState();
-    FirebaseAuth.instance.authStateChanges().listen(_onAuthChanged);
+    // Listen to changes to toggle security
+    FirebaseAuth.instance.authStateChanges().listen(_handleScreenSecurity);
   }
 
-  Future<void> _onAuthChanged(User? user) async {
-    // Ensuring screen protection is ON for everyone
-    try {
-      await ScreenProtector.preventScreenshotOn();
-      await ScreenProtector.protectDataLeakageWithBlur();
-    } catch (e) {
-      debugPrint('ScreenProtector error: $e');
-    }
+  Future<void> _handleScreenSecurity(User? user) async {
+    debugPrint('🔓 Ensuring screen protection is OFF for all users');
+    await ScreenProtector.preventScreenshotOff();
   }
 
   @override
@@ -197,8 +237,9 @@ class _SessionRouterState extends State<SessionRouter> {
         if (snapshot.connectionState == ConnectionState.active) {
           User? user = snapshot.data;
           if (user == null) {
-            return const AuthScreen();
+            return const AuthPage();
           } else {
+            // ✅ Local-First Auth Check
             return FutureBuilder<bool>(
               future: () async {
                 try {
@@ -208,43 +249,54 @@ class _SessionRouterState extends State<SessionRouter> {
                     final dynamic decoded = jsonDecode(cached);
                     if (decoded is Map<String, dynamic> &&
                         decoded['uid'] == user.uid) {
-                      debugPrint('SessionRouter: using cached profile');
-                      await DataBridge().cacheUserData(
+                      debugPrint(
+                        '🚀 AuthWrapper: Using Cached User Profile (Offline Ready)',
+                      );
+                      // Ensure HttpService memory cache is initialized
+                      await HttpService().cacheUserData(
                         Map<String, dynamic>.from(decoded),
                       );
                       return true;
                     }
                   }
 
-                  debugPrint('SessionRouter: no cache, checking RTDB');
-                  final snapshot = await FirebaseDatabase.instance.ref('users')
-                      .child(user.uid)
+                  // Fallback to Firestore (Only if no cache)
+                  debugPrint(
+                    '☁️ AuthWrapper: Cache miss, checking Firestore...',
+                  );
+                  final doc = await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(user.uid)
                       .get();
-                  if (snapshot.exists) {
-                    final data = Map<String, dynamic>.from(snapshot.value as Map);
-                    data['uid'] = user.uid;
-                    await DataBridge().cacheUserData(data);
+                  if (doc.exists) {
+                    final data = doc.data() as Map<String, dynamic>;
+                    data['uid'] = user.uid; // Ensure UID present
+                    await HttpService().cacheUserData(data);
                     return true;
                   }
                   return false;
                 } catch (e) {
-                  debugPrint('SessionRouter error: $e');
+                  debugPrint('❌ AuthWrapper Error: $e');
                   return false;
                 }
               }(),
               builder: (context, userSnapshot) {
                 if (userSnapshot.connectionState == ConnectionState.waiting) {
-                  return const SplashScreen();
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
                 }
                 if (userSnapshot.hasData && userSnapshot.data == true) {
-                  return const ChilliHomeScreen();
+                  return const MainPage();
                 }
-                return const ProfileSetupScreen();
+                // No profile (Local or Remote) -> Registration
+                return const UserDetailsPage();
               },
             );
           }
         }
-        return const SplashScreen();
+        // Show loading while checking auth state
+        return const Scaffold(body: Center(child: CircularProgressIndicator()));
       },
     );
   }
