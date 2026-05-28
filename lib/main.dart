@@ -1,20 +1,20 @@
-import 'package:firebase_core/firebase_core.dart';
+﻿import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 // import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:chilli/config/theme_colors.dart';
-import 'package:chilli/pages/diagnostics_page.dart' show DiagnosticsPage;
-import 'package:chilli/pages/auth_page.dart';
-import 'package:chilli/pages/main_page.dart';
-import 'package:chilli/pages/user_details_page.dart';
+import 'package:chilli/theme/palette.dart';
+import 'package:chilli/screens/debug_screen.dart' show DebugScreen;
+import 'package:chilli/screens/auth_screen.dart';
+import 'package:chilli/screens/home_screen.dart';
+import 'package:chilli/screens/onboard_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart'; // ✅ For localization
-import 'package:chilli/localization/locale_manager.dart'; // ✅ Custom localizations
-import 'package:chilli/core_services/push_notification_service.dart';
-import 'package:chilli/core_services/http_service.dart';
-import 'package:chilli/core_services/fb_analytics_service.dart';
+import 'package:chilli/locale/lang_bundle.dart'; // ✅ Custom localizations
+import 'package:chilli/services/push_receiver.dart';
+import 'package:chilli/services/data_bridge.dart';
+import 'package:chilli/services/fb_reporter.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -66,14 +66,14 @@ void main() async {
 
   // ✅ Initialize FCM Early (registers background handler)
   try {
-    await PushNotificationService().initialize();
+    await PushReceiver().initialize();
   } catch (e) {
     debugPrint("Error initializing FCM in main: $e");
   }
 
   // ✅ Initialize Facebook App Events Tracking
   try {
-    await FbAnalyticsService().initialize();
+    await FbReporter().initialize();
     debugPrint('✅ Facebook App Events initialized');
   } catch (e) {
     debugPrint('❌ Error initializing Facebook tracking: $e');
@@ -114,7 +114,7 @@ class _MainAppState extends State<MainApp> {
 
         // Skip for specific user
         final user = FirebaseAuth.instance.currentUser;
-        if (user?.email == 'inflyratechnew@gmail.com') {
+        if (user?.email == 'nurxiannew@gmail.com') {
           debugPrint('🔓 Screenshot allowed for admin user.');
           return;
         }
@@ -138,7 +138,7 @@ class _MainAppState extends State<MainApp> {
 
         // Skip for specific user
         final user = FirebaseAuth.instance.currentUser;
-        if (user?.email == 'inflyratechnew@gmail.com') {
+        if (user?.email == 'nurxiannew@gmail.com') {
           debugPrint('🔓 Screen recording allowed for admin user.');
           return;
         }
@@ -167,7 +167,7 @@ class _MainAppState extends State<MainApp> {
       debugShowCheckedModeBanner: false,
       // ✅ Localization Configuration
       localizationsDelegates: const [
-        LocaleManager.delegate,
+        LangBundle.delegate,
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
@@ -188,20 +188,20 @@ class _MainAppState extends State<MainApp> {
       ],
       locale: const Locale('en', ''), // Default: English
       theme: ThemeData(
-        primaryColor: ThemeColors.primary,
-        scaffoldBackgroundColor: ThemeColors.background,
+        primaryColor: Palette.primary,
+        scaffoldBackgroundColor: Palette.background,
         colorScheme: ColorScheme.fromSeed(
-          seedColor: ThemeColors.primary,
-          primary: ThemeColors.primary,
-          secondary: ThemeColors.secondary,
+          seedColor: Palette.primary,
+          primary: Palette.primary,
+          secondary: Palette.secondary,
         ),
         useMaterial3: true,
       ),
       home: const AuthWrapper(),
       routes: {
-        '/login': (context) => const AuthPage(),
-        '/home': (context) => const MainPage(),
-        '/user_info': (context) => const UserDetailsPage(),
+        '/login': (context) => const AuthScreen(),
+        '/home': (context) => const HomeScreen(),
+        '/user_info': (context) => const OnboardScreen(),
       },
     );
   }
@@ -235,7 +235,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         if (snapshot.connectionState == ConnectionState.active) {
           User? user = snapshot.data;
           if (user == null) {
-            return const AuthPage();
+            return const AuthScreen();
           } else {
             // ✅ Local-First Auth Check
             return FutureBuilder<bool>(
@@ -250,8 +250,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
                       debugPrint(
                         '🚀 AuthWrapper: Using Cached User Profile (Offline Ready)',
                       );
-                      // Ensure HttpService memory cache is initialized
-                      await HttpService().cacheUserData(
+                      // Ensure DataBridge memory cache is initialized
+                      await DataBridge().cacheUserData(
                         Map<String, dynamic>.from(decoded),
                       );
                       return true;
@@ -269,7 +269,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                   if (doc.exists) {
                     final data = doc.data() as Map<String, dynamic>;
                     data['uid'] = user.uid; // Ensure UID present
-                    await HttpService().cacheUserData(data);
+                    await DataBridge().cacheUserData(data);
                     return true;
                   }
                   return false;
@@ -285,10 +285,10 @@ class _AuthWrapperState extends State<AuthWrapper> {
                   );
                 }
                 if (userSnapshot.hasData && userSnapshot.data == true) {
-                  return const MainPage();
+                  return const HomeScreen();
                 }
                 // No profile (Local or Remote) -> Registration
-                return const UserDetailsPage();
+                return const OnboardScreen();
               },
             );
           }
@@ -299,3 +299,5 @@ class _AuthWrapperState extends State<AuthWrapper> {
     );
   }
 }
+
+
