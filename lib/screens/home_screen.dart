@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'dart:ui';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
@@ -429,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF14141E), // Dark GenZ background
+      backgroundColor: Palette.background, // Light Theme background
       appBar: _selectedIndex == 1 ? _buildAppBar() : null,
       body: _buildBody(),
       extendBody: true, // Needed for floating nav bar so body flows under it
@@ -444,10 +445,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Container(
                 height: 70,
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.7),
+                  color: const Color(0xFFF8FAFC).withOpacity(0.7),
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Palette.textPrimary.withOpacity(0.1),
                     width: 1.5,
                   ),
                   boxShadow: [
@@ -520,12 +521,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               decoration: BoxDecoration(
                                 color: isSelected
                                     ? const Color(0xFF06B6D4) // GenZ cyan
-                                    : const Color(0xFF1E293B), // Dark inactive
+                                    : const Color(0xFFF8FAFC), // Dark inactive
                                 borderRadius: BorderRadius.circular(30),
                                 border: Border.all(
                                   color: isSelected
                                       ? const Color(0xFF06B6D4)
-                                      : Colors.white.withOpacity(0.1),
+                                      : Palette.textPrimary.withOpacity(0.1),
                                   width: 2,
                                 ),
                                 boxShadow: isSelected
@@ -558,7 +559,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                                     style: TextStyle(
                                       color: isSelected
                                           ? Colors.white
-                                          : Colors.grey[300],
+                                          : Colors.grey[600],
                                       fontWeight: FontWeight.w700,
                                       fontSize: 14,
                                     ),
@@ -585,12 +586,10 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                       margin: const EdgeInsets.symmetric(horizontal: 16),
                       padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
-                        color: const Color(
-                          0xFF1E293B,
-                        ).withOpacity(0.6), // Dark glass
+                        color: Palette.surface,
                         borderRadius: BorderRadius.circular(28),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.08),
+                          color: Palette.textPrimary.withOpacity(0.08),
                           width: 1.5,
                         ),
                         boxShadow: [
@@ -617,7 +616,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                               const Text(
                                 'QUICK MATCH',
                                 style: TextStyle(
-                                  color: Colors.white,
+                                  color: Palette.textPrimary,
                                   fontSize: 18,
                                   fontWeight: FontWeight.w900,
                                   letterSpacing: 2.0,
@@ -635,7 +634,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                           Text(
                             'Find your next connection instantly',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.6),
+                              color: Palette.textSecondary,
                               fontSize: 13,
                               fontWeight: FontWeight.w500,
                             ),
@@ -1749,7 +1748,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           children: [
             Icon(
               icon,
-              color: isSelected ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.5),
+              color: isSelected ? const Color(0xFF06B6D4) : Palette.textPrimary.withOpacity(0.5),
               size: 26,
             ),
             if (isSelected) ...[
@@ -1772,7 +1771,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
-      backgroundColor: const Color(0xFF14141E),
+      backgroundColor: Palette.background,
       elevation: 0,
       centerTitle: true,
       title: _isSearching
@@ -1781,12 +1780,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               autofocus: true,
               decoration: InputDecoration(
                 hintText: 'Search...',
-                hintStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+                hintStyle: TextStyle(color: Palette.textPrimary.withOpacity(0.5)),
                 border: InputBorder.none,
                 isDense: true,
                 contentPadding: EdgeInsets.zero,
               ),
-              style: const TextStyle(fontSize: 16, color: Colors.white),
+              style: const TextStyle(fontSize: 16, color: Palette.textPrimary),
               onChanged: (value) {
                 setState(() {
                   _searchQuery = value;
@@ -1796,7 +1795,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
           : const Text(
               'chilli',
               style: TextStyle(
-                color: Colors.white,
+                color: Palette.textPrimary,
                 fontSize: 24,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.5,
@@ -1817,7 +1816,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               border: Border.all(color: const Color(0xFF06B6D4), width: 1.5),
             ),
             child: CircleAvatar(
-              backgroundColor: const Color(0xFF0F172A),
+              backgroundColor: const Color(0xFFFFFFFF),
               backgroundImage: _currentUserAvatar != null && _currentUserAvatar!.isNotEmpty
                   ? NetworkImage(_currentUserAvatar!)
                   : null,
@@ -1829,10 +1828,38 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
       actions: [
+        Padding(
+          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+          child: GestureDetector(
+            onTap: () async {
+              final Uri url = Uri.parse('https://wa.me/918899841923');
+              if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+                Fluttertoast.showToast(msg: 'Could not launch WhatsApp');
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF25D366).withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Image.network(
+                'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/512px-WhatsApp.svg.png',
+                width: 20,
+                height: 20,
+                errorBuilder: (_, __, ___) => const Icon(
+                  Icons.chat_rounded,
+                  color: Color(0xFF25D366),
+                  size: 20,
+                ),
+              ),
+            ),
+          ),
+        ),
         IconButton(
           icon: Icon(
             _isSearching ? Icons.close : Icons.search,
-            color: Colors.white.withOpacity(0.9),
+            color: Palette.textPrimary.withOpacity(0.9),
             size: 24,
           ),
           onPressed: () {

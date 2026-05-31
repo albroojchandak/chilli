@@ -1,24 +1,24 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class Palette {
-  // Fresh Teal & Coral Theme
-  static const Color primary = Color(0xFF06B6D4); // Vibrant Cyan
-  static const Color secondary = Color(0xFFFF6B6B); // Coral Red
-  static const Color accent = Color(0xFFFBBF24); // Golden Yellow
-  static const Color background = Color(0xFFF8FAFC); // Soft White
-  static const Color surface = Colors.white;
+  // 7:3:1 Theme (70% White, 30% Indigo, 10% Chilli Red)
+  static const Color primary = Color(0xFF4F46E5); // Deep Indigo
+  static const Color secondary = Color(0xFF3730A3); // Darker Indigo
+  static const Color accent = Color(0xFFE11D48); // Vibrant Chilli Red
+  static const Color background = Color(0xFFFFFFFF); // Pure White (70%)
+  static const Color surface = Color(0xFFFFFFFF); // Pure White (70%)
   static const Color textPrimary = Color(0xFF0F172A); // Slate Dark
   static const Color textSecondary = Color(0xFF64748B); // Slate Gray
   static const Color error = Color(0xFFEF4444);
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [Color(0xFF06B6D4), Color(0xFF0891B2), Color(0xFF0E7490)],
+    colors: [Color(0xFF6366F1), Color(0xFF4F46E5), Color(0xFF4338CA)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const LinearGradient accentGradient = LinearGradient(
-    colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
+    colors: [Color(0xFFF43F5E), Color(0xFFE11D48)],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );

@@ -1,4 +1,4 @@
-﻿import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -194,6 +194,8 @@ class _MainAppState extends State<MainApp> {
           seedColor: Palette.primary,
           primary: Palette.primary,
           secondary: Palette.secondary,
+          tertiary: Palette.accent,
+          surface: Palette.surface,
         ),
         useMaterial3: true,
       ),

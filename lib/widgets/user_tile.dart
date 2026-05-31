@@ -1,6 +1,7 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
+import 'package:chilli/theme/palette.dart';
 
 class UserTile extends StatefulWidget {
   final String name;
@@ -148,51 +149,22 @@ class _UserTileState extends State<UserTile>
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
+        color: Palette.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.15), width: 1.5),
+        border: Border.all(color: Palette.textPrimary.withValues(alpha: 0.08), width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.3),
-            blurRadius: 25,
+            color: Palette.textPrimary.withValues(alpha: 0.05),
+            blurRadius: 20,
             offset: const Offset(0, 10),
           ),
         ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(18),
-        child: Stack(
-          children: [
-            // Background Image
-            Positioned.fill(
-              child: Image.network(
-                widget.imageUrl,
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(color: const Color(0xFF14141E)),
-              ),
-            ),
-            // Blur Effect and Dark Overlay
-            Positioned.fill(
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 15, sigmaY: 15),
-                child: Container(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      colors: [
-                        Colors.black.withValues(alpha: 0.4),
-                        Colors.black.withValues(alpha: 0.7),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            // Main content
-            Padding(
-              padding: const EdgeInsets.all(18),
-              child: Column(
+        child: Padding(
+          padding: const EdgeInsets.all(18),
+          child: Column(
                 children: [
                   Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,10 +180,8 @@ class _UserTileState extends State<UserTile>
                   _buildModernActionButtonsSection(),
                 ],
               ),
-            ),
-          ],
+          ),
         ),
-      ),
     );
   }
 
@@ -241,7 +211,7 @@ class _UserTileState extends State<UserTile>
               fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
-                  color: const Color(0xFF1E293B),
+                  color: Palette.textPrimary.withValues(alpha: 0.05),
                   child: const Icon(Icons.person, size: 50, color: Color(0xFF8B5CF6)),
                 );
               },
@@ -264,7 +234,7 @@ class _UserTileState extends State<UserTile>
                   ),
                   borderRadius: BorderRadius.circular(10),
                   border: Border.all(
-                    color: const Color(0xFF1E293B),
+                    color: Palette.surface,
                     width: 2,
                   ),
                   boxShadow: [
@@ -308,7 +278,7 @@ class _UserTileState extends State<UserTile>
                     ? const Color(0xFF10B981)
                     : Colors.grey[700]!,
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: const Color(0xFF1E293B), width: 2),
+                border: Border.all(color: Palette.surface, width: 2),
                 boxShadow: [
                   BoxShadow(
                     color: _isUserOnline
@@ -375,7 +345,7 @@ class _UserTileState extends State<UserTile>
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
-                  color: Colors.white,
+                  color: Palette.textPrimary,
                   letterSpacing: -0.5,
                 ),
                 overflow: TextOverflow.ellipsis,
@@ -389,12 +359,12 @@ class _UserTileState extends State<UserTile>
         // Language
         Row(
           children: [
-            Icon(Icons.language_rounded, size: 14, color: Colors.white.withValues(alpha: 0.7)),
+            Icon(Icons.language_rounded, size: 14, color: Palette.textSecondary),
             const SizedBox(width: 4),
             Flexible(
               child: Text(
                 widget.language,
-                style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 13),
+                style: const TextStyle(color: Palette.textSecondary, fontSize: 13),
                 overflow: TextOverflow.ellipsis,
               ),
             ),
@@ -440,7 +410,7 @@ class _UserTileState extends State<UserTile>
               style: const TextStyle(
                 fontWeight: FontWeight.w800,
                 fontSize: 13,
-                color: Colors.white,
+                color: Palette.textPrimary,
               ),
             ),
           ],
@@ -462,10 +432,10 @@ class _UserTileState extends State<UserTile>
           return Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
+              color: Palette.textPrimary.withValues(alpha: 0.04),
               borderRadius: BorderRadius.circular(8),
               border: Border.all(
-                color: Colors.white.withValues(alpha: 0.15),
+                color: Palette.textPrimary.withValues(alpha: 0.08),
                 width: 1,
               ),
             ),
@@ -473,7 +443,7 @@ class _UserTileState extends State<UserTile>
               child: Text(
                 interests[index],
                 style: const TextStyle(
-                  color: Colors.white,
+                  color: Palette.textPrimary,
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                 ),
@@ -545,21 +515,21 @@ class _UserTileState extends State<UserTile>
                 const SizedBox(width: 8),
                 Text(
                   '₹$price/m',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
+                  style: TextStyle(
+                    color: iconColor,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
                     letterSpacing: 0.5,
                   ),
                 ),
               ] else ...[
                 const SizedBox(width: 8),
-                const Text(
+                Text(
                   'FREE',
                   style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 13,
+                    color: iconColor,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 14,
                     letterSpacing: 0.5,
                   ),
                 ),

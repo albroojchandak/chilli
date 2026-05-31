@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:chilli/theme/palette.dart';
 import 'package:flutter/services.dart';
 import 'package:chilli/screens/lang_screen.dart';
 
@@ -236,7 +237,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
     final bool isSmallDevice = size.height < 700;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Dark GenZ background
+      backgroundColor: const Color(0xFFFFFFFF), // Dark GenZ background
       body: Stack(
         children: [
           // Ambient Background Glows
@@ -264,9 +265,9 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withOpacity(0.6), // Dark Glass
+                          color: const Color(0xFFF8FAFC).withOpacity(0.6), // Dark Glass
                           borderRadius: BorderRadius.circular(32),
-                          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                          border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
                           boxShadow: [
                             BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 10)),
                             BoxShadow(color: const Color(0xFF06B6D4).withOpacity(0.05), blurRadius: 30, spreadRadius: -5),
@@ -321,9 +322,9 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.8),
+                  color: const Color(0xFFF8FAFC).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                  border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
                 ),
                 child: const Icon(Icons.person_add_rounded, color: Color(0xFF06B6D4), size: 28),
               ),
@@ -331,15 +332,15 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.8),
+                  color: const Color(0xFFF8FAFC).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                  border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18),
                     const SizedBox(width: 6),
-                    Text('2 Steps', style: TextStyle(color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text('2 Steps', style: TextStyle(color: Palette.textPrimary.withOpacity(0.9), fontWeight: FontWeight.w600, fontSize: 14)),
                   ],
                 ),
               ),
@@ -357,7 +358,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
               style: TextStyle(
                 fontSize: isSmall ? 32 : 36,
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
+                color: Palette.textPrimary,
                 height: 1.2,
                 letterSpacing: -0.5,
               ),
@@ -366,7 +367,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
           const SizedBox(height: 8),
           Text(
             'Let\'s get to know you better.',
-            style: TextStyle(fontSize: 16, color: Colors.white.withOpacity(0.6), fontWeight: FontWeight.w500),
+            style: TextStyle(fontSize: 16, color: Palette.textSecondary, fontWeight: FontWeight.w500),
           ),
         ],
       ),
@@ -386,12 +387,12 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                 gradient: isCompleted ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)]) : null,
                 color: isCompleted ? null : const Color(0xFF14141E),
                 shape: BoxShape.circle,
-                border: Border.all(color: isCompleted ? Colors.transparent : Colors.white.withOpacity(0.2), width: 1.5),
+                border: Border.all(color: isCompleted ? Colors.transparent : Palette.textPrimary.withOpacity(0.2), width: 1.5),
               ),
               child: Center(
                 child: isCompleted
-                    ? const Icon(Icons.check, color: Colors.white, size: 18)
-                    : Text('$stepNumber', style: TextStyle(color: Colors.white.withOpacity(0.5), fontWeight: FontWeight.bold, fontSize: 14)),
+                    ? const Icon(Icons.check, color: Palette.textPrimary, size: 18)
+                    : Text('$stepNumber', style: TextStyle(color: Palette.textSecondary, fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
             const SizedBox(width: 12),
@@ -401,7 +402,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isCompleted ? Colors.white : Colors.white.withOpacity(0.7),
+                  color: isCompleted ? Colors.white : Palette.textPrimary.withOpacity(0.7),
                 ),
               ),
             ),
@@ -447,7 +448,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('✅ $gender selected'),
-              backgroundColor: const Color(0xFF1E293B),
+              backgroundColor: const Color(0xFFF8FAFC),
               duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isMale ? const Color(0xFF06B6D4) : const Color(0xFF8B5CF6))),
@@ -462,7 +463,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
           color: isSelected ? Colors.transparent : const Color(0xFF14141E),
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.1),
+            color: isSelected ? Colors.transparent : Palette.textPrimary.withOpacity(0.1),
             width: 1.5,
           ),
           gradient: isSelected ? activeGradient : null,
@@ -479,12 +480,12 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, size: 40, color: isSelected ? Colors.white : Colors.white.withOpacity(0.4)),
+            Icon(icon, size: 40, color: isSelected ? Colors.white : Palette.textPrimary.withOpacity(0.4)),
             const SizedBox(height: 8),
             Text(
               gender,
               style: TextStyle(
-                color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+                color: isSelected ? Colors.white : Palette.textSecondary,
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
               ),
@@ -497,9 +498,9 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified, color: Colors.white, size: 12),
+                    Icon(Icons.verified, color: Palette.textPrimary, size: 12),
                     SizedBox(width: 4),
-                    Text('Verified', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
+                    Text('Verified', style: TextStyle(color: Palette.textPrimary, fontSize: 11, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -538,13 +539,13 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
               FilteringTextInputFormatter.deny(RegExp(r'[0-9]')),
             ],
             onChanged: (value) => setState(() {}),
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Colors.white),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Palette.textPrimary),
             decoration: InputDecoration(
               hintText: 'Enter your username',
-              hintStyle: TextStyle(color: Colors.white.withOpacity(0.3), fontSize: 16, fontWeight: FontWeight.normal),
+              hintStyle: TextStyle(color: Palette.textPrimary.withOpacity(0.3), fontSize: 16, fontWeight: FontWeight.normal),
               prefixIcon: Icon(
                 Icons.alternate_email_rounded,
-                color: isNotEmpty ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.3),
+                color: isNotEmpty ? const Color(0xFF06B6D4) : Palette.textPrimary.withOpacity(0.3),
               ),
               suffixIcon: isNotEmpty ? const Icon(Icons.check_circle, color: Color(0xFF06B6D4)) : null,
               border: InputBorder.none,
@@ -555,7 +556,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
         const SizedBox(height: 12),
         Text(
           '• At least 3 characters\n• No phone numbers or social media',
-          style: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.4), height: 1.5),
+          style: TextStyle(fontSize: 12, color: Palette.textPrimary.withOpacity(0.4), height: 1.5),
         ),
       ],
     );
@@ -571,7 +572,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
         gradient: allCompleted ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)], begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
         color: allCompleted ? null : const Color(0xFF14141E),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: allCompleted ? Colors.transparent : Colors.white.withOpacity(0.1)),
+        border: Border.all(color: allCompleted ? Colors.transparent : Palette.textPrimary.withOpacity(0.1)),
         boxShadow: allCompleted
             ? [
                 BoxShadow(
@@ -648,7 +649,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                       Text(
                         'Continue to Next Step',
                         style: TextStyle(
-                          color: allCompleted ? Colors.white : Colors.white.withOpacity(0.4),
+                          color: allCompleted ? Colors.white : Palette.textPrimary.withOpacity(0.4),
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
@@ -656,7 +657,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                       const SizedBox(width: 8),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        color: allCompleted ? Colors.white : Colors.white.withOpacity(0.4),
+                        color: allCompleted ? Colors.white : Palette.textPrimary.withOpacity(0.4),
                         size: 20,
                       ),
                     ],

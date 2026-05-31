@@ -1,4 +1,4 @@
-﻿import 'dart:io';
+import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -672,7 +672,7 @@ Join me on chilli! 🚀
               height: 140,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF1E293B),
+                color: Color(0xFFF8FAFC),
               ),
               clipBehavior: Clip.antiAlias,
               child:

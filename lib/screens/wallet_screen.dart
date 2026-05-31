@@ -1,5 +1,6 @@
-﻿import 'package:facebook_app_events/facebook_app_events.dart';
+import 'package:facebook_app_events/facebook_app_events.dart';
 import 'package:flutter/material.dart';
+import 'package:chilli/theme/palette.dart';
 import 'package:flutter/services.dart';
 import 'dart:ui';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -446,13 +447,13 @@ class _WalletScreenState extends State<WalletScreen>
                     Text(
                       isClaimed ? 'Day $day Bonus' : 'Scratch & Win!',
                       style: const TextStyle(
-                        color: Colors.white,
+                        color: Palette.textPrimary,
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.close, color: Colors.white),
+                      icon: const Icon(Icons.close, color: Palette.textPrimary),
                       onPressed: () => Navigator.pop(context),
                     ),
                   ],
@@ -462,7 +463,7 @@ class _WalletScreenState extends State<WalletScreen>
                   height: 250,
                   width: double.infinity,
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: Palette.textPrimary,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: ClipRRect(
@@ -519,7 +520,7 @@ class _WalletScreenState extends State<WalletScreen>
                               height: 250,
                               width: double.infinity,
                               alignment: Alignment.center,
-                              color: Colors.white,
+                              color: Palette.textPrimary,
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
@@ -669,7 +670,7 @@ class _WalletScreenState extends State<WalletScreen>
       toastLength: Toast.LENGTH_SHORT,
       gravity: ToastGravity.BOTTOM,
       backgroundColor: color,
-      textColor: Colors.white,
+      textColor: Palette.textPrimary,
       fontSize: 14.0,
     );
   }
@@ -688,7 +689,7 @@ class _WalletScreenState extends State<WalletScreen>
         child: Container(
           padding: const EdgeInsets.all(32),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: Palette.textPrimary,
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
@@ -741,7 +742,7 @@ class _WalletScreenState extends State<WalletScreen>
                 child: const Text(
                   'Continue',
                   style: TextStyle(
-                    color: Colors.white,
+                    color: Palette.textPrimary,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -1664,6 +1665,200 @@ class _WalletScreenState extends State<WalletScreen>
     }
   }
 
+
+  Widget _buildUniqueHeader(BuildContext context, bool isFemale, num currentCoins) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 40, 16, 16),
+      padding: const EdgeInsets.all(28),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF0F172A), // Deep Slate
+            Color(0xFF3B82F6), // Vibrant Blue
+          ],
+        ),
+        borderRadius: BorderRadius.circular(36),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF3B82F6).withOpacity(0.3),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
+          ),
+        ],
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Decorative Watermark Icon
+          Positioned(
+            right: -20,
+            top: -20,
+            child: Transform.rotate(
+              angle: -0.2,
+              child: Icon(
+                Icons.account_balance_wallet_rounded,
+                size: 140,
+                color: Colors.white.withOpacity(0.06),
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Top Row
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      if (Navigator.canPop(context)) ...[
+                        GestureDetector(
+                          onTap: () => Navigator.pop(context),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                            child: const Icon(
+                              Icons.arrow_back_ios_new_rounded,
+                              color: Colors.white,
+                              size: 18,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                      ],
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isFemale ? 'My Earnings' : 'Wallet',
+                            style: TextStyle(
+                              color: Colors.white.withOpacity(0.7),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              letterSpacing: 1.0,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            isFemale ? 'Withdraw' : 'Store',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  Row(
+                    children: [
+                      if (!isFemale) ...[
+                        // Debug button for Male
+                        GestureDetector(
+                          onTap: () async {
+                            await DataBridge().updateLocalCoins(1000);
+                            await DataBridge().syncCoinsWithServer();
+                            _showToast('Debug: Added 1000 coins', Colors.green);
+                          },
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 12),
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.greenAccent.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.greenAccent.withOpacity(0.3)),
+                            ),
+                            child: const Text(
+                              '+1000',
+                              style: TextStyle(
+                                color: Colors.greenAccent,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                      GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => TxnScreen(isWithdrawal: isFemale),
+                            ),
+                          );
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Icon(
+                            Icons.history_rounded,
+                            color: Colors.white,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 40),
+              // Balance Row
+              Text(
+                'Available Balance',
+                style: TextStyle(
+                  color: Colors.white.withOpacity(0.7),
+                  fontSize: 15,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.account_balance_wallet_rounded,
+                      color: Colors.white,
+                      size: 28,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(
+                    currentCoins.toStringAsFixed(1),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 48,
+                      fontWeight: FontWeight.w900,
+                      height: 1.0,
+                      letterSpacing: -1.0,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
@@ -1676,7 +1871,7 @@ class _WalletScreenState extends State<WalletScreen>
     // Show withdrawal page for female users
     if (userGender == 'female') {
       return Scaffold(
-        backgroundColor: const Color(0xFF0F172A),
+        backgroundColor: const Color(0xFFFFFFFF),
         body: Stack(
           children: [
             // Background ambient glows
@@ -1720,139 +1915,7 @@ class _WalletScreenState extends State<WalletScreen>
             ),
             Column(
               children: [
-                // Enhanced Premium Header
-                Container(
-                  padding: const EdgeInsets.fromLTRB(20, 50, 20, 24),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withOpacity(0.1),
-                        Colors.white.withOpacity(0.05),
-                      ],
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
-                    ),
-                    border: Border.all(
-                      color: Colors.white.withOpacity(0.1),
-                      width: 1,
-                    ),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
-                    ],
-                  ),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      bottomLeft: Radius.circular(40),
-                      bottomRight: Radius.circular(40),
-                    ),
-                    child: BackdropFilter(
-                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Row(
-                            children: [
-                              if (Navigator.canPop(context))
-                                GestureDetector(
-                                  onTap: () => Navigator.pop(context),
-                                  child: Container(
-                                    padding: const EdgeInsets.all(12),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white.withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(14),
-                                      border: Border.all(
-                                        color: Colors.white.withOpacity(0.2),
-                                        width: 1,
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.arrow_back_ios_new_rounded,
-                                      color: Colors.white,
-                                      size: 20,
-                                    ),
-                                  ),
-                                ),
-                              if (Navigator.canPop(context))
-                                const SizedBox(width: 16),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'My Earnings',
-                                      style: TextStyle(
-                                        color: Colors.white.withOpacity(0.6),
-                                        fontSize: 14,
-                                        fontWeight: FontWeight.w600,
-                                        letterSpacing: 1.0,
-                                      ),
-                                    ),
-                                    const SizedBox(height: 4),
-                                    const Text(
-                                      'Withdraw',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 28,
-                                        fontWeight: FontWeight.bold,
-                                        letterSpacing: 0.5,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => const TxnScreen(
-                                        isWithdrawal: true,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFF3B82F6),
-                                        Color(0xFF1D4ED8),
-                                      ],
-                                    ),
-                                    borderRadius: BorderRadius.circular(14),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: const Color(
-                                          0xFF3B82F6,
-                                        ).withOpacity(0.4),
-                                        blurRadius: 12,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: const Icon(
-                                    Icons.history_rounded,
-                                    color: Colors.white,
-                                    size: 20,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
+                _buildUniqueHeader(context, true, currentCoins),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.only(top: 24),
@@ -1869,7 +1932,7 @@ class _WalletScreenState extends State<WalletScreen>
 
     // Recharge page for male users
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A),
+      backgroundColor: const Color(0xFFFFFFFF),
       body: Stack(
         children: [
           // Background ambient glows
@@ -1914,166 +1977,7 @@ class _WalletScreenState extends State<WalletScreen>
           ),
           Column(
             children: [
-              // Enhanced Premium Header
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 50, 20, 24),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withOpacity(0.1),
-                      Colors.white.withOpacity(0.05),
-                    ],
-                  ),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
-                    width: 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(40),
-                    bottomRight: Radius.circular(40),
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Header Row - Title and History Button
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            // Debug Add 1000 button
-                            GestureDetector(
-                              onTap: () async {
-                                await DataBridge().updateLocalCoins(1000);
-                                await DataBridge().syncCoinsWithServer();
-                                _showToast(
-                                  'Debug: Added 1000 coins',
-                                  Colors.green,
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 8,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.green.withOpacity(0.3),
-                                  ),
-                                ),
-                                child: const Text(
-                                  '+1000',
-                                  style: TextStyle(
-                                    color: Colors.greenAccent,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Text(
-                              'Store',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                            // History button
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => const TxnScreen(
-                                      isWithdrawal: false,
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                padding: const EdgeInsets.all(12),
-                                decoration: BoxDecoration(
-                                  color: Colors.white.withOpacity(0.1),
-                                  borderRadius: BorderRadius.circular(14),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.2),
-                                    width: 1,
-                                  ),
-                                ),
-                                child: const Icon(
-                                  Icons.history_rounded,
-                                  color: Colors.white,
-                                  size: 20,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 24),
-                        // Balance Display - Ultra Premium
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 24,
-                            vertical: 16,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFF8B5CF6), Color(0xFF6D28D9)],
-                            ),
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: const Color(0xFF8B5CF6).withOpacity(0.4),
-                                blurRadius: 15,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const Icon(
-                                Icons.diamond_rounded,
-                                color: Colors.white,
-                                size: 28,
-                              ),
-                              const SizedBox(width: 12),
-                              Text(
-                                currentCoins.toStringAsFixed(1),
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 32,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.0,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
+              _buildUniqueHeader(context, false, currentCoins),
               if (_isPaymentProcessing)
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
@@ -2198,12 +2102,12 @@ class _WalletScreenState extends State<WalletScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 12),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.03),
+          color: Palette.surface,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isPopular
                 ? const Color(0xFFF59E0B).withOpacity(0.5)
-                : Colors.white.withOpacity(0.1),
+                : Palette.textPrimary.withOpacity(0.1),
             width: isPopular ? 2 : 1,
           ),
           boxShadow: [
@@ -2214,7 +2118,7 @@ class _WalletScreenState extends State<WalletScreen>
                 spreadRadius: 2,
               ),
             BoxShadow(
-              color: Colors.black.withOpacity(0.2),
+              color: Palette.textPrimary.withOpacity(0.08),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -2233,7 +2137,7 @@ class _WalletScreenState extends State<WalletScreen>
                   style: const TextStyle(
                     fontSize: 34,
                     fontWeight: FontWeight.w900,
-                    color: Colors.white,
+                    color: Palette.textPrimary,
                     height: 1.0,
                     letterSpacing: -0.5,
                   ),
@@ -2244,7 +2148,7 @@ class _WalletScreenState extends State<WalletScreen>
                   'coins',
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.white.withOpacity(0.6),
+                    color: Palette.textSecondary,
                     fontWeight: FontWeight.w500,
                     letterSpacing: 1.0,
                   ),
@@ -2258,7 +2162,7 @@ class _WalletScreenState extends State<WalletScreen>
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
-                        Colors.white.withOpacity(0.3),
+                        Palette.textPrimary.withOpacity(0.3),
                         Colors.transparent,
                       ],
                     ),
@@ -2312,7 +2216,7 @@ class _WalletScreenState extends State<WalletScreen>
                   child: const Text(
                     'HOT DEAL',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Palette.textPrimary,
                       fontSize: 10,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 1.0,
@@ -2352,12 +2256,12 @@ class _WalletScreenState extends State<WalletScreen>
         },
         backgroundColor: Colors.transparent,
         elevation: 0,
-        icon: const Icon(Icons.cancel_rounded, color: Colors.white),
+        icon: const Icon(Icons.cancel_rounded, color: Palette.textPrimary),
         label: const Text(
           'Cancel Payment',
           style: TextStyle(
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: Palette.textPrimary,
             letterSpacing: 0.5,
           ),
         ),
@@ -2383,12 +2287,12 @@ class _WalletScreenState extends State<WalletScreen>
       margin: const EdgeInsets.symmetric(horizontal: 4),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.03),
+        color: Palette.surface,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
+        border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
+            color: Palette.textPrimary.withOpacity(0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -2417,7 +2321,7 @@ class _WalletScreenState extends State<WalletScreen>
                 ),
                 child: const Icon(
                   Icons.account_balance_wallet_rounded,
-                  color: Colors.white,
+                  color: Palette.textPrimary,
                   size: 28,
                 ),
               ),
@@ -2431,7 +2335,7 @@ class _WalletScreenState extends State<WalletScreen>
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        color: Palette.textPrimary,
                         letterSpacing: 0.3,
                       ),
                     ),
@@ -2439,7 +2343,7 @@ class _WalletScreenState extends State<WalletScreen>
                     Text(
                       'Transfer to your UPI account',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.5),
+                        color: Palette.textSecondary,
                         fontSize: 13,
                       ),
                     ),
@@ -2458,13 +2362,13 @@ class _WalletScreenState extends State<WalletScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Colors.white.withOpacity(0.1),
-                  Colors.white.withOpacity(0.05),
+                  Palette.textPrimary.withOpacity(0.1),
+                  Palette.textPrimary.withOpacity(0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Colors.white.withOpacity(0.2),
+                color: Palette.textPrimary.withOpacity(0.2),
                 width: 1.5,
               ),
             ),
@@ -2477,7 +2381,7 @@ class _WalletScreenState extends State<WalletScreen>
                     Text(
                       'Available Balance',
                       style: TextStyle(
-                        color: Colors.white.withOpacity(0.7),
+                        color: Palette.textPrimary.withOpacity(0.7),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.5,
@@ -2490,7 +2394,7 @@ class _WalletScreenState extends State<WalletScreen>
                         Text(
                           '₹',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.8),
+                            color: Palette.textPrimary.withOpacity(0.8),
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2498,7 +2402,7 @@ class _WalletScreenState extends State<WalletScreen>
                         Text(
                           (currentCoins).toStringAsFixed(2),
                           style: const TextStyle(
-                            color: Colors.white,
+                            color: Palette.textPrimary,
                             fontSize: 36,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.0,
@@ -2511,16 +2415,16 @@ class _WalletScreenState extends State<WalletScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Palette.textPrimary.withOpacity(0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Palette.textPrimary.withOpacity(0.2),
                       width: 1,
                     ),
                   ),
                   child: const Icon(
                     Icons.account_balance_rounded,
-                    color: Colors.white,
+                    color: Palette.textPrimary,
                     size: 32,
                   ),
                 ),
@@ -2538,17 +2442,17 @@ class _WalletScreenState extends State<WalletScreen>
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Colors.white.withOpacity(0.7),
+                  color: Palette.textPrimary.withOpacity(0.7),
                   letterSpacing: 0.3,
                 ),
               ),
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.05),
+                  color: Palette.textPrimary.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Palette.textPrimary.withOpacity(0.2),
                     width: 1,
                   ),
                 ),
@@ -2557,7 +2461,7 @@ class _WalletScreenState extends State<WalletScreen>
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
-                    color: Colors.white,
+                    color: Palette.textPrimary,
                   ),
                   decoration: InputDecoration(
                     hintText: 'username@paytm',
@@ -2569,12 +2473,12 @@ class _WalletScreenState extends State<WalletScreen>
                       margin: const EdgeInsets.all(12),
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Palette.textPrimary.withOpacity(0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
                         Icons.payment_rounded,
-                        color: Colors.white,
+                        color: Palette.textPrimary,
                         size: 20,
                       ),
                     ),
@@ -2623,7 +2527,7 @@ class _WalletScreenState extends State<WalletScreen>
                       width: 24,
                       height: 24,
                       child: CircularProgressIndicator(
-                        color: Colors.white,
+                        color: Palette.textPrimary,
                         strokeWidth: 3,
                       ),
                     )
@@ -2632,14 +2536,14 @@ class _WalletScreenState extends State<WalletScreen>
                       children: [
                         const Icon(
                           Icons.send_rounded,
-                          color: Colors.white,
+                          color: Palette.textPrimary,
                           size: 22,
                         ),
                         const SizedBox(width: 10),
                         const Text(
                           'Withdraw Now',
                           style: TextStyle(
-                            color: Colors.white,
+                            color: Palette.textPrimary,
                             fontSize: 17,
                             fontWeight: FontWeight.bold,
                             letterSpacing: 0.5,
@@ -2675,7 +2579,7 @@ class _WalletScreenState extends State<WalletScreen>
         children: [
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+              color: Palette.textPrimary,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
                 color: isSelected
@@ -2774,7 +2678,7 @@ class _WalletScreenState extends State<WalletScreen>
                 child: Text(
                   discount,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Palette.textPrimary,
                     fontSize: 9,
                     fontWeight: FontWeight.bold,
                   ),
@@ -2808,7 +2712,7 @@ class _WalletScreenState extends State<WalletScreen>
                   child: Text(
                     isSelected ? 'SELECTED' : 'POPULAR',
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Palette.textPrimary,
                       fontSize: 8,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,
@@ -2842,7 +2746,7 @@ class _WalletScreenState extends State<WalletScreen>
                   child: const Text(
                     'SELECTED',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Palette.textPrimary,
                       fontSize: 8,
                       fontWeight: FontWeight.bold,
                       letterSpacing: 0.5,

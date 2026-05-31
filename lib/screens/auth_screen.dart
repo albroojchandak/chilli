@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:chilli/theme/palette.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -103,7 +104,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
     final bool isSmallDevice = screenHeight < 700;
 
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Even darker GenZ background
+      backgroundColor: const Color(0xFFFFFFFF), // Even darker GenZ background
       body: Stack(
         children: [
           // 1. Massive Ambient Background Glows
@@ -170,12 +171,10 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                               vertical: 40,
                             ),
                             decoration: BoxDecoration(
-                              color: const Color(
-                                0xFF1E293B,
-                              ).withOpacity(0.6), // Dark Glass
+                              color: Palette.surface,
                               borderRadius: BorderRadius.circular(32),
                               border: Border.all(
-                                color: Colors.white.withOpacity(0.1),
+                                color: Palette.textPrimary.withOpacity(0.1),
                                 width: 1.5,
                               ),
                               boxShadow: [
@@ -243,7 +242,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                                     return Icon(
                                                       Icons.video_call_rounded,
                                                       size: logoSize * 0.5,
-                                                      color: Colors.white,
+                                                      color: Palette.textPrimary,
                                                     );
                                                   },
                                             ),
@@ -271,7 +270,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                     style: TextStyle(
                                       fontSize: isSmallDevice ? 40 : 48,
                                       fontWeight: FontWeight.w900,
-                                      color: Colors.white,
+                                      color: Palette.textPrimary,
                                       letterSpacing: -1.5,
                                     ),
                                   ),
@@ -283,7 +282,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                   'Meet. Match. Vibe.',
                                   style: TextStyle(
                                     fontSize: isSmallDevice ? 12 : 14,
-                                    color: Colors.white.withOpacity(0.6),
+                                    color: Palette.textSecondary,
                                     letterSpacing: 2,
                                     fontWeight: FontWeight.w700,
                                   ),
@@ -298,7 +297,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                   style: TextStyle(
                                     fontSize: isSmallDevice ? 24 : 28,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: Palette.textPrimary,
                                     letterSpacing: -0.5,
                                   ),
                                 ),
@@ -307,7 +306,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                   'Dive in and find your people',
                                   style: TextStyle(
                                     fontSize: isSmallDevice ? 14 : 15,
-                                    color: Colors.white.withOpacity(0.5),
+                                    color: Palette.textSecondary,
                                     fontWeight: FontWeight.w500,
                                   ),
                                 ),
@@ -399,7 +398,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                   children: [
                                     Theme(
                                       data: ThemeData(
-                                        unselectedWidgetColor: Colors.white
+                                        unselectedWidgetColor: Palette.textPrimary
                                             .withOpacity(0.3),
                                       ),
                                       child: SizedBox(
@@ -428,9 +427,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                                         text: TextSpan(
                                           style: TextStyle(
                                             fontSize: isSmallDevice ? 11 : 12,
-                                            color: Colors.white.withOpacity(
-                                              0.5,
-                                            ),
+                                            color: Palette.textSecondary,
                                             fontWeight: FontWeight.w500,
                                             height: 1.4,
                                           ),
@@ -499,25 +496,25 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 4),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.6),
+                  color: const Color(0xFFF8FAFC).withOpacity(0.6),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.1),
+                    color: Palette.textPrimary.withOpacity(0.1),
                     width: 1,
                   ),
                 ),
                 child: PopupMenuButton<String>(
                   icon: Icon(
                     Icons.language_rounded,
-                    color: Colors.white.withOpacity(0.8),
+                    color: Palette.textPrimary.withOpacity(0.8),
                     size: 22,
                   ),
                   tooltip: 'Language',
                   offset: const Offset(0, 45),
-                  color: const Color(0xFF1E293B),
+                  color: const Color(0xFFF8FAFC),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.white.withOpacity(0.1)),
+                    side: BorderSide(color: Palette.textPrimary.withOpacity(0.1)),
                   ),
                   onSelected: (String languageCode) {
                     setState(() => _currentLocale = Locale(languageCode, ''));
@@ -528,7 +525,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       child: Text(
                         'English',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Palette.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -538,7 +535,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       child: Text(
                         'हिंदी (Hindi)',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Palette.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
@@ -548,7 +545,7 @@ class _AuthScreenState extends State<AuthScreen> with TickerProviderStateMixin {
                       child: Text(
                         'தமிழ் (Tamil)',
                         style: TextStyle(
-                          color: Colors.white,
+                          color: Palette.textPrimary,
                           fontWeight: FontWeight.w600,
                         ),
                       ),

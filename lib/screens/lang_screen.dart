@@ -1,4 +1,5 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import 'package:chilli/theme/palette.dart';
 import 'package:chilli/services/firestore_repo.dart';
 import 'package:chilli/services/push_receiver.dart';
 import 'package:chilli/services/data_bridge.dart';
@@ -93,7 +94,7 @@ class _LangScreenState extends State<LangScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF0F172A), // Dark GenZ background
+      backgroundColor: const Color(0xFFFFFFFF), // Dark GenZ background
       body: Stack(
         children: [
           // Ambient Background Glows
@@ -123,9 +124,9 @@ class _LangScreenState extends State<LangScreen>
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withOpacity(0.6), // Dark Glass
+                          color: const Color(0xFFF8FAFC).withOpacity(0.6), // Dark Glass
                           borderRadius: BorderRadius.circular(32),
-                          border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                          border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
                           boxShadow: [
                             BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 10)),
                             BoxShadow(color: const Color(0xFF06B6D4).withOpacity(0.05), blurRadius: 30, spreadRadius: -5),
@@ -166,9 +167,9 @@ class _LangScreenState extends State<LangScreen>
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.8),
+                  color: const Color(0xFFF8FAFC).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                  border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
                 ),
                 child: const Icon(Icons.language_rounded, color: Color(0xFF06B6D4), size: 28),
               ),
@@ -176,15 +177,15 @@ class _LangScreenState extends State<LangScreen>
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFF1E293B).withOpacity(0.8),
+                  color: const Color(0xFFF8FAFC).withOpacity(0.8),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
+                  border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
                 ),
                 child: Row(
                   children: [
                     const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18),
                     const SizedBox(width: 6),
-                    Text('Final Step', style: TextStyle(color: Colors.white.withOpacity(0.9), fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text('Final Step', style: TextStyle(color: Palette.textPrimary.withOpacity(0.9), fontWeight: FontWeight.w600, fontSize: 14)),
                   ],
                 ),
               ),
@@ -202,7 +203,7 @@ class _LangScreenState extends State<LangScreen>
               style: TextStyle(
                 fontSize: 36,
                 fontWeight: FontWeight.w900,
-                color: Colors.white,
+                color: Palette.textPrimary,
                 height: 1.2,
                 letterSpacing: -0.5,
               ),
@@ -233,14 +234,14 @@ class _LangScreenState extends State<LangScreen>
               gradient: const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)]),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.info_outline_rounded, color: Colors.white, size: 20),
+            child: const Icon(Icons.info_outline_rounded, color: Palette.textPrimary, size: 20),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               selectedLanguage == null ? 'Tap on a language to select' : 'Selected: $selectedLanguage',
               style: TextStyle(
-                color: selectedLanguage != null ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.6),
+                color: selectedLanguage != null ? const Color(0xFF06B6D4) : Palette.textSecondary,
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
@@ -250,7 +251,7 @@ class _LangScreenState extends State<LangScreen>
             Container(
               padding: const EdgeInsets.all(6),
               decoration: const BoxDecoration(
-                color: Color(0xFF1E293B),
+                color: Color(0xFFF8FAFC),
                 shape: BoxShape.circle,
               ),
               child: const Icon(Icons.check, color: Color(0xFF06B6D4), size: 16),
@@ -287,7 +288,7 @@ class _LangScreenState extends State<LangScreen>
               color: isSelected ? Colors.transparent : const Color(0xFF14141E),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected ? Colors.transparent : Colors.white.withOpacity(0.1),
+                color: isSelected ? Colors.transparent : Palette.textPrimary.withOpacity(0.1),
                 width: 1.5,
               ),
               gradient: isSelected
@@ -316,7 +317,7 @@ class _LangScreenState extends State<LangScreen>
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
-                          color: isSelected ? Colors.white : Colors.white.withOpacity(0.7),
+                          color: isSelected ? Colors.white : Palette.textPrimary.withOpacity(0.7),
                         ),
                       ),
                       const SizedBox(height: 2),
@@ -324,7 +325,7 @@ class _LangScreenState extends State<LangScreen>
                         language['name'],
                         style: TextStyle(
                           fontSize: 12,
-                          color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.4),
+                          color: isSelected ? Palette.textPrimary.withOpacity(0.8) : Palette.textPrimary.withOpacity(0.4),
                         ),
                       ),
                     ],
@@ -337,10 +338,10 @@ class _LangScreenState extends State<LangScreen>
                     child: Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
+                        color: Palette.textPrimary.withOpacity(0.3),
                         shape: BoxShape.circle,
                       ),
-                      child: const Icon(Icons.check, color: Colors.white, size: 16),
+                      child: const Icon(Icons.check, color: Palette.textPrimary, size: 16),
                     ),
                   ),
               ],
@@ -364,7 +365,7 @@ class _LangScreenState extends State<LangScreen>
             : null,
         color: isEnabled ? null : const Color(0xFF14141E),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: isEnabled ? Colors.transparent : Colors.white.withOpacity(0.1)),
+        border: Border.all(color: isEnabled ? Colors.transparent : Palette.textPrimary.withOpacity(0.1)),
         boxShadow: isEnabled
             ? [
                 BoxShadow(
@@ -463,7 +464,7 @@ class _LangScreenState extends State<LangScreen>
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
-                      color: Colors.white,
+                      color: Palette.textPrimary,
                       strokeWidth: 2,
                     ),
                   )
@@ -473,7 +474,7 @@ class _LangScreenState extends State<LangScreen>
                       Text(
                         'Get Started',
                         style: TextStyle(
-                          color: isEnabled ? Colors.white : Colors.white.withOpacity(0.4),
+                          color: isEnabled ? Colors.white : Palette.textPrimary.withOpacity(0.4),
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
@@ -481,7 +482,7 @@ class _LangScreenState extends State<LangScreen>
                       const SizedBox(width: 8),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        color: isEnabled ? Colors.white : Colors.white.withOpacity(0.4),
+                        color: isEnabled ? Colors.white : Palette.textPrimary.withOpacity(0.4),
                         size: 20,
                       ),
                     ],

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'dart:ui';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
@@ -2188,7 +2188,7 @@ class _ChilliCallViewState extends State<ChilliCallView>
                           vertical: 12,
                         ),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF1E293B).withOpacity(0.65),
+                          color: const Color(0xFFF8FAFC).withOpacity(0.65),
                           borderRadius: BorderRadius.circular(40),
                           border: Border.all(
                             color: Colors.white.withOpacity(0.15),

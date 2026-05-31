@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -24,15 +24,15 @@ class _CallLogScreenState extends State<CallLogScreen> {
   bool _isLoading = true;
   final TextEditingController _searchController = TextEditingController();
 
-  // GenZ Premium Dark Theme colors
-  static const Color _primaryColor = Color(0xFF8B5CF6);
-  static const Color _primaryLight = Color(0xFFC4B5FD);
-  static const Color _bgColor = Color(0xFF0F172A);
-  static const Color _cardColor = Color(0xFF1E293B);
-  static const Color _textDark = Colors.white;
-  static const Color _textMuted = Color(0xFF94A3B8);
+  // 7:3:1 Light Theme colors
+  static const Color _primaryColor = Color(0xFF4F46E5);
+  static const Color _primaryLight = Color(0xFF818CF8);
+  static const Color _bgColor = Color(0xFFFFFFFF);
+  static const Color _cardColor = Color(0xFFFFFFFF);
+  static const Color _textDark = Color(0xFFFFFFFF);
+  static const Color _textMuted = Color(0xFF64748B);
   static const Color _success = Color(0xFF10B981);
-  static const Color _error = Color(0xFFF43F5E);
+  static const Color _error = Color(0xFFE11D48);
 
   @override
   void initState() {
@@ -239,13 +239,13 @@ class _CallLogScreenState extends State<CallLogScreen> {
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                               colors: [
-                                Colors.white.withValues(alpha: 0.05),
-                                Colors.white.withValues(alpha: 0.02),
+                                _textDark.withValues(alpha: 0.05),
+                                _textDark.withValues(alpha: 0.02),
                               ],
                             ),
                             border: Border(
                               bottom: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.1),
+                                color: _textDark.withValues(alpha: 0.1),
                                 width: 1,
                               ),
                             ),
@@ -295,7 +295,7 @@ class _CallLogScreenState extends State<CallLogScreen> {
                                               style: TextStyle(
                                                 fontSize: 28,
                                                 fontWeight: FontWeight.w900,
-                                                color: Colors.white,
+                                                color: _textDark,
                                                 letterSpacing: -0.5,
                                               ),
                                             ),
@@ -305,7 +305,7 @@ class _CallLogScreenState extends State<CallLogScreen> {
                                               style: TextStyle(
                                                 fontSize: 14,
                                                 fontWeight: FontWeight.w500,
-                                                color: Colors.white.withValues(
+                                                color: _textDark.withValues(
                                                   alpha: 0.6,
                                                 ),
                                                 letterSpacing: 0.3,
@@ -501,10 +501,10 @@ class _CallLogScreenState extends State<CallLogScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       height: 52,
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
+        color: _textDark.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: Colors.white.withValues(alpha: 0.2),
+          color: _textDark.withValues(alpha: 0.1),
           width: 1.5,
         ),
       ),
@@ -512,7 +512,7 @@ class _CallLogScreenState extends State<CallLogScreen> {
         children: [
           Icon(
             Icons.search_rounded,
-            color: Colors.white.withValues(alpha: 0.7),
+            color: _textDark.withValues(alpha: 0.5),
             size: 22,
           ),
           const SizedBox(width: 12),
@@ -521,13 +521,13 @@ class _CallLogScreenState extends State<CallLogScreen> {
               controller: _searchController,
               style: const TextStyle(
                 fontSize: 15,
-                color: Colors.white,
+                color: _textDark,
                 fontWeight: FontWeight.w600,
               ),
               decoration: InputDecoration(
                 hintText: 'Search calls...',
                 hintStyle: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.4),
+                  color: _textDark.withValues(alpha: 0.4),
                   fontWeight: FontWeight.w500,
                 ),
                 border: InputBorder.none,
@@ -542,12 +542,12 @@ class _CallLogScreenState extends State<CallLogScreen> {
               child: Container(
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: _textDark.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(
                   Icons.close_rounded,
-                  color: Colors.white,
+                  color: _textDark,
                   size: 18,
                 ),
               ),
