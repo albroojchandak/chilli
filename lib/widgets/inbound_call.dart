@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class InboundCall extends StatefulWidget {
@@ -84,7 +84,7 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
           BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
             child: Container(
-              color: Colors.black.withOpacity(0.6),
+              color: Colors.black.withValues(alpha: 0.6),
             ),
           ),
 
@@ -92,27 +92,28 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
           SlideTransition(
             position: _slideAnimation,
             child: Center(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(32),
-                child: BackdropFilter(
-                  filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 24),
+              child: SingleChildScrollView(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(32),
+                  child: BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF151525).withOpacity(0.85),
+                      color: const Color(0xFF151525).withValues(alpha: 0.85),
                       borderRadius: BorderRadius.circular(32),
                       border: Border.all(
-                        color: _neonCyan.withOpacity(0.3),
+                        color: _neonCyan.withValues(alpha: 0.3),
                         width: 1.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.5),
+                          color: Colors.black.withValues(alpha: 0.5),
                           blurRadius: 40,
                           offset: const Offset(0, 20),
                         ),
                         BoxShadow(
-                          color: _neonCyan.withOpacity(0.1),
+                          color: _neonCyan.withValues(alpha: 0.1),
                           blurRadius: 60,
                           spreadRadius: 10,
                         ),
@@ -127,10 +128,10 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                           decoration: BoxDecoration(
-                            color: _neonCyan.withOpacity(0.1),
+                            color: _neonCyan.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(20),
                             border: Border.all(
-                              color: _neonCyan.withOpacity(0.3),
+                              color: _neonCyan.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Row(
@@ -174,7 +175,7 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
                                     decoration: BoxDecoration(
                                       shape: BoxShape.circle,
                                       border: Border.all(
-                                        color: _neonCyan.withOpacity((1 - animValue) * 0.5),
+                                        color: _neonCyan.withValues(alpha: (1 - animValue) * 0.5),
                                         width: 2,
                                       ),
                                     ),
@@ -200,7 +201,7 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
                                       ),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: _neonCyan.withOpacity(0.5),
+                                          color: _neonCyan.withValues(alpha: 0.5),
                                           blurRadius: 30,
                                         ),
                                       ],
@@ -211,7 +212,7 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
                                         fit: BoxFit.cover,
                                         errorBuilder: (context, error, stackTrace) {
                                           return Container(
-                                            color: Colors.white.withOpacity(0.1),
+                                            color: Colors.white.withValues(alpha: 0.1),
                                             child: const Icon(
                                               Icons.person,
                                               size: 60,
@@ -248,7 +249,7 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
                         Text(
                           'INCOMING TRANSMISSION...',
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.4),
+                            color: Colors.white.withValues(alpha: 0.4),
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             letterSpacing: 2,
@@ -287,6 +288,7 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
                         const SizedBox(height: 40),
                       ],
                     ),
+                    ),
                   ),
                 ),
               ),
@@ -311,12 +313,12 @@ class _InboundCallState extends State<InboundCall> with TickerProviderStateMixin
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               shape: BoxShape.circle,
-              border: Border.all(color: color.withOpacity(0.5), width: 2),
+              border: Border.all(color: color.withValues(alpha: 0.5), width: 2),
               boxShadow: [
                 BoxShadow(
-                  color: color.withOpacity(0.4),
+                  color: color.withValues(alpha: 0.4),
                   blurRadius: 20,
                   spreadRadius: 2,
                 ),

@@ -445,7 +445,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               child: Container(
                 height: 70,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC).withOpacity(0.7),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(30),
                   border: Border.all(
                     color: Palette.textPrimary.withOpacity(0.1),

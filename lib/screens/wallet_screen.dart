@@ -22,6 +22,15 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:crypto/crypto.dart';
 import 'package:scratcher/scratcher.dart';
 
+import 'package:flutter_cashfree_pg_sdk/api/cfpayment/cfdropcheckoutpayment.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfpaymentcomponents/cfpaymentcomponent.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfpaymentgateway/cfpaymentgatewayservice.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cferrorresponse/cferrorresponse.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cfsession/cfsession.dart';
+import 'package:flutter_cashfree_pg_sdk/api/cftheme/cftheme.dart';
+import 'package:flutter_cashfree_pg_sdk/utils/cfenums.dart';
+import 'package:flutter_cashfree_pg_sdk/utils/cfexceptions.dart';
+
 final FacebookAppEvents facebookAppEvents = FacebookAppEvents();
 
 class WithdrawRequest {
@@ -118,6 +127,7 @@ class _WalletScreenState extends State<WalletScreen>
   };
   // final ApiHandler _HttpService = ApiHandler(); // Add after AuthHandler
   final DataBridge _HttpService = DataBridge();
+  var cfPaymentGatewayService = CFPaymentGatewayService();
   // balanceupa() async {
   //   await _HttpService.updateLocalCoins(102);
   // }
@@ -125,6 +135,7 @@ class _WalletScreenState extends State<WalletScreen>
   @override
   void initState() {
     super.initState();
+    cfPaymentGatewayService.setCallback(verifyPayment, onError);
     // balanceupa();
     _loadUserData();
     _loadProcessedPaymentRefs(); // Load processed payments to prevent duplicates
@@ -192,32 +203,25 @@ class _WalletScreenState extends State<WalletScreen>
         return;
       }
 
-      // Resolve credentials: prefer what was saved in the record
-      final mid = (lastUnresolved['mid']?.toString() ?? '').isNotEmpty
-          ? lastUnresolved['mid'].toString()
-          : merchantId ??
-                DataBridge.appConfig['paygic_mid']?.toString().trim() ??
-                '';
-      final token = (lastUnresolved['token']?.toString() ?? '').isNotEmpty
-          ? lastUnresolved['token'].toString()
-          : paygicToken ??
-                DataBridge.appConfig['paygic_token']?.toString().trim() ??
-                '';
+      // Resolve credentials: use Cashfree from app config
+      final String appId = DataBridge.appConfig['cashfree_app_id']?.toString() ?? '';
+      final String secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString() ?? '';
 
-      if (mid.isEmpty || token.isEmpty) {
+      if (appId.isEmpty || secretKey.isEmpty) {
         print('⚠️ Auto-check: credentials not ready yet, skipping.');
         return;
       }
 
       print('🔄 Auto-checking payment status for refId: $refId');
 
-      final response = await http
-          .post(
-            Uri.parse('https://server.paygic.in/api/v2/checkPaymentStatus'),
-            headers: {'Content-Type': 'application/json', 'token': token},
-            body: jsonEncode({'mid': mid, 'merchantReferenceId': refId}),
-          )
-          .timeout(const Duration(seconds: 15));
+      final response = await http.get(
+        Uri.parse('https://api.cashfree.com/pg/orders/$refId'),
+        headers: {
+          'x-client-id': appId,
+          'x-client-secret': secretKey,
+          'x-api-version': '2023-08-01',
+        },
+      ).timeout(const Duration(seconds: 15));
 
       if (response.statusCode != 200) {
         print('⚠️ Auto-check: server returned ${response.statusCode}');
@@ -225,17 +229,12 @@ class _WalletScreenState extends State<WalletScreen>
       }
 
       final data = jsonDecode(response.body);
-      final txnStatus = (data['txnStatus'] ?? data['status'] ?? '')
-          .toString()
-          .toUpperCase();
-      final isSuccess =
-          data['status'] == true ||
-          data['statusCode'] == 200 ||
-          txnStatus == 'SUCCESS';
+      final txnStatus = data['order_status']?.toString().toUpperCase() ?? '';
+      final isSuccess = txnStatus == 'PAID';
 
       print('🔍 Auto-check result for $refId → txnStatus: $txnStatus');
 
-      if (!isSuccess || txnStatus != 'SUCCESS') {
+      if (!isSuccess) {
         print(
           'ℹ️ Auto-check: payment not successful yet ($txnStatus). No action.',
         );
@@ -754,15 +753,6 @@ class _WalletScreenState extends State<WalletScreen>
     );
   }
 
-  Future<bool> _hasPendingPaymentStored() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.containsKey(_pendingPaymentPrefsKey);
-    } catch (e) {
-      return false;
-    }
-  }
-
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     super.didChangeAppLifecycleState(state);
@@ -1118,6 +1108,22 @@ class _WalletScreenState extends State<WalletScreen>
     _submitWithdrawalRequest(amount, _upiController.text);
   }
 
+  void verifyPayment(String orderId) {
+    debugPrint("✅ Cashfree Verify Payment for $orderId");
+    if (mounted) {
+      setState(() {
+        _currentRefId = orderId;
+      });
+      _handleSuccessfulPayment();
+    }
+  }
+
+  void onError(CFErrorResponse errorResponse, String orderId) {
+    debugPrint("❌ Cashfree Error: ${errorResponse.getMessage()}");
+    _showToast('Payment Error: ${errorResponse.getMessage()}', Colors.red);
+    _resetPaymentState();
+  }
+
   Future<void> _initiatePayment(Map<String, dynamic> package) async {
     if (userData == null) {
       _showToast('User data not found', Colors.red);
@@ -1136,107 +1142,92 @@ class _WalletScreenState extends State<WalletScreen>
     _selectedPackagePrice = package['price'];
 
     try {
-      // Refresh credentials logic if needed (simplified)
-      _currentRefId = 'REF${DateTime.now().millisecondsSinceEpoch}';
+      _currentRefId = 'ORDER_${DateTime.now().millisecondsSinceEpoch}';
 
       final currentUser = FirebaseAuth.instance.currentUser;
 
-      // ✅ Robust Name Fetching
-      String customerName =
-          userData?['username'] ??
-          userData?['Name'] ??
-          currentUser?.displayName ??
-          'User';
-
-      // ✅ Robust Email Fetching
-      String customerEmail =
-          userData?['email'] ?? userData?['Email'] ?? currentUser?.email ?? '';
+      String customerName = userData?['username'] ?? userData?['Name'] ?? currentUser?.displayName ?? 'User';
+      String customerEmail = userData?['email'] ?? userData?['Email'] ?? currentUser?.email ?? '';
       if (customerEmail.isEmpty || !customerEmail.contains('@')) {
         customerEmail = '${customerName.replaceAll(' ', '')}@chilli.com';
       }
 
-      // ✅ Robust Mobile Fetching
-      String customerMobile =
-          userData?['phoneNumber']?.toString() ??
-          userData?['phonenumber']?.toString() ??
-          currentUser?.phoneNumber ??
-          '';
+      String customerMobile = userData?['phoneNumber']?.toString() ?? userData?['phonenumber']?.toString() ?? currentUser?.phoneNumber ?? '';
       if (customerMobile.isEmpty || customerMobile.length < 10) {
-        customerMobile = '9999999999'; // Default fallback
+        customerMobile = '9999999999';
       }
 
+      final String appId = DataBridge.appConfig['cashfree_app_id']?.toString() ?? '';
+      final String secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString() ?? '';
+
+      if (appId.isEmpty || secretKey.isEmpty) {
+        _showToast('Payment configuration missing', Colors.red);
+        _resetPaymentState();
+        return;
+      }
+
+      // Call Cashfree API directly to create order and get payment session id
       final response = await http
           .post(
-            Uri.parse('https://server.paygic.in/api/v2/createPaymentRequest'),
+            Uri.parse('https://api.cashfree.com/pg/orders'),
             headers: {
+              'x-client-id': appId,
+              'x-client-secret': secretKey,
+              'x-api-version': '2023-08-01',
               'Content-Type': 'application/json',
-              'Authorization': 'Bearer $paygicToken',
-              'X-API-Token': '$paygicToken',
-              'token': '$paygicToken',
+              'Accept': 'application/json',
             },
             body: jsonEncode({
-              'mid': merchantId,
-              'merchantReferenceId': _currentRefId,
-              'amount': _selectedPackagePrice.toString(),
-              'customer_name': customerName,
-              'customer_email': customerEmail,
-              'customer_mobile': customerMobile,
-              'redirect_URL': 'https://www.nurxian.site/',
-              'failed_URL': 'https://www.nurxian.site/',
+              'order_id': _currentRefId,
+              'order_amount': _selectedPackagePrice,
+              'order_currency': 'INR',
+              'customer_details': {
+                'customer_id': 'cust_${DateTime.now().millisecondsSinceEpoch}',
+                'customer_name': customerName,
+                'customer_email': customerEmail,
+                'customer_phone': customerMobile,
+              },
+              'order_meta': {
+                 'return_url': 'https://www.nurxian.site/?order_id={order_id}',
+              }
             }),
           )
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        if (responseData['status'] == false) {
-          _showToast('Payment error: ${responseData['msg']}', Colors.red);
-          _resetPaymentState();
-          return;
-        }
+        final sessionId = responseData['payment_session_id'];
 
-        if (responseData['data'] != null &&
-            responseData['data']['intent'] != null) {
-          final paymentUrl = responseData['data']['intent'];
-          String cleanUrl = paymentUrl.toString().trim();
-          if (!cleanUrl.contains('://')) cleanUrl = 'https://$cleanUrl';
-
-          final Uri url = Uri.parse(cleanUrl);
-
-          bool launched = false;
+        if (sessionId != null) {
           try {
-            // Try launching directly, sometimes canLaunchUrl returns false for UPI intents
-            launched = await launchUrl(
-              url,
-              mode: LaunchMode.externalApplication,
-            );
-          } catch (e) {
-            debugPrint('⚠️ Initial launch failed: $e');
-            // Fallback to simpler check
-            if (await canLaunchUrl(url)) {
-              launched = await launchUrl(
-                url,
-                mode: LaunchMode.externalApplication,
-              );
-            }
-          }
+            var session = CFSessionBuilder()
+                .setEnvironment(CFEnvironment.PRODUCTION)
+                .setOrderId(_currentRefId!)
+                .setPaymentSessionId(sessionId)
+                .build();
+            
+            var theme = CFThemeBuilder()
+                .setNavigationBarBackgroundColorColor("#0F0A1E")
+                .setPrimaryFont("Roboto")
+                .setSecondaryFont("Roboto")
+                .build();
+                
+            var cfDropCheckoutPayment = CFDropCheckoutPaymentBuilder()
+                .setSession(session)
+                .setTheme(theme)
+                .build();
 
-          if (launched) {
-            debugPrint('✅ Payment app launched successfully');
-            // ✅ Save as PENDING immediately so history always has a record
             await _savePendingTransaction();
             await _persistPendingPaymentState();
-            _startPaymentStatusCheck();
-          } else {
-            debugPrint('❌ Could not launch payment URL: $cleanUrl');
-            _showToast(
-              'No UPI app found. Please install Google Pay or PhonePe.',
-              Colors.red,
-            );
-            // Save a failed record
-            await _saveFailedTransaction('No UPI app available');
+
+            cfPaymentGatewayService.doPayment(cfDropCheckoutPayment);
+          } on CFException catch (e) {
+            _showToast('Cashfree init error: ${e.message}', Colors.red);
             _resetPaymentState();
           }
+        } else {
+          _showToast('Failed to generate payment session', Colors.red);
+          _resetPaymentState();
         }
       } else {
         _showToast('Payment gateway error: ${response.statusCode}', Colors.red);
@@ -1252,27 +1243,25 @@ class _WalletScreenState extends State<WalletScreen>
 
   Future<void> _checkPaymentStatus() async {
     if (userData == null || _currentRefId == null) return;
+    
+    final String appId = DataBridge.appConfig['cashfree_app_id']?.toString() ?? '';
+    final String secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString() ?? '';
+    
+    if (appId.isEmpty || secretKey.isEmpty) return;
+    
     try {
-      final response = await http
-          .post(
-            Uri.parse('https://server.paygic.in/api/v2/checkPaymentStatus'),
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': 'Bearer $paygicToken',
-              'token': '$paygicToken',
-            },
-            body: jsonEncode({
-              'mid': merchantId,
-              'merchantReferenceId': _currentRefId,
-            }),
-          )
-          .timeout(const Duration(seconds: 12));
+      final response = await http.get(
+        Uri.parse('https://api.cashfree.com/pg/orders/$_currentRefId'),
+        headers: {
+          'x-client-id': appId,
+          'x-client-secret': secretKey,
+          'x-api-version': '2023-08-01',
+        },
+      ).timeout(const Duration(seconds: 12));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['status'] == true ||
-            data['status'] == 'success' ||
-            data['code'] == 200) {
+        if (data['order_status'] == 'PAID') {
           await _handleSuccessfulPayment();
         }
       }
@@ -1682,7 +1671,7 @@ class _WalletScreenState extends State<WalletScreen>
         borderRadius: BorderRadius.circular(36),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF3B82F6).withOpacity(0.3),
+            color: const Color(0xFF3B82F6).withValues(alpha: 0.3),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -1700,7 +1689,7 @@ class _WalletScreenState extends State<WalletScreen>
               child: Icon(
                 Icons.account_balance_wallet_rounded,
                 size: 140,
-                color: Colors.white.withOpacity(0.06),
+                color: Colors.white.withValues(alpha: 0.06),
               ),
             ),
           ),
@@ -1720,7 +1709,7 @@ class _WalletScreenState extends State<WalletScreen>
                           child: Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.15),
+                              color: Colors.white.withValues(alpha: 0.15),
                               borderRadius: BorderRadius.circular(14),
                             ),
                             child: const Icon(
@@ -1738,7 +1727,7 @@ class _WalletScreenState extends State<WalletScreen>
                           Text(
                             isFemale ? 'My Earnings' : 'Wallet',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.7),
+                              color: Colors.white.withValues(alpha: 0.7),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                               letterSpacing: 1.0,
@@ -1772,9 +1761,9 @@ class _WalletScreenState extends State<WalletScreen>
                             margin: const EdgeInsets.only(right: 12),
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                             decoration: BoxDecoration(
-                              color: Colors.greenAccent.withOpacity(0.2),
+                              color: Colors.greenAccent.withValues(alpha: 0.2),
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.greenAccent.withOpacity(0.3)),
+                              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.3)),
                             ),
                             child: const Text(
                               '+1000',
@@ -1799,7 +1788,7 @@ class _WalletScreenState extends State<WalletScreen>
                         child: Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(
@@ -1818,7 +1807,7 @@ class _WalletScreenState extends State<WalletScreen>
               Text(
                 'Available Balance',
                 style: TextStyle(
-                  color: Colors.white.withOpacity(0.7),
+                  color: Colors.white.withValues(alpha: 0.7),
                   fontSize: 15,
                   letterSpacing: 0.5,
                 ),
@@ -1830,7 +1819,7 @@ class _WalletScreenState extends State<WalletScreen>
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
@@ -1883,10 +1872,10 @@ class _WalletScreenState extends State<WalletScreen>
                 height: 300,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF3B82F6).withOpacity(0.15),
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF3B82F6).withOpacity(0.15),
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
                       blurRadius: 100,
                       spreadRadius: 100,
                     ),
@@ -1902,10 +1891,10 @@ class _WalletScreenState extends State<WalletScreen>
                 height: 250,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFEAB308).withOpacity(0.1),
+                  color: const Color(0xFFEAB308).withValues(alpha: 0.1),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFFEAB308).withOpacity(0.1),
+                      color: const Color(0xFFEAB308).withValues(alpha: 0.1),
                       blurRadius: 100,
                       spreadRadius: 100,
                     ),
@@ -1944,11 +1933,11 @@ class _WalletScreenState extends State<WalletScreen>
               height: 300,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                 // blur using BoxShadow
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF8B5CF6).withOpacity(0.15),
+                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.15),
                     blurRadius: 100,
                     spreadRadius: 100,
                   ),
@@ -1964,10 +1953,10 @@ class _WalletScreenState extends State<WalletScreen>
               height: 250,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: const Color(0xFF3B82F6).withOpacity(0.15),
+                color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF3B82F6).withOpacity(0.15),
+                    color: const Color(0xFF3B82F6).withValues(alpha: 0.15),
                     blurRadius: 100,
                     spreadRadius: 100,
                   ),
@@ -1987,9 +1976,9 @@ class _WalletScreenState extends State<WalletScreen>
                       vertical: 12,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -2019,7 +2008,7 @@ class _WalletScreenState extends State<WalletScreen>
                               Text(
                                 'Click cancel if payment failed or was cancelled.',
                                 style: TextStyle(
-                                  color: Colors.red.withOpacity(0.8),
+                                  color: Colors.red.withValues(alpha: 0.8),
                                   fontSize: 12,
                                 ),
                               ),
@@ -2106,19 +2095,19 @@ class _WalletScreenState extends State<WalletScreen>
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isPopular
-                ? const Color(0xFFF59E0B).withOpacity(0.5)
-                : Palette.textPrimary.withOpacity(0.1),
+                ? const Color(0xFFF59E0B).withValues(alpha: 0.5)
+                : Palette.textPrimary.withValues(alpha: 0.1),
             width: isPopular ? 2 : 1,
           ),
           boxShadow: [
             if (isPopular)
               BoxShadow(
-                color: const Color(0xFFF59E0B).withOpacity(0.2),
+                color: const Color(0xFFF59E0B).withValues(alpha: 0.2),
                 blurRadius: 20,
                 spreadRadius: 2,
               ),
             BoxShadow(
-              color: Palette.textPrimary.withOpacity(0.08),
+              color: Palette.textPrimary.withValues(alpha: 0.08),
               blurRadius: 15,
               offset: const Offset(0, 5),
             ),
@@ -2162,7 +2151,7 @@ class _WalletScreenState extends State<WalletScreen>
                     gradient: LinearGradient(
                       colors: [
                         Colors.transparent,
-                        Palette.textPrimary.withOpacity(0.3),
+                        Palette.textPrimary.withValues(alpha: 0.3),
                         Colors.transparent,
                       ],
                     ),
@@ -2207,7 +2196,7 @@ class _WalletScreenState extends State<WalletScreen>
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFFF59E0B).withOpacity(0.4),
+                        color: const Color(0xFFF59E0B).withValues(alpha: 0.4),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       ),
@@ -2243,7 +2232,7 @@ class _WalletScreenState extends State<WalletScreen>
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFFEF4444).withOpacity(0.4),
+            color: const Color(0xFFEF4444).withValues(alpha: 0.4),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -2289,10 +2278,10 @@ class _WalletScreenState extends State<WalletScreen>
       decoration: BoxDecoration(
         color: Palette.surface,
         borderRadius: BorderRadius.circular(32),
-        border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1),
+        border: Border.all(color: Palette.textPrimary.withValues(alpha: 0.1), width: 1),
         boxShadow: [
           BoxShadow(
-            color: Palette.textPrimary.withOpacity(0.08),
+            color: Palette.textPrimary.withValues(alpha: 0.08),
             blurRadius: 20,
             offset: const Offset(0, 10),
           ),
@@ -2313,7 +2302,7 @@ class _WalletScreenState extends State<WalletScreen>
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF3B82F6).withOpacity(0.4),
+                      color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -2362,13 +2351,13 @@ class _WalletScreenState extends State<WalletScreen>
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
                 colors: [
-                  Palette.textPrimary.withOpacity(0.1),
-                  Palette.textPrimary.withOpacity(0.05),
+                  Palette.textPrimary.withValues(alpha: 0.1),
+                  Palette.textPrimary.withValues(alpha: 0.05),
                 ],
               ),
               borderRadius: BorderRadius.circular(24),
               border: Border.all(
-                color: Palette.textPrimary.withOpacity(0.2),
+                color: Palette.textPrimary.withValues(alpha: 0.2),
                 width: 1.5,
               ),
             ),
@@ -2381,7 +2370,7 @@ class _WalletScreenState extends State<WalletScreen>
                     Text(
                       'Available Balance',
                       style: TextStyle(
-                        color: Palette.textPrimary.withOpacity(0.7),
+                        color: Palette.textPrimary.withValues(alpha: 0.7),
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         letterSpacing: 0.5,
@@ -2394,7 +2383,7 @@ class _WalletScreenState extends State<WalletScreen>
                         Text(
                           '₹',
                           style: TextStyle(
-                            color: Palette.textPrimary.withOpacity(0.8),
+                            color: Palette.textPrimary.withValues(alpha: 0.8),
                             fontSize: 24,
                             fontWeight: FontWeight.bold,
                           ),
@@ -2415,10 +2404,10 @@ class _WalletScreenState extends State<WalletScreen>
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Palette.textPrimary.withOpacity(0.1),
+                    color: Palette.textPrimary.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                     border: Border.all(
-                      color: Palette.textPrimary.withOpacity(0.2),
+                      color: Palette.textPrimary.withValues(alpha: 0.2),
                       width: 1,
                     ),
                   ),
@@ -2442,17 +2431,17 @@ class _WalletScreenState extends State<WalletScreen>
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
-                  color: Palette.textPrimary.withOpacity(0.7),
+                  color: Palette.textPrimary.withValues(alpha: 0.7),
                   letterSpacing: 0.3,
                 ),
               ),
               const SizedBox(height: 10),
               Container(
                 decoration: BoxDecoration(
-                  color: Palette.textPrimary.withOpacity(0.05),
+                  color: Palette.textPrimary.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: Palette.textPrimary.withOpacity(0.2),
+                    color: Palette.textPrimary.withValues(alpha: 0.2),
                     width: 1,
                   ),
                 ),
@@ -2473,7 +2462,7 @@ class _WalletScreenState extends State<WalletScreen>
                       margin: const EdgeInsets.all(12),
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Palette.textPrimary.withOpacity(0.1),
+                        color: Palette.textPrimary.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: const Icon(
@@ -2507,7 +2496,7 @@ class _WalletScreenState extends State<WalletScreen>
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF3B82F6).withOpacity(0.4),
+                  color: const Color(0xFF3B82F6).withValues(alpha: 0.4),
                   blurRadius: 15,
                   offset: const Offset(0, 8),
                 ),
@@ -2585,17 +2574,17 @@ class _WalletScreenState extends State<WalletScreen>
                 color: isSelected
                     ? Palette.primary
                     : (isPopular
-                          ? Colors.orange.withOpacity(0.5)
-                          : Colors.grey.withOpacity(0.1)),
+                          ? Colors.orange.withValues(alpha: 0.5)
+                          : Colors.grey.withValues(alpha: 0.1)),
                 width: isSelected ? 4 : (isPopular ? 2 : 1),
               ),
               boxShadow: [
                 BoxShadow(
                   color: isSelected
-                      ? Palette.primary.withOpacity(0.3)
+                      ? Palette.primary.withValues(alpha: 0.3)
                       : (isPopular
-                            ? Colors.orange.withOpacity(0.15)
-                            : Colors.black.withOpacity(0.05)),
+                            ? Colors.orange.withValues(alpha: 0.15)
+                            : Colors.black.withValues(alpha: 0.05)),
                   blurRadius: isSelected ? 12 : 8,
                   offset: isSelected ? const Offset(0, 6) : const Offset(0, 4),
                 ),
@@ -2603,7 +2592,7 @@ class _WalletScreenState extends State<WalletScreen>
               gradient: isSelected
                   ? LinearGradient(
                       colors: [
-                        Palette.primary.withOpacity(0.15),
+                        Palette.primary.withValues(alpha: 0.15),
                         Colors.white,
                       ],
                       begin: Alignment.topCenter,
@@ -2640,7 +2629,7 @@ class _WalletScreenState extends State<WalletScreen>
                   decoration: BoxDecoration(
                     color: isPopular
                         ? Palette.primary
-                        : Palette.primary.withOpacity(0.1),
+                        : Palette.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
                     gradient: isPopular
                         ? const LinearGradient(
@@ -2703,7 +2692,7 @@ class _WalletScreenState extends State<WalletScreen>
                       BoxShadow(
                         color:
                             (isSelected ? Palette.primary : Colors.orange)
-                                .withOpacity(0.4),
+                                .withValues(alpha: 0.4),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -2737,7 +2726,7 @@ class _WalletScreenState extends State<WalletScreen>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Palette.primary.withOpacity(0.4),
+                        color: Palette.primary.withValues(alpha: 0.4),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),

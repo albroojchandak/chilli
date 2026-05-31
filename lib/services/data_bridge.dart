@@ -1,4 +1,4 @@
-﻿import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -265,6 +265,8 @@ class DataBridge {
     'min_withdrawal': 50.0,
     'paygic_mid': '',
     'paygic_token': '',
+    'cashfree_app_id': '',
+    'cashfree_secret_key': '',
     'min_app_version': '1.0.0',
     'latest_app_version': '1.0.0',
     'update_url':
@@ -551,6 +553,14 @@ class DataBridge {
                     data['token'] ??
                     data['temtoken'] ??
                     _appConfig['paygic_token'])
+                .toString()
+                .trim();
+        _appConfig['cashfree_app_id'] =
+            (data['cashfree_app_id'] ?? _appConfig['cashfree_app_id'])
+                .toString()
+                .trim();
+        _appConfig['cashfree_secret_key'] =
+            (data['cashfree_secret_key'] ?? _appConfig['cashfree_secret_key'])
                 .toString()
                 .trim();
 
