@@ -14,6 +14,7 @@ class OnboardScreen extends StatefulWidget {
 
 class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
   String? selectedGender;
   String? selectedAvatar;
   bool genderVerified = false; // ✅ Track verification status
@@ -43,6 +44,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
     _fadeController.dispose();
     _slideController.dispose();
     _nameController.dispose();
+    _phoneController.dispose();
     super.dispose();
   }
 
@@ -237,19 +239,19 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
     final bool isSmallDevice = size.height < 700;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFFFFFFF), // Dark GenZ background
+      backgroundColor: Palette.surface, 
       body: Stack(
         children: [
           // Ambient Background Glows
           Positioned(
             top: -150,
             left: -100,
-            child: _buildGlowingOrb(450, const Color(0xFF8B5CF6).withOpacity(0.12)),
+            child: _buildGlowingOrb(450, Palette.primary.withOpacity(0.08)),
           ),
           Positioned(
             bottom: -200,
             right: -100,
-            child: _buildGlowingOrb(500, const Color(0xFF06B6D4).withOpacity(0.12)),
+            child: _buildGlowingOrb(500, Palette.secondary.withOpacity(0.08)),
           ),
           
           SafeArea(
@@ -265,12 +267,11 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                       child: Container(
                         margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFF8FAFC).withOpacity(0.6), // Dark Glass
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(32),
-                          border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
+                          border: Border.all(color: Palette.primary.withOpacity(0.1), width: 1.5),
                           boxShadow: [
-                            BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 10)),
-                            BoxShadow(color: const Color(0xFF06B6D4).withOpacity(0.05), blurRadius: 30, spreadRadius: -5),
+                            BoxShadow(color: Palette.primary.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10)),
                           ],
                         ),
                         child: Padding(
@@ -292,6 +293,14 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                                 title: 'Enter Username',
                                 isCompleted: _nameController.text.isNotEmpty,
                                 child: _buildUsernameSection(),
+                              ),
+                              const SizedBox(height: 24),
+                              // Step 3: Phone Number
+                              _buildStepCard(
+                                stepNumber: 3,
+                                title: 'Phone Number',
+                                isCompleted: _phoneController.text.length >= 10,
+                                child: _buildPhoneSection(),
                               ),
                               const SizedBox(height: 40),
                               _buildContinueButton(),
@@ -322,25 +331,27 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC).withOpacity(0.8),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
+                  border: Border.all(color: Palette.primary.withOpacity(0.1), width: 1.5),
+                  boxShadow: [BoxShadow(color: Palette.primary.withOpacity(0.05), blurRadius: 10)],
                 ),
-                child: const Icon(Icons.person_add_rounded, color: Color(0xFF06B6D4), size: 28),
+                child: const Icon(Icons.person_add_rounded, color: Palette.primary, size: 28),
               ),
               const Spacer(),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC).withOpacity(0.8),
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: Palette.textPrimary.withOpacity(0.1), width: 1.5),
+                  border: Border.all(color: Palette.primary.withOpacity(0.1), width: 1.5),
+                  boxShadow: [BoxShadow(color: Palette.primary.withOpacity(0.05), blurRadius: 10)],
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.check_circle, color: Color(0xFF8B5CF6), size: 18),
+                    const Icon(Icons.check_circle, color: Palette.primary, size: 18),
                     const SizedBox(width: 6),
-                    Text('2 Steps', style: TextStyle(color: Palette.textPrimary.withOpacity(0.9), fontWeight: FontWeight.w600, fontSize: 14)),
+                    Text('3 Steps', style: TextStyle(color: Palette.textPrimary, fontWeight: FontWeight.w600, fontSize: 14)),
                   ],
                 ),
               ),
@@ -348,24 +359,20 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
           ),
           const SizedBox(height: 24),
           ShaderMask(
-            shaderCallback: (bounds) => const LinearGradient(
-              colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ).createShader(bounds),
+            shaderCallback: (bounds) => Palette.primaryGradient.createShader(bounds),
             child: Text(
               'Create Your\nProfile',
               style: TextStyle(
                 fontSize: isSmall ? 32 : 36,
                 fontWeight: FontWeight.w900,
-                color: Palette.textPrimary,
+                color: Colors.white,
                 height: 1.2,
                 letterSpacing: -0.5,
               ),
             ),
           ),
           const SizedBox(height: 8),
-          Text(
+          const Text(
             'Let\'s get to know you better.',
             style: TextStyle(fontSize: 16, color: Palette.textSecondary, fontWeight: FontWeight.w500),
           ),
@@ -384,15 +391,15 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                gradient: isCompleted ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)]) : null,
-                color: isCompleted ? null : const Color(0xFF14141E),
+                gradient: isCompleted ? Palette.primaryGradient : null,
+                color: isCompleted ? null : Colors.grey.shade100,
                 shape: BoxShape.circle,
-                border: Border.all(color: isCompleted ? Colors.transparent : Palette.textPrimary.withOpacity(0.2), width: 1.5),
+                border: Border.all(color: isCompleted ? Colors.transparent : Palette.primary.withOpacity(0.2), width: 1.5),
               ),
               child: Center(
                 child: isCompleted
-                    ? const Icon(Icons.check, color: Palette.textPrimary, size: 18)
-                    : Text('$stepNumber', style: TextStyle(color: Palette.textSecondary, fontWeight: FontWeight.bold, fontSize: 14)),
+                    ? const Icon(Icons.check, color: Colors.white, size: 18)
+                    : Text('$stepNumber', style: const TextStyle(color: Palette.textSecondary, fontWeight: FontWeight.bold, fontSize: 14)),
               ),
             ),
             const SizedBox(width: 12),
@@ -402,7 +409,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isCompleted ? Colors.white : Palette.textPrimary.withOpacity(0.7),
+                  color: isCompleted ? Palette.primary : Palette.textPrimary,
                 ),
               ),
             ),
@@ -426,20 +433,14 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
 
   Widget _buildModernGenderCard(String gender, IconData icon) {
     final isSelected = selectedGender == gender;
-    final isMale = gender == 'Male';
     
-    // GenZ vibrant gradient styles
-    final activeGradient = isMale
-        ? const LinearGradient(colors: [Color(0xFF3B82F6), Color(0xFF06B6D4)]) // Blue to Cyan
-        : const LinearGradient(colors: [Color(0xFFEC4899), Color(0xFF8B5CF6)]); // Pink to Purple
-
     return GestureDetector(
       onTap: () {
         setState(() {
           selectedGender = gender;
           genderVerified = true;
           final random = Random();
-          final list = isMale ? maleAvatars : femaleAvatars;
+          final list = gender == 'Male' ? maleAvatars : femaleAvatars;
           if (selectedAvatar == null || !list.contains(selectedAvatar)) {
             selectedAvatar = list[random.nextInt(list.length)];
           }
@@ -448,10 +449,10 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('✅ $gender selected'),
-              backgroundColor: const Color(0xFFF8FAFC),
+              backgroundColor: Palette.surface,
               duration: const Duration(seconds: 1),
               behavior: SnackBarBehavior.floating,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: BorderSide(color: isMale ? const Color(0xFF06B6D4) : const Color(0xFF8B5CF6))),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12), side: const BorderSide(color: Palette.primary)),
             ),
           );
         }
@@ -460,17 +461,16 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
         duration: const Duration(milliseconds: 300),
         padding: const EdgeInsets.symmetric(vertical: 20),
         decoration: BoxDecoration(
-          color: isSelected ? Colors.transparent : const Color(0xFF14141E),
+          color: isSelected ? Palette.primary : Colors.white,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: isSelected ? Colors.transparent : Palette.textPrimary.withOpacity(0.1),
+            color: isSelected ? Colors.transparent : Palette.primary.withOpacity(0.1),
             width: 1.5,
           ),
-          gradient: isSelected ? activeGradient : null,
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: (isMale ? const Color(0xFF06B6D4) : const Color(0xFF8B5CF6)).withOpacity(0.4),
+                    color: Palette.primary.withOpacity(0.4),
                     blurRadius: 20,
                     offset: const Offset(0, 5),
                   )
@@ -498,9 +498,9 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.verified, color: Palette.textPrimary, size: 12),
+                    Icon(Icons.verified, color: Colors.white, size: 12),
                     SizedBox(width: 4),
-                    Text('Verified', style: TextStyle(color: Palette.textPrimary, fontSize: 11, fontWeight: FontWeight.w600)),
+                    Text('Verified', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w600)),
                   ],
                 ),
               ),
@@ -518,16 +518,16 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
       children: [
         Container(
           decoration: BoxDecoration(
-            color: const Color(0xFF14141E),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isNotEmpty ? const Color(0xFF06B6D4) : Colors.white.withOpacity(0.1),
+              color: isNotEmpty ? Palette.primary : Palette.textPrimary.withOpacity(0.1),
               width: 1.5,
             ),
             boxShadow: isNotEmpty
                 ? [
                     BoxShadow(
-                      color: const Color(0xFF06B6D4).withOpacity(0.2),
+                      color: Palette.primary.withOpacity(0.1),
                       blurRadius: 15,
                     )
                   ]
@@ -542,41 +542,89 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Palette.textPrimary),
             decoration: InputDecoration(
               hintText: 'Enter your username',
-              hintStyle: TextStyle(color: Palette.textPrimary.withOpacity(0.3), fontSize: 16, fontWeight: FontWeight.normal),
+              hintStyle: TextStyle(color: Palette.textSecondary.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.normal),
               prefixIcon: Icon(
                 Icons.alternate_email_rounded,
-                color: isNotEmpty ? const Color(0xFF06B6D4) : Palette.textPrimary.withOpacity(0.3),
+                color: isNotEmpty ? Palette.primary : Palette.textSecondary.withOpacity(0.5),
               ),
-              suffixIcon: isNotEmpty ? const Icon(Icons.check_circle, color: Color(0xFF06B6D4)) : null,
+              suffixIcon: isNotEmpty ? const Icon(Icons.check_circle, color: Palette.primary) : null,
               border: InputBorder.none,
               contentPadding: const EdgeInsets.all(20),
             ),
           ),
         ),
         const SizedBox(height: 12),
-        Text(
+        const Text(
           '• At least 3 characters\n• No phone numbers or social media',
-          style: TextStyle(fontSize: 12, color: Palette.textPrimary.withOpacity(0.4), height: 1.5),
+          style: TextStyle(fontSize: 12, color: Palette.textSecondary, height: 1.5),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPhoneSection() {
+    final isNotEmpty = _phoneController.text.length >= 10;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: isNotEmpty ? Palette.primary : Palette.textPrimary.withOpacity(0.1),
+              width: 1.5,
+            ),
+            boxShadow: isNotEmpty
+                ? [
+                    BoxShadow(
+                      color: Palette.primary.withOpacity(0.1),
+                      blurRadius: 15,
+                    )
+                  ]
+                : null,
+          ),
+          child: TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+              LengthLimitingTextInputFormatter(15),
+            ],
+            onChanged: (value) => setState(() {}),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Palette.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Enter your phone number',
+              hintStyle: TextStyle(color: Palette.textSecondary.withOpacity(0.5), fontSize: 16, fontWeight: FontWeight.normal),
+              prefixIcon: Icon(
+                Icons.phone_rounded,
+                color: isNotEmpty ? Palette.primary : Palette.textSecondary.withOpacity(0.5),
+              ),
+              suffixIcon: isNotEmpty ? const Icon(Icons.check_circle, color: Palette.primary) : null,
+              border: InputBorder.none,
+              contentPadding: const EdgeInsets.all(20),
+            ),
+          ),
         ),
       ],
     );
   }
 
   Widget _buildContinueButton() {
-    final allCompleted = selectedAvatar != null && genderVerified && _nameController.text.isNotEmpty;
+    final allCompleted = selectedAvatar != null && genderVerified && _nameController.text.isNotEmpty && _phoneController.text.length >= 10;
 
     return Container(
       width: double.infinity,
       height: 60,
       decoration: BoxDecoration(
-        gradient: allCompleted ? const LinearGradient(colors: [Color(0xFF8B5CF6), Color(0xFF06B6D4)], begin: Alignment.topLeft, end: Alignment.bottomRight) : null,
-        color: allCompleted ? null : const Color(0xFF14141E),
+        gradient: allCompleted ? Palette.primaryGradient : null,
+        color: allCompleted ? null : Colors.grey.shade200,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: allCompleted ? Colors.transparent : Palette.textPrimary.withOpacity(0.1)),
+        border: Border.all(color: allCompleted ? Colors.transparent : Colors.grey.shade300),
         boxShadow: allCompleted
             ? [
                 BoxShadow(
-                  color: const Color(0xFF06B6D4).withOpacity(0.4),
+                  color: Palette.primary.withOpacity(0.4),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 )
@@ -595,7 +643,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text('⚠️ $usernameError'),
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: Palette.error,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -607,7 +655,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: const Text('Please select your gender'),
-                        backgroundColor: Colors.redAccent,
+                        backgroundColor: Palette.error,
                         behavior: SnackBarBehavior.floating,
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                       ),
@@ -629,6 +677,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                         builder: (context) => LangScreen(
                           username: _nameController.text,
                           gender: selectedGender!,
+                          phoneNumber: _phoneController.text,
                           avatar: finalAvatar,
                           audioUrl: audioUrl,
                         ),
@@ -649,7 +698,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                       Text(
                         'Continue to Next Step',
                         style: TextStyle(
-                          color: allCompleted ? Colors.white : Palette.textPrimary.withOpacity(0.4),
+                          color: allCompleted ? Colors.white : Palette.textSecondary,
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
                         ),
@@ -657,7 +706,7 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
                       const SizedBox(width: 8),
                       Icon(
                         Icons.arrow_forward_rounded,
-                        color: allCompleted ? Colors.white : Palette.textPrimary.withOpacity(0.4),
+                        color: allCompleted ? Colors.white : Palette.textSecondary,
                         size: 20,
                       ),
                     ],
@@ -668,4 +717,3 @@ class _OnboardScreenState extends State<OnboardScreen> with TickerProviderStateM
     );
   }
 }
-

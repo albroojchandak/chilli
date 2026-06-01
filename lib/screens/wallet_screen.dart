@@ -1,4 +1,5 @@
 import 'package:facebook_app_events/facebook_app_events.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:chilli/theme/palette.dart';
 import 'package:flutter/services.dart';
@@ -1108,13 +1109,67 @@ class _WalletScreenState extends State<WalletScreen>
     _submitWithdrawalRequest(amount, _upiController.text);
   }
 
+  Future<void> _checkCashfreePaymentStatus(String orderId) async {
+    final String appId;
+    final String secretKey;
+    final String environmentUrl;
+
+    if (kDebugMode) {
+      appId = 'TEST11025156928ec9186fcc0dbef20c65152011';
+      secretKey = 'cfsk_ma_test_7b08216f7826f56045b029122a611706_1752373a';
+      environmentUrl = 'https://sandbox.cashfree.com/pg/orders';
+    } else {
+      appId = DataBridge.appConfig['cashfree_app_id']?.toString().trim() ?? '';
+      secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString().trim() ?? '';
+      environmentUrl = 'https://api.cashfree.com/pg/orders';
+    }
+
+    if (appId.isEmpty || secretKey.isEmpty) {
+      debugPrint('Cashfree config missing for verification');
+      _showToast('Verification failed: config missing', Colors.red);
+      _resetPaymentState(clearStoredPending: true);
+      return;
+    }
+
+    try {
+      final url = Uri.parse('$environmentUrl/$orderId');
+      final headers = {
+        'Content-Type': 'application/json',
+        'x-client-id': appId,
+        'x-client-secret': secretKey,
+        'x-api-version': '2023-08-01',
+      };
+
+      final response = await http.get(url, headers: headers).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['order_status'] == 'PAID') {
+          await _handleSuccessfulPayment();
+        } else {
+          debugPrint('Cashfree Payment Not PAID: ${data['order_status']}');
+          _showToast('Payment not successful: ${data['order_status']}', Colors.red);
+          _resetPaymentState(clearStoredPending: true);
+        }
+      } else {
+        debugPrint('Cashfree verify API error ${response.statusCode}');
+        _showToast('Payment verification failed', Colors.red);
+        _resetPaymentState(clearStoredPending: true);
+      }
+    } catch (e) {
+      debugPrint('Cashfree verify Network error $e');
+      _showToast('Network error during verification', Colors.red);
+      _resetPaymentState(clearStoredPending: true);
+    }
+  }
+
   void verifyPayment(String orderId) {
     debugPrint("✅ Cashfree Verify Payment for $orderId");
     if (mounted) {
       setState(() {
         _currentRefId = orderId;
       });
-      _handleSuccessfulPayment();
+      _checkCashfreePaymentStatus(orderId);
     }
   }
 
@@ -1141,77 +1196,191 @@ class _WalletScreenState extends State<WalletScreen>
     _selectedPackageCoins = package['tokens'];
     _selectedPackagePrice = package['price'];
 
+    final currentUser = FirebaseAuth.instance.currentUser;
+
+    String customerName = userData?['username'] ?? userData?['Name'] ?? currentUser?.displayName ?? 'User';
+    String customerEmail = userData?['email'] ?? userData?['Email'] ?? currentUser?.email ?? '';
+    if (customerEmail.isEmpty || !customerEmail.contains('@')) {
+      customerEmail = '${customerName.replaceAll(' ', '')}@chilli.com';
+    }
+
+    String customerMobile = userData?['phoneNumber']?.toString() ?? userData?['phonenumber']?.toString() ?? currentUser?.phoneNumber ?? '';
+    if (customerMobile.isEmpty || customerMobile.length < 10) {
+      customerMobile = '9999999999';
+    }
+
     try {
-      _currentRefId = 'ORDER_${DateTime.now().millisecondsSinceEpoch}';
+      await _initiateCashfreePayment(package, customerName, customerEmail, customerMobile);
+    } catch (e) {
+      debugPrint('Error initiating Cashfree: $e, falling back to Paygic');
+      await _initiatePaygicPayment(package, customerName, customerEmail, customerMobile);
+    }
+  }
 
-      final currentUser = FirebaseAuth.instance.currentUser;
+  Future<void> _initiatePaygicPayment(
+    Map<String, dynamic> package,
+    String customerName,
+    String customerEmail,
+    String customerMobile,
+  ) async {
+    debugPrint('Initiating Paygic Payment (Fallback)');
+    try {
+      _currentRefId = 'REF${DateTime.now().millisecondsSinceEpoch}';
 
-      String customerName = userData?['username'] ?? userData?['Name'] ?? currentUser?.displayName ?? 'User';
-      String customerEmail = userData?['email'] ?? userData?['Email'] ?? currentUser?.email ?? '';
-      if (customerEmail.isEmpty || !customerEmail.contains('@')) {
-        customerEmail = '${customerName.replaceAll(' ', '')}@chilli.com';
-      }
-
-      String customerMobile = userData?['phoneNumber']?.toString() ?? userData?['phonenumber']?.toString() ?? currentUser?.phoneNumber ?? '';
-      if (customerMobile.isEmpty || customerMobile.length < 10) {
-        customerMobile = '9999999999';
-      }
-
-      final String appId = DataBridge.appConfig['cashfree_app_id']?.toString() ?? '';
-      final String secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString() ?? '';
-
-      if (appId.isEmpty || secretKey.isEmpty) {
-        _showToast('Payment configuration missing', Colors.red);
-        _resetPaymentState();
-        return;
-      }
-
-      // Call Cashfree API directly to create order and get payment session id
       final response = await http
           .post(
-            Uri.parse('https://api.cashfree.com/pg/orders'),
+            Uri.parse('https://server.paygic.in/api/v2/createPaymentRequest'),
             headers: {
-              'x-client-id': appId,
-              'x-client-secret': secretKey,
-              'x-api-version': '2023-08-01',
               'Content-Type': 'application/json',
-              'Accept': 'application/json',
+              'Authorization': 'Bearer $paygicToken',
+              'X-API-Token': '$paygicToken',
+              'token': '$paygicToken',
             },
             body: jsonEncode({
-              'order_id': _currentRefId,
-              'order_amount': _selectedPackagePrice,
-              'order_currency': 'INR',
-              'customer_details': {
-                'customer_id': 'cust_${DateTime.now().millisecondsSinceEpoch}',
-                'customer_name': customerName,
-                'customer_email': customerEmail,
-                'customer_phone': customerMobile,
-              },
-              'order_meta': {
-                 'return_url': 'https://www.nurxian.site/?order_id={order_id}',
-              }
+              'mid': merchantId,
+              'merchantReferenceId': _currentRefId,
+              'amount': _selectedPackagePrice.toString(),
+              'customer_name': customerName,
+              'customer_email': customerEmail,
+              'customer_mobile': customerMobile,
+              'redirect_URL': 'https://www.nurxian.site/',
+              'failed_URL': 'https://www.nurxian.site/',
             }),
           )
           .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        final sessionId = responseData['payment_session_id'];
+        if (responseData['status'] == false) {
+          debugPrint('Paygic error: ${responseData['msg']}, falling back to Cashfree');
+          return _initiateCashfreePayment(package, customerName, customerEmail, customerMobile);
+        }
 
-        if (sessionId != null) {
+        if (responseData['data'] != null &&
+            responseData['data']['intent'] != null) {
+          final paymentUrl = responseData['data']['intent'];
+          String cleanUrl = paymentUrl.toString().trim();
+          if (!cleanUrl.contains('://')) cleanUrl = 'https://$cleanUrl';
+
+          final Uri url = Uri.parse(cleanUrl);
+
+          bool launched = false;
+          try {
+            launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+          } catch (e) {
+            debugPrint('⚠️ Initial launch failed: $e');
+            if (await canLaunchUrl(url)) {
+              launched = await launchUrl(url, mode: LaunchMode.externalApplication);
+            }
+          }
+
+          if (launched) {
+            debugPrint('✅ Payment app launched successfully');
+            await _savePendingTransaction();
+            await _persistPendingPaymentState();
+            _startPaymentStatusCheck();
+          } else {
+            debugPrint('❌ Could not launch payment URL: $cleanUrl');
+            _showToast('Payment failed', Colors.red);
+            _resetPaymentState();
+            return;
+          }
+        } else {
+          debugPrint('Paygic intent missing, Payment failed');
+          _showToast('Payment failed', Colors.red);
+          _resetPaymentState();
+          return;
+        }
+      } else {
+        debugPrint('Paygic gateway error: ${response.statusCode}, Payment failed');
+        _showToast('Payment failed', Colors.red);
+        _resetPaymentState();
+        return;
+      }
+    } catch (e) {
+      debugPrint('Paygic Network error: $e, Payment failed');
+      _showToast('Network error: $e', Colors.red);
+      _resetPaymentState();
+      return;
+    }
+  }
+
+  Future<void> _initiateCashfreePayment(
+    Map<String, dynamic> package,
+    String customerName,
+    String customerEmail,
+    String customerMobile,
+  ) async {
+    debugPrint('Initiating Cashfree Payment (Primary)');
+    final String appId;
+    final String secretKey;
+    final String environmentUrl;
+    final CFEnvironment cfEnvironment;
+
+    if (kDebugMode) {
+      appId = 'TEST11025156928ec9186fcc0dbef20c65152011';
+      secretKey = 'cfsk_ma_test_7b08216f7826f56045b029122a611706_1752373a';
+      environmentUrl = 'https://sandbox.cashfree.com/pg/orders';
+      cfEnvironment = CFEnvironment.SANDBOX;
+    } else {
+      appId = DataBridge.appConfig['cashfree_app_id']?.toString().trim() ?? '';
+      secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString().trim() ?? '';
+      environmentUrl = 'https://api.cashfree.com/pg/orders';
+      cfEnvironment = CFEnvironment.PRODUCTION;
+    }
+
+    if (appId.isEmpty || secretKey.isEmpty) {
+      debugPrint('Cashfree config missing, falling back to Paygic');
+      return _initiatePaygicPayment(package, customerName, customerEmail, customerMobile);
+    }
+
+    try {
+      final url = Uri.parse(environmentUrl);
+      final headers = {
+        'Content-Type': 'application/json',
+        'x-client-id': appId,
+        'x-client-secret': secretKey,
+        'x-api-version': '2023-08-01',
+      };
+
+      final orderId = 'ORDER_${DateTime.now().millisecondsSinceEpoch}';
+      _currentRefId = orderId;
+
+      final body = jsonEncode({
+        "order_amount": _selectedPackagePrice.toDouble(),
+        "order_currency": "INR",
+        "order_id": orderId,
+        "customer_details": {
+          "customer_id": "CUST_${FirebaseAuth.instance.currentUser?.uid ?? 'unknown'}",
+          "customer_name": customerName,
+          "customer_email": customerEmail,
+          "customer_phone": customerMobile,
+        },
+        "order_meta": {
+          "return_url": "https://www.nurxian.site/?order_id={order_id}"
+        }
+      });
+
+      final response = await http.post(url, headers: headers, body: body).timeout(const Duration(seconds: 15));
+
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        final paymentSessionId = responseData['payment_session_id'];
+
+        if (paymentSessionId != null) {
           try {
             var session = CFSessionBuilder()
-                .setEnvironment(CFEnvironment.PRODUCTION)
-                .setOrderId(_currentRefId!)
-                .setPaymentSessionId(sessionId)
+                .setEnvironment(cfEnvironment)
+                .setOrderId(orderId)
+                .setPaymentSessionId(paymentSessionId)
                 .build();
-            
+
             var theme = CFThemeBuilder()
-                .setNavigationBarBackgroundColorColor("#0F0A1E")
-                .setPrimaryFont("Roboto")
-                .setSecondaryFont("Roboto")
+                .setNavigationBarBackgroundColorColor("#000000")
+                .setPrimaryFont("Menlo")
+                .setSecondaryFont("Futura")
                 .build();
-                
+
             var cfDropCheckoutPayment = CFDropCheckoutPaymentBuilder()
                 .setSession(session)
                 .setTheme(theme)
@@ -1219,54 +1388,55 @@ class _WalletScreenState extends State<WalletScreen>
 
             await _savePendingTransaction();
             await _persistPendingPaymentState();
-
-            cfPaymentGatewayService.doPayment(cfDropCheckoutPayment);
+            
+            CFPaymentGatewayService().doPayment(cfDropCheckoutPayment);
           } on CFException catch (e) {
-            _showToast('Cashfree init error: ${e.message}', Colors.red);
-            _resetPaymentState();
+            debugPrint('Cashfree SDK Error: ${e.message}, falling back to Paygic');
+            return _initiatePaygicPayment(package, customerName, customerEmail, customerMobile);
           }
         } else {
-          _showToast('Failed to generate payment session', Colors.red);
-          _resetPaymentState();
+          debugPrint('Cashfree session failed, falling back to Paygic');
+          return _initiatePaygicPayment(package, customerName, customerEmail, customerMobile);
         }
       } else {
-        _showToast('Payment gateway error: ${response.statusCode}', Colors.red);
-        await _saveFailedTransaction('Gateway error ${response.statusCode}');
-        _resetPaymentState();
+        debugPrint('Cashfree API error ${response.statusCode}, falling back to Paygic');
+        return _initiatePaygicPayment(package, customerName, customerEmail, customerMobile);
       }
     } catch (e) {
-      _showToast('Network error: $e', Colors.red);
-      await _saveFailedTransaction('Network error');
-      _resetPaymentState();
+      debugPrint('Cashfree Network error $e, falling back to Paygic');
+      return _initiatePaygicPayment(package, customerName, customerEmail, customerMobile);
     }
   }
 
   Future<void> _checkPaymentStatus() async {
     if (userData == null || _currentRefId == null) return;
-    
-    final String appId = DataBridge.appConfig['cashfree_app_id']?.toString() ?? '';
-    final String secretKey = DataBridge.appConfig['cashfree_secret_key']?.toString() ?? '';
-    
-    if (appId.isEmpty || secretKey.isEmpty) return;
-    
     try {
-      final response = await http.get(
-        Uri.parse('https://api.cashfree.com/pg/orders/$_currentRefId'),
-        headers: {
-          'x-client-id': appId,
-          'x-client-secret': secretKey,
-          'x-api-version': '2023-08-01',
-        },
-      ).timeout(const Duration(seconds: 12));
+      final response = await http
+          .post(
+            Uri.parse('https://server.paygic.in/api/v2/checkPaymentStatus'),
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer $paygicToken',
+              'token': '${paygicToken ?? ''}',
+            },
+            body: jsonEncode({
+              'mid': merchantId,
+              'merchantReferenceId': _currentRefId,
+            }),
+          )
+          .timeout(const Duration(seconds: 15));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['order_status'] == 'PAID') {
+        final txnStatus = (data['txnStatus'] ?? data['status'] ?? '').toString().toUpperCase();
+        final isSuccess = data['status'] == true || data['statusCode'] == 200 || txnStatus == 'SUCCESS';
+
+        if (isSuccess && txnStatus == 'SUCCESS') {
           await _handleSuccessfulPayment();
         }
       }
     } catch (e) {
-      print('Status check error: $e');
+      debugPrint('Paygic Status check error: $e');
     }
   }
 

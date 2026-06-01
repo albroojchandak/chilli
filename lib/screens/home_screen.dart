@@ -1773,7 +1773,8 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     return AppBar(
       backgroundColor: Palette.background,
       elevation: 0,
-      centerTitle: true,
+      centerTitle: false,
+      titleSpacing: 10,
       title: _isSearching
           ? TextField(
               controller: _searchController,
@@ -1793,7 +1794,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
               },
             )
           : const Text(
-              'chilli',
+              'Chilli',
               style: TextStyle(
                 color: Palette.textPrimary,
                 fontSize: 24,
@@ -1828,34 +1829,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         ),
       ),
       actions: [
-        Padding(
-          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
-          child: GestureDetector(
-            onTap: () async {
-              final Uri url = Uri.parse('https://wa.me/918899841923');
-              if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
-                Fluttertoast.showToast(msg: 'Could not launch WhatsApp');
-              }
-            },
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF25D366).withOpacity(0.15),
-                shape: BoxShape.circle,
-              ),
-              child: Image.network(
-                'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/WhatsApp.svg/512px-WhatsApp.svg.png',
-                width: 20,
-                height: 20,
-                errorBuilder: (_, __, ___) => const Icon(
-                  Icons.chat_rounded,
-                  color: Color(0xFF25D366),
-                  size: 20,
-                ),
-              ),
-            ),
-          ),
-        ),
         IconButton(
           icon: Icon(
             _isSearching ? Icons.close : Icons.search,

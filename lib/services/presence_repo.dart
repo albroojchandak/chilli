@@ -1,4 +1,4 @@
-﻿import 'package:firebase_database/firebase_database.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -169,7 +169,7 @@ class PresenceRepo {
         );
         String status = pData['s']?.toString() ?? 'offline';
 
-        // ✅ LAST ACTIVE CHECK (30 MINS) - Filter out of UI, but don't delete from DB (Function will handle DB)
+        // ✅ LAST ACTIVE CHECK (3 HOURS) - Filter out of UI
         final lastActiveTs =
             pData['la'] ?? user.lastActive?.millisecondsSinceEpoch;
         DateTime? lastActiveDate;
@@ -184,12 +184,13 @@ class PresenceRepo {
             status = 'offline';
           }
 
-          // REMOVED: 30-minute filter to ensure all users are displayed
+          // ✅ Filter out users inactive for more than 3 hours
+          if (diff.inHours >= 3) {
+            continue;
+          }
         } else {
-          // ✅ No lastActive data means user is offline
-          status = 'offline';
-          // ✅ Add a dummy lastActiveDate so the user still shows up and can be sorted
-          lastActiveDate = now.subtract(const Duration(days: 7));
+          // ✅ No lastActive data means user is offline and inactive
+          continue;
         }
 
         mergedUsers.add(
@@ -342,12 +343,18 @@ class PresenceRepo {
                     (status == 'online' || status == 'active')) {
                   status = 'offline';
                 }
-              } else {
-                // No lastActive data means user is offline
-                if (status == 'online' || status == 'active') {
-                  status = 'offline';
+
+                // ✅ Filter to only show users active within the last 3 hours
+                if (diff.inHours >= 3) {
+                  return; // skip this user
                 }
+              } else {
+                // No lastActive data means user is offline and inactive
+                return; // skip this user
               }
+            } else {
+              // No presence data at all -> inactive
+              return; // skip this user
             }
 
             data['s'] = status;

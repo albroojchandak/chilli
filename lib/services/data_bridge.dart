@@ -314,7 +314,7 @@ class DataBridge {
       debugPrint('💳 Creating payment document...');
       await _firestore.collection('app_config').doc('payment').set({
         // Payment gateway credentials
-        'paygic_mid': 'ELITEZEENZGFR', // Add your Merchant ID here
+        'paygic_mid': 'CHITCHATZ', // Add your Merchant ID here
         'paygic_token':
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJFTElURVpFRU5aR0ZSIiwiX2lkIjoiNjhlNzUxOWJiNGE0NmMzYjc3NDhkNzdlIiwiaWF0IjoxNzY3MjQ1MDA0LCJleHAiOjE3Njk4MzcwMDR9.BP1apIcNcGmHfTHKSlcNGgxtYo3gQ3NQ5beSbylSPjo', // Add your API Token here
         // Payment thresholds
@@ -727,4 +727,3 @@ class DataBridge {
     return DateTime.now(); // Fallback
   }
 }
-

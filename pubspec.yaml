@@ -2,7 +2,7 @@ name: chilli
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 9.0.0+13
+version: 10.0.0+1
 
 environment:
   sdk: ^3.11.4
