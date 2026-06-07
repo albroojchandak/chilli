@@ -447,20 +447,20 @@ class _ProfileScreenState extends State<ProfileScreen>
         type: GenZDialogType.info,
         customContent: TextField(
           controller: nameController,
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Color(0xFF1E293B)),
           decoration: InputDecoration(
             labelText: 'New Name',
-            labelStyle: TextStyle(color: Colors.white.withOpacity(0.5)),
+            labelStyle: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.5)),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: BorderSide(color: Colors.white.withOpacity(0.1)),
+              borderSide: BorderSide(color: const Color(0xFF1E293B).withOpacity(0.1)),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(16),
-              borderSide: const BorderSide(color: Color(0xFF06B6D4)),
+              borderSide: const BorderSide(color: Color(0xFFE11D48)),
             ),
             filled: true,
-            fillColor: Colors.black.withOpacity(0.3),
+            fillColor: Colors.white.withOpacity(0.8),
           ),
         ),
         primaryButtonText: 'SAVE CHANGES',
@@ -557,9 +557,7 @@ Join me on chilli! 🚀
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
     return Scaffold(
-      backgroundColor: const Color(
-        0xFF14141E,
-      ), // Slightly darker blue/black based on image
+      backgroundColor: Colors.white, // 70% White theme
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),
@@ -577,7 +575,7 @@ Join me on chilli! 🚀
                     IconButton(
                       icon: const Icon(
                         Icons.arrow_back_rounded,
-                        color: Colors.white,
+                        color: Color(0xFF1E293B),
                         size: 28,
                       ),
                       onPressed: () => Navigator.pop(context),
@@ -585,7 +583,7 @@ Join me on chilli! 🚀
                     IconButton(
                       icon: const Icon(
                         Icons.share_rounded,
-                        color: Colors.white,
+                        color: Color(0xFF1E293B),
                         size: 24,
                       ),
                       onPressed: _shareApp,
@@ -631,35 +629,35 @@ Join me on chilli! 🚀
         Stack(
           alignment: Alignment.center,
           children: [
-            // Outer Ring (Cyan)
+            // Outer Ring (Accent)
             Container(
               width: 170,
               height: 170,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: const Color(0xFF06B6D4).withValues(alpha: 0.5),
+                  color: const Color(0xFFE11D48).withValues(alpha: 0.5),
                   width: 2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF06B6D4).withValues(alpha: 0.2),
+                    color: const Color(0xFFE11D48).withValues(alpha: 0.2),
                     blurRadius: 20,
                     spreadRadius: 2,
                   ),
                 ],
               ),
             ),
-            // Inner Ring (Purple)
+            // Inner Ring (Secondary)
             Container(
               width: 150,
               height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                border: Border.all(color: const Color(0xFF8B5CF6), width: 3),
+                border: Border.all(color: const Color(0xFF1E293B), width: 3),
                 boxShadow: [
                   BoxShadow(
-                    color: const Color(0xFF8B5CF6).withValues(alpha: 0.3),
+                    color: const Color(0xFF1E293B).withValues(alpha: 0.1),
                     blurRadius: 15,
                     spreadRadius: 1,
                   ),
@@ -683,7 +681,7 @@ Join me on chilli! 🚀
                   : const Icon(
                       Icons.person,
                       size: 80,
-                      color: Color(0xFF8B5CF6),
+                      color: Color(0xFF1E293B),
                     ),
             ),
             // Edit Button (Cyan glowing)
@@ -695,11 +693,11 @@ Join me on chilli! 🚀
                 child: Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: const Color(0xFF06B6D4), // Cyan
+                    color: const Color(0xFFE11D48), // Accent
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: const Color(0xFF06B6D4).withValues(alpha: 0.6),
+                        color: const Color(0xFFE11D48).withValues(alpha: 0.4),
                         blurRadius: 15,
                         spreadRadius: 2,
                       ),
@@ -708,7 +706,7 @@ Join me on chilli! 🚀
                   child: const Icon(
                     Icons.edit,
                     size: 18,
-                    color: Colors.black87,
+                    color: Colors.white,
                   ),
                 ),
               ),
@@ -723,7 +721,7 @@ Join me on chilli! 🚀
               width: 24,
               height: 24,
               child: CircularProgressIndicator(
-                color: Color(0xFF06B6D4),
+                color: Color(0xFFE11D48),
                 strokeWidth: 2.5,
               ),
             ),
@@ -741,7 +739,7 @@ Join me on chilli! 🚀
                 child: Text(
                   name,
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Color(0xFF1E293B),
                     fontSize: 32,
                     fontWeight: FontWeight.w900,
                     letterSpacing: -0.5,
@@ -750,9 +748,9 @@ Join me on chilli! 🚀
                 ),
               ),
               IconButton(
-                icon: const Icon(
+                icon: Icon(
                   Icons.edit_rounded,
-                  color: Colors.white54,
+                  color: const Color(0xFF1E293B).withValues(alpha: 0.5),
                   size: 20,
                 ),
                 onPressed: _showEditNameDialog,
@@ -769,12 +767,12 @@ Join me on chilli! 🚀
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
             decoration: BoxDecoration(
-              color: const Color(0xFF1E1F30), // Dark card color
+              color: Colors.white, // Light card color
               borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+              border: Border.all(color: const Color(0xFF1E293B).withValues(alpha: 0.1)),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.2),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 8),
                 ),
@@ -788,7 +786,7 @@ Join me on chilli! 🚀
                   icon: gender.toLowerCase() == 'male'
                       ? Icons.male
                       : Icons.female,
-                  iconColor: const Color(0xFF06B6D4), // Cyan
+                  iconColor: const Color(0xFFE11D48), // Accent
                   title: gender.toUpperCase(),
                   subtitle: 'GENDER',
                 ),
@@ -796,7 +794,7 @@ Join me on chilli! 🚀
                 Container(
                   width: 1,
                   height: 40,
-                  color: Colors.white.withValues(alpha: 0.1),
+                  color: const Color(0xFF1E293B).withValues(alpha: 0.1),
                 ),
                 // Coins Stat
                 _buildStatColumn(
@@ -818,18 +816,18 @@ Join me on chilli! 🚀
           onPressed: isUpdatingProfile ? null : _generateRandomAvatar,
           icon: const Icon(
             Icons.shuffle_rounded,
-            color: Color(0xFFA855F7),
+            color: Color(0xFF1E293B),
             size: 18,
           ),
           label: const Text(
             'Shuffle Avatar',
             style: TextStyle(
-              color: Color(0xFFA855F7),
+              color: Color(0xFF1E293B),
               fontWeight: FontWeight.bold,
             ),
           ),
           style: TextButton.styleFrom(
-            backgroundColor: const Color(0xFFA855F7).withValues(alpha: 0.1),
+            backgroundColor: const Color(0xFF1E293B).withValues(alpha: 0.05),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
             ),
@@ -852,7 +850,7 @@ Join me on chilli! 🚀
         Text(
           title,
           style: const TextStyle(
-            color: Colors.white,
+            color: Color(0xFF1E293B),
             fontSize: 18,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.5,
@@ -862,7 +860,7 @@ Join me on chilli! 🚀
         Text(
           subtitle,
           style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.5),
+            color: const Color(0xFF1E293B).withValues(alpha: 0.5),
             fontSize: 11,
             fontWeight: FontWeight.w800,
             letterSpacing: 1.2,
@@ -884,21 +882,21 @@ Join me on chilli! 🚀
               fontSize: 12,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
-              color: Colors.white.withValues(alpha: 0.5),
+              color: const Color(0xFF1E293B).withValues(alpha: 0.5),
             ),
           ),
         ),
         Container(
           decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.05),
+            color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: const Color(0xFF8B5CF6).withValues(alpha: 0.2),
+              color: const Color(0xFF1E293B).withValues(alpha: 0.1),
               width: 1.5,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
+                color: Colors.black.withValues(alpha: 0.02),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -1045,7 +1043,7 @@ Join me on chilli! 🚀
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
-                      color: Colors.white,
+                      color: Color(0xFF1E293B),
                     ),
                   ),
                   const SizedBox(height: 2),
@@ -1053,7 +1051,7 @@ Join me on chilli! 🚀
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Colors.white.withValues(alpha: 0.6),
+                      color: const Color(0xFF1E293B).withValues(alpha: 0.6),
                     ),
                   ),
                 ],
@@ -1062,7 +1060,7 @@ Join me on chilli! 🚀
             Icon(
               Icons.arrow_forward_ios_rounded,
               size: 16,
-              color: Colors.white.withValues(alpha: 0.3),
+              color: const Color(0xFF1E293B).withValues(alpha: 0.3),
             ),
           ],
         ),
@@ -1076,7 +1074,7 @@ Join me on chilli! 🚀
       child: Divider(
         height: 1,
         thickness: 1,
-        color: Colors.white.withValues(alpha: 0.1),
+        color: const Color(0xFF1E293B).withValues(alpha: 0.1),
       ),
     );
   }

@@ -1,14 +1,14 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class RestrictionsScreen extends StatelessWidget {
   const RestrictionsScreen({super.key});
 
-  static const Color _bg = Color(0xFF06010F);
-  static const Color _neonCyan = Color(0xFF00F5FF);
-  static const Color _neonPink = Color(0xFFFF2D78);
-  static const Color _neonViolet = Color(0xFFBF5AF2);
-  static const Color _surface = Color(0xFF151525);
+  static const Color _bg = Colors.white;
+  static const Color _neonCyan = Color(0xFF1E293B);
+  static const Color _neonPink = Color(0xFFE11D48);
+  static const Color _neonViolet = Color(0xFF1E293B);
+  static const Color _surface = Colors.white;
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +24,13 @@ class RestrictionsScreen extends StatelessWidget {
               backgroundColor: _bg.withOpacity(0.7),
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B)),
                 onPressed: () => Navigator.pop(context),
               ),
               title: const Text(
                 'RESTRICTION PROTOCOL',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1E293B),
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
                   letterSpacing: 2,
@@ -45,7 +45,7 @@ class RestrictionsScreen extends StatelessWidget {
           Positioned(
             top: -100,
             left: -100,
-            child: _buildGlow(_neonViolet.withOpacity(0.1), 400),
+            child: _buildGlow(const Color(0xFFE11D48).withOpacity(0.1), 400),
           ),
           SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -106,12 +106,12 @@ class RestrictionsScreen extends StatelessWidget {
         const SizedBox(height: 12),
         const Text(
           'Network Conduct\n& Safety Standards.',
-          style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900, height: 1.1),
+          style: TextStyle(color: Color(0xFF1E293B), fontSize: 26, fontWeight: FontWeight.w900, height: 1.1),
         ),
         const SizedBox(height: 16),
         Text(
           'To ensure the integrity of the ecosystem, all users must adhere to strict behavioral protocols. Violations are absolute.',
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
+          style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.6), fontSize: 14, height: 1.6),
         ),
       ],
     );
@@ -134,7 +134,7 @@ class RestrictionsScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(color: Colors.white, fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  style: const TextStyle(color: Color(0xFF1E293B), fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: 1),
                 ),
               ),
             ],
@@ -144,7 +144,7 @@ class RestrictionsScreen extends StatelessWidget {
             padding: const EdgeInsets.only(left: 38),
             child: Text(
               description,
-              style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 13, height: 1.6),
+              style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.7), fontSize: 13, height: 1.6),
             ),
           ),
         ],
@@ -181,12 +181,12 @@ class RestrictionsScreen extends StatelessWidget {
         children: [
           Text(
             'CHILLI OS | SECURITY CORE',
-            style: TextStyle(color: Colors.white.withOpacity(0.15), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
+            style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.4), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
           ),
           const SizedBox(height: 8),
           Text(
             'NURXIAN ENFORCEMENT NODE',
-            style: TextStyle(color: Colors.white.withOpacity(0.05), fontSize: 9, letterSpacing: 1),
+            style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.3), fontSize: 9, letterSpacing: 1),
           ),
         ],
       ),

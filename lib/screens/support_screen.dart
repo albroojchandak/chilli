@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -32,13 +32,10 @@ class _SupportScreenState extends State<SupportScreen>
       parent: _appearController,
       curve: Curves.easeOutExpo,
     );
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(0, 0.1),
-      end: Offset.zero,
-    ).animate(CurvedAnimation(
-      parent: _appearController,
-      curve: Curves.easeOutBack,
-    ));
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(0, 0.1), end: Offset.zero).animate(
+          CurvedAnimation(parent: _appearController, curve: Curves.easeOutBack),
+        );
 
     _appearController.forward();
   }
@@ -121,7 +118,7 @@ class _SupportScreenState extends State<SupportScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF09090B),
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Background Glowing Orbs
@@ -131,9 +128,9 @@ class _SupportScreenState extends State<SupportScreen>
             child: Container(
               width: 300,
               height: 300,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF4F46E5),
+                color: const Color(0xFF1E293B).withOpacity(0.1),
               ),
             ),
           ),
@@ -143,9 +140,9 @@ class _SupportScreenState extends State<SupportScreen>
             child: Container(
               width: 250,
               height: 250,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFE11D48),
+                color: const Color(0xFFE11D48).withOpacity(0.1),
               ),
             ),
           ),
@@ -167,14 +164,17 @@ class _SupportScreenState extends State<SupportScreen>
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: const Color(0xFF1E293B).withOpacity(0.1),
                         ),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new,
-                          color: Colors.white, size: 18),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Color(0xFF1E293B),
+                        size: 18,
+                      ),
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -182,7 +182,7 @@ class _SupportScreenState extends State<SupportScreen>
                   title: const Text(
                     'HIT US UP',
                     style: TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF1E293B),
                       fontSize: 16,
                       fontWeight: FontWeight.w900,
                       letterSpacing: 2,
@@ -196,7 +196,9 @@ class _SupportScreenState extends State<SupportScreen>
                       position: _slideAnimation,
                       child: Padding(
                         padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 20),
+                          horizontal: 24,
+                          vertical: 20,
+                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -205,7 +207,7 @@ class _SupportScreenState extends State<SupportScreen>
                               style: TextStyle(
                                 fontSize: 48,
                                 fontWeight: FontWeight.w900,
-                                color: Colors.white,
+                                color: Color(0xFF1E293B),
                                 height: 1.1,
                               ),
                             ),
@@ -214,7 +216,7 @@ class _SupportScreenState extends State<SupportScreen>
                               "Don't ghost us. Drop a message, call, or whatever floats your boat.",
                               style: TextStyle(
                                 fontSize: 16,
-                                color: Colors.white.withOpacity(0.7),
+                                color: const Color(0xFF1E293B).withOpacity(0.7),
                                 height: 1.5,
                               ),
                             ),
@@ -267,10 +269,12 @@ class _SupportScreenState extends State<SupportScreen>
                             Container(
                               padding: const EdgeInsets.all(24),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.05),
+                                color: Colors.white,
                                 borderRadius: BorderRadius.circular(32),
                                 border: Border.all(
-                                  color: Colors.white.withOpacity(0.1),
+                                  color: const Color(
+                                    0xFF1E293B,
+                                  ).withOpacity(0.1),
                                 ),
                               ),
                               child: Column(
@@ -281,9 +285,15 @@ class _SupportScreenState extends State<SupportScreen>
                                     onCopy: () =>
                                         _copyToClipboard(_email, 'Email'),
                                   ),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 16),
-                                    child: Divider(color: Colors.white12),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 16,
+                                    ),
+                                    child: Divider(
+                                      color: const Color(
+                                        0xFF1E293B,
+                                      ).withOpacity(0.12),
+                                    ),
                                   ),
                                   _InfoRow(
                                     icon: Icons.tag,
@@ -300,17 +310,24 @@ class _SupportScreenState extends State<SupportScreen>
                             Center(
                               child: Container(
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
-                                child: const Row(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                child: Row(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    Icon(Icons.bolt,
-                                        color: Colors.amber, size: 16),
-                                    SizedBox(width: 8),
+                                    const Icon(
+                                      Icons.bolt,
+                                      color: Colors.amber,
+                                      size: 16,
+                                    ),
+                                    const SizedBox(width: 8),
                                     Text(
                                       'We reply at lightning speed',
                                       style: TextStyle(
-                                        color: Colors.white70,
+                                        color: const Color(
+                                          0xFF1E293B,
+                                        ).withOpacity(0.7),
                                         fontSize: 12,
                                         fontWeight: FontWeight.w600,
                                       ),
@@ -367,10 +384,7 @@ class _BentoCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: color.withOpacity(0.15),
           borderRadius: BorderRadius.circular(32),
-          border: Border.all(
-            color: color.withOpacity(0.3),
-            width: 1.5,
-          ),
+          border: Border.all(color: color.withOpacity(0.3), width: 1.5),
         ),
         child: horizontal
             ? Row(
@@ -387,7 +401,7 @@ class _BentoCard extends StatelessWidget {
                   Text(
                     title,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Color(0xFF1E293B),
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
@@ -412,7 +426,7 @@ class _BentoCard extends StatelessWidget {
                       Text(
                         title,
                         style: const TextStyle(
-                          color: Colors.white,
+                          color: Color(0xFF1E293B),
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                         ),
@@ -422,7 +436,7 @@ class _BentoCard extends StatelessWidget {
                         Text(
                           subtitle,
                           style: TextStyle(
-                            color: Colors.white.withOpacity(0.6),
+                            color: const Color(0xFF1E293B).withOpacity(0.6),
                             fontSize: 12,
                           ),
                         ),
@@ -451,13 +465,13 @@ class _InfoRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Icon(icon, color: Colors.white54, size: 20),
+        Icon(icon, color: const Color(0xFF1E293B).withOpacity(0.5), size: 20),
         const SizedBox(width: 16),
         Expanded(
           child: Text(
             value,
             style: const TextStyle(
-              color: Colors.white,
+              color: Color(0xFF1E293B),
               fontSize: 16,
               fontWeight: FontWeight.w600,
             ),
@@ -471,13 +485,13 @@ class _InfoRow extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
+              color: const Color(0xFF1E293B).withOpacity(0.05),
               borderRadius: BorderRadius.circular(20),
             ),
             child: const Text(
               'Copy',
               style: TextStyle(
-                color: Colors.white,
+                color: Color(0xFF1E293B),
                 fontSize: 12,
                 fontWeight: FontWeight.bold,
               ),
@@ -488,4 +502,3 @@ class _InfoRow extends StatelessWidget {
     );
   }
 }
-

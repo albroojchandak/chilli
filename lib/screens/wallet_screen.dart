@@ -88,7 +88,7 @@ class _WalletScreenState extends State<WalletScreen>
       0; // Renamed from currentTokens to currentCoins for consistency
   bool isLoading = true;
   String userGender = 'male';
-  double minDepositAmount = 79.0;
+  double minDepositAmount = 89.0;
   double minWithdrawalAmount = 50.0;
 
   num _selectedPackageCoins = 0;
@@ -882,10 +882,11 @@ class _WalletScreenState extends State<WalletScreen>
 
         // Use App Config values
         paygicToken = config['paygic_token']?.toString().trim();
-        merchantId = config['paygic_mid']?.toString().trim();
-        minDepositAmount = (config['min_deposit'] as num?)?.toDouble() ?? 79.0;
-        minWithdrawalAmount =
-            (config['min_withdrawal'] as num?)?.toDouble() ?? 50.0;
+        if (config != null) {
+          minDepositAmount = (config['min_deposit'] as num?)?.toDouble() ?? 89.0;
+          merchantId = config['paygic_mid']?.toString();
+          minWithdrawalAmount = (config['min_withdrawal'] as num?)?.toDouble() ?? 50.0;
+        }
       });
 
       // ✅ Fetch REAL balance from local storage/RTDB (Source of Truth)
@@ -925,11 +926,20 @@ class _WalletScreenState extends State<WalletScreen>
     {
       'name': 'Mini',
       'tokens': 89, // Generous start
-      'price': 78,
+      'price': 89,
       'color': Color(0xFFFFD700),
       'icon': Icons.circle,
       'popular': false,
       'discount': '',
+    },
+    {
+      'name': 'Popular',
+      'tokens': 1300, // Generous bump
+      'price': 999,
+      'color': Color(0xFFFFD700),
+      'icon': Icons.local_fire_department,
+      'popular': true,
+      'discount': 'Extra 20%',
     },
     {
       'name': 'Starter',
@@ -957,15 +967,6 @@ class _WalletScreenState extends State<WalletScreen>
       'icon': Icons.circle,
       'popular': false,
       'discount': 'Extra 12%',
-    },
-    {
-      'name': 'Popular',
-      'tokens': 1300, // Generous bump
-      'price': 999,
-      'color': Color(0xFFFFD700),
-      'icon': Icons.local_fire_department,
-      'popular': true,
-      'discount': 'Extra 20%',
     },
     {
       'name': 'Value Pack',
@@ -1919,33 +1920,7 @@ class _WalletScreenState extends State<WalletScreen>
                   ),
                   Row(
                     children: [
-                      if (!isFemale) ...[
-                        // Debug button for Male
-                        GestureDetector(
-                          onTap: () async {
-                            await DataBridge().updateLocalCoins(1000);
-                            await DataBridge().syncCoinsWithServer();
-                            _showToast('Debug: Added 1000 coins', Colors.green);
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 12),
-                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                            decoration: BoxDecoration(
-                              color: Colors.greenAccent.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.greenAccent.withValues(alpha: 0.3)),
-                            ),
-                            child: const Text(
-                              '+1000',
-                              style: TextStyle(
-                                color: Colors.greenAccent,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+
                       GestureDetector(
                         onTap: () {
                           Navigator.push(

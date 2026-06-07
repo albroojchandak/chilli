@@ -1,14 +1,14 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key});
 
-  static const Color _bg = Color(0xFF06010F);
-  static const Color _neonCyan = Color(0xFF00F5FF);
-  static const Color _neonPink = Color(0xFFFF2D78);
-  static const Color _neonViolet = Color(0xFFBF5AF2);
-  static const Color _surface = Color(0xFF151525);
+  static const Color _bg = Colors.white;
+  static const Color _neonCyan = Color(0xFF1E293B);
+  static const Color _neonPink = Color(0xFFE11D48);
+  static const Color _neonViolet = Color(0xFFE11D48);
+  static const Color _surface = Colors.white;
 
   @override
   Widget build(BuildContext context) {
@@ -24,13 +24,13 @@ class PrivacyScreen extends StatelessWidget {
               backgroundColor: _bg.withOpacity(0.7),
               elevation: 0,
               leading: IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white70),
+                icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Color(0xFF1E293B)),
                 onPressed: () => Navigator.pop(context),
               ),
               title: const Text(
                 'PRIVACY PROTOCOL',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: Color(0xFF1E293B),
                   fontWeight: FontWeight.w900,
                   fontSize: 18,
                   letterSpacing: 2,
@@ -129,12 +129,12 @@ class PrivacyScreen extends StatelessWidget {
         const SizedBox(height: 20),
         const Text(
           'Nurxian Privacy Policy\nData Sovereignty Protocol.',
-          style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.w900, height: 1.2),
+          style: TextStyle(color: Color(0xFF1E293B), fontSize: 24, fontWeight: FontWeight.w900, height: 1.2),
         ),
         const SizedBox(height: 16),
         Text(
           'At Chilli, operated by Nurxian, we ensure the absolute integrity of your digital footprint. This protocol outlines our commitment to transparency and play-console compliance.',
-          style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
+          style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.6), fontSize: 14, height: 1.6),
         ),
       ],
     );
@@ -156,7 +156,7 @@ class PrivacyScreen extends StatelessWidget {
               Expanded(
                 child: Text(
                   title,
-                  style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1),
+                  style: const TextStyle(color: Color(0xFF1E293B), fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1),
                 ),
               ),
             ],
@@ -166,7 +166,7 @@ class PrivacyScreen extends StatelessWidget {
             padding: const EdgeInsets.only(left: 32),
             child: Text(
               description,
-              style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 14, height: 1.6),
+              style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.6), fontSize: 14, height: 1.6),
             ),
           ),
         ],
@@ -180,7 +180,7 @@ class PrivacyScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: _surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: const Color(0xFF1E293B).withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -189,7 +189,7 @@ class PrivacyScreen extends StatelessWidget {
             children: [
               Icon(Icons.hub_rounded, color: _neonCyan, size: 20),
               SizedBox(width: 12),
-              Text('NURXIAN HEADQUARTERS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, letterSpacing: 1)),
+              Text('NURXIAN HEADQUARTERS', style: TextStyle(color: Color(0xFF1E293B), fontWeight: FontWeight.w900, letterSpacing: 1)),
             ],
           ),
           const SizedBox(height: 20),
@@ -206,9 +206,9 @@ class PrivacyScreen extends StatelessWidget {
   Widget _contactItem(IconData icon, String label) {
     return Row(
       children: [
-        Icon(icon, size: 14, color: Colors.white.withOpacity(0.3)),
+        Icon(icon, size: 14, color: const Color(0xFF1E293B).withOpacity(0.5)),
         const SizedBox(width: 12),
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+        Text(label, style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.8), fontSize: 13)),
       ],
     );
   }
@@ -219,12 +219,12 @@ class PrivacyScreen extends StatelessWidget {
         children: [
           Text(
             'CHILLI OS | NURXIAN CORE',
-            style: TextStyle(color: Colors.white.withOpacity(0.2), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
+            style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.4), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 3),
           ),
           const SizedBox(height: 8),
           Text(
             '© ESTB DEC 2025 NURXIAN. ALL RIGHTS RESERVED.',
-            style: TextStyle(color: Colors.white.withOpacity(0.1), fontSize: 9, letterSpacing: 1),
+            style: TextStyle(color: const Color(0xFF1E293B).withOpacity(0.3), fontSize: 9, letterSpacing: 1),
           ),
         ],
       ),

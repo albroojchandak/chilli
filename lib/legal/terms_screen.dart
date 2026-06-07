@@ -1,4 +1,4 @@
-﻿import 'dart:ui';
+import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class TermsScreen extends StatelessWidget {
@@ -14,11 +14,9 @@ class TermsScreen extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 24.0),
       padding: const EdgeInsets.all(24.0),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.05),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.1),
-        ),
+        border: Border.all(color: const Color(0xFF1E293B).withOpacity(0.1)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -31,7 +29,7 @@ class TermsScreen extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w900,
-                  color: Color(0xFF8B5CF6), // Purple accent
+                  color: Color(0xFFE11D48), // Accent
                   fontFamily: 'Courier',
                 ),
               ),
@@ -42,7 +40,7 @@ class TermsScreen extends StatelessWidget {
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: Colors.white,
+                    color: Color(0xFF1E293B),
                     letterSpacing: 0.5,
                   ),
                 ),
@@ -51,7 +49,10 @@ class TermsScreen extends StatelessWidget {
           ),
           if (content != null || bulletPoints != null) ...[
             const SizedBox(height: 16),
-            const Divider(color: Colors.white12, height: 1),
+            Divider(
+              color: const Color(0xFF1E293B).withOpacity(0.12),
+              height: 1,
+            ),
             const SizedBox(height: 16),
           ],
           if (content != null)
@@ -60,36 +61,38 @@ class TermsScreen extends StatelessWidget {
               style: TextStyle(
                 fontSize: 14,
                 height: 1.6,
-                color: Colors.white.withOpacity(0.7),
+                color: const Color(0xFF1E293B).withOpacity(0.7),
               ),
             ),
           if (bulletPoints != null)
-            ...bulletPoints.map((point) => Padding(
-                  padding: const EdgeInsets.only(bottom: 12.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(top: 6.0, right: 12.0),
-                        child: Icon(
-                          Icons.arrow_right_alt_rounded,
-                          color: Color(0xFFEC4899), // Pink accent
-                          size: 16,
+            ...bulletPoints.map(
+              (point) => Padding(
+                padding: const EdgeInsets.only(bottom: 12.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.only(top: 6.0, right: 12.0),
+                      child: const Icon(
+                        Icons.arrow_right_alt_rounded,
+                        color: Color(0xFFE11D48), // Accent
+                        size: 16,
+                      ),
+                    ),
+                    Expanded(
+                      child: Text(
+                        point,
+                        style: TextStyle(
+                          fontSize: 14,
+                          height: 1.5,
+                          color: const Color(0xFF1E293B).withOpacity(0.7),
                         ),
                       ),
-                      Expanded(
-                        child: Text(
-                          point,
-                          style: TextStyle(
-                            fontSize: 14,
-                            height: 1.5,
-                            color: Colors.white.withOpacity(0.7),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                )),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -98,7 +101,7 @@ class TermsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF09090B),
+      backgroundColor: Colors.white,
       body: Stack(
         children: [
           // Background blobs
@@ -108,9 +111,9 @@ class TermsScreen extends StatelessWidget {
             child: Container(
               width: 400,
               height: 400,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFF4F46E5), // Indigo
+                color: const Color(0xFF1E293B).withOpacity(0.1), // Slate
               ),
             ),
           ),
@@ -120,9 +123,9 @@ class TermsScreen extends StatelessWidget {
             child: Container(
               width: 300,
               height: 300,
-              decoration: const BoxDecoration(
+              decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Color(0xFFE11D48), // Rose
+                color: const Color(0xFFE11D48).withOpacity(0.1), // Rose
               ),
             ),
           ),
@@ -143,14 +146,17 @@ class TermsScreen extends StatelessWidget {
                     icon: Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.1),
+                        color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: Colors.white.withOpacity(0.2),
+                          color: const Color(0xFF1E293B).withOpacity(0.1),
                         ),
                       ),
-                      child: const Icon(Icons.arrow_back_ios_new,
-                          color: Colors.white, size: 18),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Color(0xFF1E293B),
+                        size: 18,
+                      ),
                     ),
                     onPressed: () => Navigator.pop(context),
                   ),
@@ -158,17 +164,19 @@ class TermsScreen extends StatelessWidget {
                 SliverToBoxAdapter(
                   child: Padding(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 24, vertical: 10),
+                      horizontal: 24,
+                      vertical: 10,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         // Header
                         const Text(
                           'The Rules 📜',
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.w900,
-                            color: Colors.white,
+                            color: Color(0xFF1E293B),
                             height: 1.1,
                           ),
                         ),
@@ -177,7 +185,7 @@ class TermsScreen extends StatelessWidget {
                           "By accessing or using the chilli app, you agree to be bound by these Terms of Use. If you do not agree, discontinue use of chilli immediately.",
                           style: TextStyle(
                             fontSize: 16,
-                            color: Colors.white.withOpacity(0.7),
+                            color: const Color(0xFF1E293B).withOpacity(0.7),
                             height: 1.5,
                           ),
                         ),
@@ -299,10 +307,10 @@ class TermsScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.02),
+                            color: Colors.white,
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
-                              color: Colors.white.withOpacity(0.05),
+                              color: const Color(0xFF1E293B).withOpacity(0.1),
                             ),
                           ),
                           child: Column(
@@ -312,20 +320,28 @@ class TermsScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontStyle: FontStyle.italic,
-                                  color: Colors.white.withOpacity(0.5),
+                                  color: const Color(
+                                    0xFF1E293B,
+                                  ).withOpacity(0.5),
                                   height: 1.5,
                                 ),
                                 textAlign: TextAlign.center,
                               ),
                               const SizedBox(height: 16),
-                              const Divider(color: Colors.white12),
+                              Divider(
+                                color: const Color(
+                                  0xFF1E293B,
+                                ).withOpacity(0.12),
+                              ),
                               const SizedBox(height: 16),
-                              const Text(
+                              Text(
                                 '© nurxian - chilli App. All rights reserved.',
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w600,
-                                  color: Colors.white70,
+                                  color: const Color(
+                                    0xFF1E293B,
+                                  ).withOpacity(0.7),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -335,7 +351,9 @@ class TermsScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
-                                  color: Colors.white.withOpacity(0.5),
+                                  color: const Color(
+                                    0xFF1E293B,
+                                  ).withOpacity(0.5),
                                 ),
                                 textAlign: TextAlign.center,
                               ),
@@ -355,4 +373,3 @@ class TermsScreen extends StatelessWidget {
     );
   }
 }
-

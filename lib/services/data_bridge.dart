@@ -261,7 +261,7 @@ class DataBridge {
     'female_audio_reward': 5.0, // 10 per min
     'female_video_reward': 10.0, // 20 per min
     'min_coins_required': 5.0,
-    'min_deposit': 79.0,
+    'min_deposit': 89.0,
     'min_withdrawal': 50.0,
     'paygic_mid': '',
     'paygic_token': '',
@@ -301,7 +301,7 @@ class DataBridge {
         // Reward system
         'is_reward_enabled': true, // Enable/disable female rewards
         // Payment thresholds (optional - can also go in payment doc)
-        'min_deposit': 79.0, // Minimum recharge amount
+        'min_deposit': 89.0, // Minimum recharge amount
         'min_withdrawal': 50.0, // Minimum withdrawal amount
         // Metadata
         'last_updated': FieldValue.serverTimestamp(),
@@ -318,7 +318,7 @@ class DataBridge {
         'paygic_token':
             'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJtaWQiOiJFTElURVpFRU5aR0ZSIiwiX2lkIjoiNjhlNzUxOWJiNGE0NmMzYjc3NDhkNzdlIiwiaWF0IjoxNzY3MjQ1MDA0LCJleHAiOjE3Njk4MzcwMDR9.BP1apIcNcGmHfTHKSlcNGgxtYo3gQ3NQ5beSbylSPjo', // Add your API Token here
         // Payment thresholds
-        'min_deposit': 79.0,
+        'min_deposit': 89.0,
         'min_withdrawal': 50.0,
 
         // Alternative field names (for compatibility)
@@ -485,7 +485,7 @@ class DataBridge {
           debugPrint('💳 Payment fields found in pricing doc');
           _appConfig['min_deposit'] = parseDouble(
             data['min_deposit'] ?? data['min_recharge'],
-            79.0,
+            89.0,
           );
           _appConfig['min_withdrawal'] = parseDouble(
             data['min_withdrawal'] ?? data['min_payout'],
